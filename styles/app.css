@@ -135,3 +135,38 @@ a {
   align-items: center;
   gap: 12px;
 }
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summary-stat-value {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.zone-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.zone-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.zone-bar {
+  width: 100%;
+}
