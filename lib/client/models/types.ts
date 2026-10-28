@@ -20,3 +20,11 @@ export interface PowerMeasurement {
   crankRevolutions: number | null;
   crankEventTime: number | null;
 }
+
+export interface BikeSample {
+  watts: number;
+  rpm: number | null;
+  receivedAt: number;
+}
+
+export type BikeListener = (sample: BikeSample) => void;
