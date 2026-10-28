@@ -63,3 +63,13 @@ export interface RideSummary {
   ftpTestSeconds?: 60 | 180 | 300;
   ftpTestAverageWatts?: number;
 }
+
+export interface Settings {
+  ftp: number;
+  spotifyClientId: string;
+  spotifyPlaylistId: string;
+  getSongBpmKey: string;
+  bikeName: string;
+}
+
+export type TempoCache = Record<string, number | null>;
