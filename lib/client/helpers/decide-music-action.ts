@@ -1,7 +1,6 @@
 import pickTrack from '@/lib/client/helpers/pick-track';
 import shouldChangeTrack from '@/lib/client/helpers/should-change-track';
-import type { MusicAction, MusicState } from '@/components/RideScreen/types';
-import type { TempoCache, Track, ZoneNumber } from '@/lib/client/models/types';
+import type { MusicAction, MusicState, TempoCache, Track, ZoneNumber } from '@/lib/client/models/types';
 
 export default function decideMusicAction(
   state: MusicState,

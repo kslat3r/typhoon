@@ -1,5 +1,5 @@
 import renderRideProfile from '@/components/RideProfile';
-import type { RideScreenElements, RideScreenState } from '@/components/RideScreen/types';
+import type { FinishReason, RideScreenElements, RideScreenState } from '@/components/RideScreen/types';
 import accumulateRideStats from '@/lib/client/helpers/accumulate-ride-stats';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import calculateFtp from '@/lib/client/helpers/calculate-ftp';
@@ -67,7 +67,7 @@ function currentZone(state: RideScreenState, ride: Ride): ZoneNumber {
 }
 
 function freshSample(state: RideScreenState, now: number): BikeSample | null {
-  if (state.latestSample === null || now - state.latestSample.receivedAt >= SAMPLE_MAX_AGE_MS) {
+  if (state.bikeState !== 'connected' || state.latestSample === null || now - state.latestSample.receivedAt >= SAMPLE_MAX_AGE_MS) {
     return null;
   }
   return state.latestSample;
@@ -134,8 +134,9 @@ function updateTrack(state: RideScreenState): void {
     return;
   }
 
+  const tempo: number | null | undefined = state.tempos[shown.id];
   trackTitle.textContent = shown.name;
-  trackArtist.textContent = shown.artist;
+  trackArtist.textContent = typeof tempo === 'number' ? `${shown.artist} · ${Math.round(tempo)} bpm` : shown.artist;
   if (shown.artworkUrl) {
     artwork.src = shown.artworkUrl;
     artwork.hidden = false;
@@ -285,6 +286,7 @@ async function releaseWakeLock(state: RideScreenState): Promise<void> {
 
 async function acquireWakeLock(state: RideScreenState): Promise<void> {
   const sentinel: WakeLockSentinel | null = await requestWakeLock();
+  await releaseWakeLock(state);
   state.wakeLock = sentinel;
   if (state.phase !== 'riding') {
     await releaseWakeLock(state);
@@ -310,7 +312,7 @@ function showFtpResult(state: RideScreenState, summary: RideSummary, proposedFtp
   state.elements.statsStrip.replaceWith(panel);
 }
 
-function finishRide(state: RideScreenState, ride: Ride): void {
+function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): void {
   if (state.phase === 'finished') {
     return;
   }
@@ -338,6 +340,11 @@ function finishRide(state: RideScreenState, ride: Ride): void {
     ride.ftpTestSeconds === undefined ? undefined : state.ftpTestSeconds > 0 ? state.ftpTestWattSeconds / state.ftpTestSeconds : 0;
   const summary: RideSummary = summariseRide(ride, state.stats, state.settings.ftp, state.startedAtDate, ftpTestAverageWatts);
 
+  if (reason === 'navigated') {
+    appendRideSummary(summary);
+    return;
+  }
+
   if (ride.ftpTestSeconds === undefined || ftpTestAverageWatts === undefined) {
     saveSummaryAndLeave(summary);
     return;
@@ -357,7 +364,7 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
 
   const position: IntervalPosition | null = intervalAtElapsed(ride, elapsed);
   if (position === null) {
-    finishRide(state, ride);
+    finishRide(state, ride, 'completed');
     return;
   }
 
@@ -406,17 +413,23 @@ function startRide(state: RideScreenState, ride: Ride): void {
   }, TICK_MS);
 }
 
-async function attemptReconnect(state: RideScreenState, onSample: (sample: BikeSample) => void, onDisconnect: () => void): Promise<void> {
+async function attemptReconnect(
+  state: RideScreenState,
+  ride: Ride,
+  onSample: (sample: BikeSample) => void, onDisconnect: () => void): Promise<void> {
   const device: BluetoothDevice | null = state.device;
-  if (device === null || state.bikeState !== 'reconnecting') {
+  if (device === null || state.bikeState !== 'reconnecting' || state.reconnectInFlight) {
     return;
   }
 
+  state.reconnectInFlight = true;
   try {
     await reconnectWattbike(device, onSample, onDisconnect);
   } catch (reconnectError) {
     state.elements.status.textContent = `Reconnecting to bike: ${errorMessage(reconnectError)}`;
     return;
+  } finally {
+    state.reconnectInFlight = false;
   }
 
   if (state.phase === 'finished') {
@@ -430,6 +443,10 @@ async function attemptReconnect(state: RideScreenState, onSample: (sample: BikeS
   }
   state.bikeState = 'connected';
   state.elements.status.textContent = '';
+  if (state.phase === 'ready') {
+    state.elements.startButton.disabled = false;
+    updateReadyScreen(state, ride);
+  }
 }
 
 async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample: BikeSample) => void, onDisconnect: () => void): Promise<void> {
@@ -501,7 +518,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   });
   startButton.disabled = true;
   const endButton: HTMLButtonElement = buildButton('End ride', (): void => {
-    finishRide(state, ride);
+    finishRide(state, ride, 'ended');
   });
   endButton.className = 'ride-end';
   endButton.hidden = true;
@@ -526,6 +543,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     musicFailed: false,
     queuedForThisPlay: false,
     spotifyCallInFlight: false,
+    reconnectInFlight: false,
     pendingPlay: null,
     wakeLock: null,
     tickHandle: null,
@@ -558,8 +576,9 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
       return;
     }
     state.bikeState = 'reconnecting';
+    state.latestSample = null;
     state.reconnectHandle = setInterval((): void => {
-      void attemptReconnect(state, onSample, onDisconnect);
+      void attemptReconnect(state, ride, onSample, onDisconnect);
     }, RECONNECT_MS);
     if (state.phase === 'ready') {
       state.elements.startButton.disabled = true;
@@ -570,7 +589,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   window.addEventListener(
     'hashchange',
     (): void => {
-      finishRide(state, ride);
+      finishRide(state, ride, 'navigated');
     },
     { signal: state.listeners.signal },
   );

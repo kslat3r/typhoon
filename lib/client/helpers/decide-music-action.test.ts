@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import decideMusicAction from '@/lib/client/helpers/decide-music-action';
-import type { MusicState } from '@/components/RideScreen/types';
-import type { Track } from '@/lib/client/models/types';
+import type { MusicState, Track } from '@/lib/client/models/types';
 
 function track(id: string): Track {
   return { id, uri: `spotify:track:${id}`, name: id, artist: 'artist', artworkUrl: null, durationMs: 180000 };

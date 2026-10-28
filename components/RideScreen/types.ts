@@ -1,12 +1,6 @@
-import type { BikeSample, IntervalPosition, RideStats, Settings, TempoCache, Track, ZoneNumber } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, MusicState, RideStats, Settings, TempoCache, Track } from '@/lib/client/models/types';
 
-export type MusicState = {
-  track: Track | null;
-  startedAt: number;
-  zone: ZoneNumber;
-};
-
-export type MusicAction = { kind: 'hold' } | { kind: 'play'; track: Track };
+export type FinishReason = 'completed' | 'ended' | 'navigated';
 
 export type RidePhase = 'ready' | 'riding' | 'finished';
 
@@ -51,6 +45,7 @@ export type RideScreenState = {
   musicFailed: boolean;
   queuedForThisPlay: boolean;
   spotifyCallInFlight: boolean;
+  reconnectInFlight: boolean;
   pendingPlay: Track | null;
   wakeLock: WakeLockSentinel | null;
   tickHandle: ReturnType<typeof setInterval> | null;

@@ -100,3 +100,11 @@ export interface SpotifyPlaylist {
   id: string;
   name: string;
 }
+
+export type MusicState = {
+  track: Track | null;
+  startedAt: number;
+  zone: ZoneNumber;
+};
+
+export type MusicAction = { kind: 'hold' } | { kind: 'play'; track: Track };

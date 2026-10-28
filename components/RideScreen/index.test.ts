@@ -74,11 +74,11 @@ describe('renderRideScreen', () => {
     await vi.advanceTimersByTimeAsync(0);
     findButton(root, 'Start').click();
     await vi.advanceTimersByTimeAsync(0);
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1500);
 
     // Assert
     expect((root.querySelector('.ride-top') as HTMLElement).textContent).toContain('No music');
-    expect(countdown.textContent).toBe('0:09');
+    expect(countdown.textContent).toBe('0:08');
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
 
     // Act
