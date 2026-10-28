@@ -16,6 +16,10 @@ export default async function lookupTempo(apiKey: string, track: Track): Promise
     return null;
   }
 
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Tempo lookup unauthorised: ${response.status}`);
+  }
+
   if (!response.ok) {
     throw new Error(`Tempo lookup failed: ${response.status}`);
   }

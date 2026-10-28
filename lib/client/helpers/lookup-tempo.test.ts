@@ -46,6 +46,14 @@ describe('lookupTempo', () => {
     expect(await lookupTempo('key', TRACK)).toBeNull();
   });
 
+  it('throws when unauthorised', async () => {
+    // Arrange
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 403 })));
+
+    // Act / Assert
+    await expect(lookupTempo('key', TRACK)).rejects.toThrow('Tempo lookup unauthorised: 403');
+  });
+
   it('throws on other failures', async () => {
     // Arrange
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 500 })));

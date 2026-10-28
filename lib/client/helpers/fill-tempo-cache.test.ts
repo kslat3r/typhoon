@@ -58,4 +58,30 @@ describe('fillTempoCache', () => {
     // Assert
     expect(result).toEqual({ b: 100 });
   });
+
+  it('reports progress for failed lookups too', async () => {
+    // Arrange
+    vi.mocked(lookupTempo).mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(100);
+    const onProgress = vi.fn();
+
+    // Act
+    const promise = fillTempoCache('key', [track('a'), track('b')], {}, onProgress);
+    await vi.advanceTimersByTimeAsync(1100);
+    await promise;
+
+    // Assert
+    expect(onProgress).toHaveBeenNthCalledWith(1, 1, 2);
+    expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
+  });
+
+  it('rejects on an unauthorised lookup without saving', async () => {
+    // Arrange
+    vi.mocked(lookupTempo).mockRejectedValueOnce(new Error('Tempo lookup unauthorised: 401'));
+    const onProgress = vi.fn();
+
+    // Act / Assert
+    await expect(fillTempoCache('key', [track('a'), track('b')], {}, onProgress)).rejects.toThrow('Tempo lookup unauthorised');
+    expect(saveTempoCache).not.toHaveBeenCalled();
+    expect(onProgress).not.toHaveBeenCalled();
+  });
 });

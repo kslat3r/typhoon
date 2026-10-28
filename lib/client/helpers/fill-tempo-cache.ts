@@ -21,8 +21,14 @@ export default async function fillTempoCache(
 
     try {
       tempo = await lookupTempo(apiKey, track);
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Tempo lookup unauthorised')) {
+        throw error;
+      }
+
       // Left out of the cache so it is retried next time
+      done += 1;
+      onProgress(done, missing.length);
       continue;
     }
 
