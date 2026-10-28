@@ -6,7 +6,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 1000;
 const HEIGHT = 300;
 const GAP = 1;
-const DOT_RADIUS = 8;
+const DOT_RADIUS = 13;
 
 function percentToY(percent: number): number {
   const zoneIndex: number = ZONES.findIndex((zone): boolean => percent < zone.maxPercent);
