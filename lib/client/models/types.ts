@@ -73,3 +73,30 @@ export interface Settings {
 }
 
 export type TempoCache = Record<string, number | null>;
+
+export interface SpotifyAuth {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+export interface Track {
+  id: string;
+  uri: string;
+  name: string;
+  artist: string;
+  artworkUrl: string | null;
+  durationMs: number;
+}
+
+export interface PlayerState {
+  trackId: string | null;
+  progressMs: number;
+  durationMs: number;
+  isPlaying: boolean;
+}
+
+export interface SpotifyPlaylist {
+  id: string;
+  name: string;
+}
