@@ -94,9 +94,15 @@ coaching text is being replaced.
   deprecated for apps registered after 27 November 2024 and extended
   quota needs a business with 250k monthly users. Track tempo therefore
   comes from GetSongBPM (free API key, looked up by title and artist).
-  Their terms require a visible link back to GetSongBPM.com, which goes on
-  the settings screen. The API key is pasted into settings and kept in
-  local storage, never committed.
+  Their API base is `https://api.getsong.co/` and the key is sent as the
+  `api_key` query parameter (a custom header would force a CORS preflight
+  from the browser). Their terms require a visible link back to
+  GetSongBPM.com, which goes on the settings screen. The API key is pasted
+  into settings and kept in local storage, never committed.
+- Spotify's February 2026 Development Mode changes apply: playlist
+  contents come from `GET /playlists/{id}/items` (entries carry `item`,
+  not `track`) and only for playlists the user owns or collaborates on,
+  so the chosen playlist must be one of Ed's own.
 - Storage: everything (FTP, settings, BPM cache, ride history) lives in
   the browser's local storage on the phone.
 
