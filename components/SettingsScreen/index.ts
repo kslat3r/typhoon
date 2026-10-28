@@ -42,7 +42,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-async function fillFromPlaylist(
+async function runFill(
   playlistId: string,
   settings: Settings,
   progress: HTMLProgressElement,
@@ -80,6 +80,27 @@ async function fillFromPlaylist(
   status.textContent = 'Tempo data is up to date';
 }
 
+let activeFill: Promise<void> | null = null;
+
+async function fillFromPlaylist(
+  playlistId: string,
+  settings: Settings,
+  progress: HTMLProgressElement,
+  status: HTMLElement,
+): Promise<void> {
+  if (activeFill !== null) {
+    status.textContent = 'Tempo lookup already running';
+    return;
+  }
+
+  activeFill = runFill(playlistId, settings, progress, status);
+  try {
+    await activeFill;
+  } finally {
+    activeFill = null;
+  }
+}
+
 async function loadPlaylistChoices(
   select: HTMLSelectElement,
   settings: Settings,
@@ -111,11 +132,11 @@ async function loadPlaylistChoices(
 
 async function finishLogin(root: HTMLElement, code: string): Promise<void> {
   const settings: Settings = loadSettings();
+  history.replaceState(null, '', location.pathname + '#/settings');
   let auth: SpotifyAuth;
   try {
     auth = await completeSpotifyLogin(settings.spotifyClientId, redirectUri(), code);
   } catch (loginError) {
-    history.replaceState(null, '', location.pathname + '#/settings');
     renderSettingsScreen(root);
     const status: HTMLElement | null = root.querySelector('.status');
     if (status) {
@@ -125,7 +146,6 @@ async function finishLogin(root: HTMLElement, code: string): Promise<void> {
   }
 
   saveSpotifyAuth(auth);
-  history.replaceState(null, '', location.pathname + '#/settings');
   renderSettingsScreen(root);
 }
 
