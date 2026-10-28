@@ -14,3 +14,9 @@ export interface Ride {
   intervals: RideInterval[];
   ftpTestSeconds?: 60 | 180 | 300;
 }
+
+export interface PowerMeasurement {
+  watts: number;
+  crankRevolutions: number | null;
+  crankEventTime: number | null;
+}
