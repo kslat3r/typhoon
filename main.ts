@@ -15,7 +15,15 @@ function renderRoute(): void {
     return;
   }
 
-  if (new URLSearchParams(location.search).get('code')) {
+  const query: URLSearchParams = new URLSearchParams(location.search);
+  if (query.get('code')) {
+    renderSettingsScreen(app);
+    return;
+  }
+
+  if (query.get('error')) {
+    history.replaceState(null, '', location.pathname + '#/settings');
+    sessionStorage.setItem('typhoon.spotifyLoginCancelled', '1');
     renderSettingsScreen(app);
     return;
   }

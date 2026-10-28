@@ -4,7 +4,8 @@ import saveSpotifyAuth from '@/lib/client/helpers/save-spotify-auth';
 
 function item(id: string, images: { url: string; width: number }[]): object {
   return {
-    track: {
+    item: {
+      type: 'track',
       id,
       uri: `spotify:track:${id}`,
       name: `Name ${id}`,
@@ -28,7 +29,7 @@ describe('getPlaylistTracks', () => {
 
   it('follows paging and maps items to tracks', async () => {
     // Arrange
-    const pageTwoUrl = 'https://api.spotify.com/v1/playlists/p1/tracks?offset=100&limit=100';
+    const pageTwoUrl = 'https://api.spotify.com/v1/playlists/p1/items?offset=100&limit=100';
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (url === pageTwoUrl) {
         return Promise.resolve(new Response(JSON.stringify({ items: [item('b', [])], next: null })));
@@ -38,8 +39,9 @@ describe('getPlaylistTracks', () => {
           JSON.stringify({
             items: [
               item('a', [{ url: 'big', width: 640 }, { url: 'small', width: 64 }]),
-              { track: null },
-              { track: { id: null, uri: 'spotify:local:x', name: 'Local' } },
+              { item: null },
+              { item: { type: 'track', id: null, uri: 'spotify:local:x', name: 'Local' } },
+              { item: { type: 'episode', id: 'e1', uri: 'spotify:episode:e1', name: 'Episode', duration_ms: 1000, artists: [], album: { images: [] } } },
             ],
             next: pageTwoUrl,
           }),
@@ -52,10 +54,18 @@ describe('getPlaylistTracks', () => {
     const tracks = await getPlaylistTracks('p1');
 
     // Assert
-    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/playlists/p1/tracks?limit=100');
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/playlists/p1/items?limit=100');
     expect(tracks).toEqual([
       { id: 'a', uri: 'spotify:track:a', name: 'Name a', artist: 'Artist a', artworkUrl: 'small', durationMs: 1000 },
       { id: 'b', uri: 'spotify:track:b', name: 'Name b', artist: 'Artist b', artworkUrl: null, durationMs: 1000 },
     ]);
+  });
+
+  it('throws a clear message when the playlist contents are not available', async () => {
+    // Arrange
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 403 })));
+
+    // Act / Assert
+    await expect(getPlaylistTracks('p1')).rejects.toThrow('Playlist not available: choose a playlist you own');
   });
 });

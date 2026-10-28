@@ -5,7 +5,7 @@ const SCOPES =
 
 export default async function startSpotifyLogin(clientId: string, redirectUri: string): Promise<void> {
   const verifier = base64UrlEncode(crypto.getRandomValues(new Uint8Array(64)));
-  sessionStorage.setItem('typhoon.pkceVerifier', verifier);
+  localStorage.setItem('typhoon.pkceVerifier', verifier);
 
   let digest: ArrayBuffer;
   try {

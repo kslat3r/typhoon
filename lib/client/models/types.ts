@@ -108,3 +108,10 @@ export type MusicState = {
 };
 
 export type MusicAction = { kind: 'hold' } | { kind: 'play'; track: Track };
+
+export interface SpotifyDevice {
+  id: string;
+  name: string;
+  type: string;
+  isActive: boolean;
+}

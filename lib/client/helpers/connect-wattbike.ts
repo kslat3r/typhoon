@@ -5,11 +5,16 @@ export default async function connectWattbike(
   onSample: BikeListener,
   onDisconnect: () => void,
 ): Promise<BluetoothDevice> {
+  if (navigator.bluetooth === undefined) {
+    throw new Error('Web Bluetooth is not available in this browser');
+  }
+
   let device: BluetoothDevice;
   try {
     device = await navigator.bluetooth.requestDevice({ filters: [{ services: ['cycling_power'] }] });
-  } catch {
-    throw new Error('Bluetooth picker cancelled');
+  } catch (pickerError) {
+    const message: string = pickerError instanceof Error ? pickerError.message : String(pickerError);
+    throw new Error('Bluetooth picker failed: ' + message, { cause: pickerError });
   }
 
   if (!device.gatt) {

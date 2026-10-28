@@ -44,6 +44,21 @@ describe('loadHistory', () => {
     // Assert
     expect(history.map((summary) => summary.id)).toEqual(['second', 'first']);
   });
+
+  it('drops corrupt entries', () => {
+    // Arrange
+    const valid: RideSummary = buildSummary('valid');
+    localStorage.setItem(
+      'typhoon.history',
+      JSON.stringify([valid, null, 'text', { id: 7, secondsInZone: [0, 0, 0, 0, 0, 0, 0] }, { id: 'short', secondsInZone: [0] }, { id: 'none' }]),
+    );
+
+    // Act
+    const history = loadHistory();
+
+    // Assert
+    expect(history).toEqual([valid]);
+  });
 });
 
 describe('loadTempoCache', () => {

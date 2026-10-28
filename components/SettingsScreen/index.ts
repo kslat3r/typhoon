@@ -169,6 +169,10 @@ export default function renderSettingsScreen(root: HTMLElement): void {
 
   const status: HTMLParagraphElement = document.createElement('p');
   status.className = 'status';
+  if (sessionStorage.getItem('typhoon.spotifyLoginCancelled') !== null) {
+    sessionStorage.removeItem('typhoon.spotifyLoginCancelled');
+    status.textContent = 'Spotify login cancelled';
+  }
 
   const ftpField: HTMLLabelElement = buildField('FTP (watts)', 'ftp', 'number', String(settings.ftp));
   (ftpField.querySelector('input') as HTMLInputElement).min = '1';

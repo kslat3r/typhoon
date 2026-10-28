@@ -30,10 +30,10 @@ describe('lookupTempo', () => {
     const tempo = await lookupTempo('key', TRACK);
 
     // Assert
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
     expect(tempo).toBe(128);
-    expect(url).toBe(`https://api.getsongbpm.com/search/?type=both&lookup=${encodeURIComponent('song:Song One artist:Band')}`);
-    expect(new Headers(init.headers).get('X-API-KEY')).toBe('key');
+    expect(url).toBe(`https://api.getsong.co/search/?api_key=key&type=both&lookup=${encodeURIComponent('song:Song One artist:Band')}`);
+    expect(init).toBeUndefined();
   });
 
   it('returns null for an empty list, a bad tempo and a 404', async () => {

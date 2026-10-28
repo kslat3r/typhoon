@@ -11,7 +11,7 @@ export default async function completeSpotifyLogin(
   redirectUri: string,
   code: string,
 ): Promise<SpotifyAuth> {
-  const verifier = sessionStorage.getItem('typhoon.pkceVerifier');
+  const verifier = localStorage.getItem('typhoon.pkceVerifier');
   if (verifier === null) {
     throw new Error('Spotify login failed: missing PKCE verifier');
   }
@@ -43,7 +43,7 @@ export default async function completeSpotifyLogin(
   } catch (error) {
     throw new Error('Spotify login failed at reading the token response', { cause: error });
   }
-  sessionStorage.removeItem('typhoon.pkceVerifier');
+  localStorage.removeItem('typhoon.pkceVerifier');
 
   return {
     accessToken: token.access_token,

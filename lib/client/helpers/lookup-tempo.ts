@@ -2,12 +2,12 @@ import type { Track } from '@/lib/client/models/types';
 
 export default async function lookupTempo(apiKey: string, track: Track): Promise<number | null> {
   const lookup = encodeURIComponent(`song:${track.name} artist:${track.artist}`);
-  const url = `https://api.getsongbpm.com/search/?type=both&lookup=${lookup}`;
+  const url = `https://api.getsong.co/search/?api_key=${encodeURIComponent(apiKey)}&type=both&lookup=${lookup}`;
   let response: Response;
   let body: { search?: unknown };
 
   try {
-    response = await fetch(url, { headers: { 'X-API-KEY': apiKey } });
+    response = await fetch(url);
   } catch (error) {
     throw new Error('Tempo lookup request failed', { cause: error });
   }

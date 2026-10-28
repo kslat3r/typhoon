@@ -9,6 +9,7 @@ import emptyRideStats from '@/lib/client/helpers/empty-ride-stats';
 import formatClock from '@/lib/client/helpers/format-clock';
 import getPlayerState from '@/lib/client/helpers/get-player-state';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
+import getSpotifyDevices from '@/lib/client/helpers/get-spotify-devices';
 import intervalAtElapsed from '@/lib/client/helpers/interval-at-elapsed';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import loadSpotifyAuth from '@/lib/client/helpers/load-spotify-auth';
@@ -24,7 +25,7 @@ import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
 import { ZONES } from '@/lib/client/models/zones';
-import type { BikeSample, IntervalPosition, PlayerState, Ride, RideInterval, RideSummary, Track, ZoneNumber } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, PlayerState, Ride, RideInterval, RideSummary, SpotifyDevice, Track, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
 const POLL_MS = 2000;
@@ -201,12 +202,48 @@ async function runSpotifyCall(state: RideScreenState, call: () => Promise<void>)
   try {
     await call();
   } catch (spotifyError) {
-    state.musicFailed = true;
-    state.elements.status.textContent = `Music stopped: ${errorMessage(spotifyError)}`;
-    updateTrack(state);
+    markMusicFailed(state, `Music stopped: ${errorMessage(spotifyError)}`);
   } finally {
     state.spotifyCallInFlight = false;
   }
+}
+
+function markMusicFailed(state: RideScreenState, message: string): void {
+  state.musicFailed = true;
+  state.elements.status.textContent = message;
+  updateTrack(state);
+}
+
+async function playWithDeviceFallback(state: RideScreenState, uri: string): Promise<boolean> {
+  try {
+    await playTrack(uri);
+    return true;
+  } catch (playError) {
+    if (errorMessage(playError) !== 'Play failed: 404') {
+      throw new Error(errorMessage(playError), { cause: playError });
+    }
+  }
+
+  let devices: SpotifyDevice[];
+  try {
+    devices = await getSpotifyDevices();
+  } catch (deviceError) {
+    throw new Error(`Finding a Spotify device failed: ${errorMessage(deviceError)}`, { cause: deviceError });
+  }
+
+  const device: SpotifyDevice | undefined =
+    devices.find((candidate: SpotifyDevice): boolean => candidate.type === 'Smartphone') ?? devices[0];
+  if (device === undefined) {
+    markMusicFailed(state, 'Open Spotify on the phone and press play once');
+    return false;
+  }
+
+  try {
+    await playTrack(uri, device.id);
+  } catch (retryError) {
+    throw new Error(`Play on ${device.name} failed: ${errorMessage(retryError)}`, { cause: retryError });
+  }
+  return true;
 }
 
 async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
@@ -217,7 +254,10 @@ async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
 
   state.pendingPlay = null;
   await runSpotifyCall(state, async (): Promise<void> => {
-    await playTrack(track.uri);
+    const played: boolean = await playWithDeviceFallback(state, track.uri);
+    if (!played) {
+      return;
+    }
     state.music = { track, startedAt: performance.now(), zone: currentZone(state, ride) };
     state.queuedForThisPlay = false;
     state.musicFailed = false;
@@ -293,20 +333,15 @@ async function acquireWakeLock(state: RideScreenState): Promise<void> {
   }
 }
 
-function saveSummaryAndLeave(summary: RideSummary): void {
-  appendRideSummary(summary);
-  navigate('#/summary/' + summary.id);
-}
-
 function showFtpResult(state: RideScreenState, summary: RideSummary, proposedFtp: number): void {
   const panel: HTMLElement = buildElement('section', 'ride-ftp-result', '');
   const save: HTMLButtonElement = buildButton('Save', (): void => {
     saveSettings({ ...loadSettings(), ftp: proposedFtp });
-    saveSummaryAndLeave(summary);
+    navigate('#/summary/' + summary.id);
   });
   save.disabled = proposedFtp <= 0;
   const keep: HTMLButtonElement = buildButton('Keep current', (): void => {
-    saveSummaryAndLeave(summary);
+    navigate('#/summary/' + summary.id);
   });
   panel.append(buildElement('p', 'ride-ftp-proposed', `Proposed FTP: ${proposedFtp} W`), save, keep);
   state.elements.statsStrip.replaceWith(panel);
@@ -336,17 +371,25 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   }
 
   state.elements.endButton.hidden = true;
+  if (state.stats.sampledSeconds === 0) {
+    if (reason !== 'navigated') {
+      navigate('#/');
+    }
+    return;
+  }
+
   const ftpTestAverageWatts: number | undefined =
     ride.ftpTestSeconds === undefined ? undefined : state.ftpTestSeconds > 0 ? state.ftpTestWattSeconds / state.ftpTestSeconds : 0;
   const summary: RideSummary = summariseRide(ride, state.stats, state.settings.ftp, state.startedAtDate, ftpTestAverageWatts);
 
+  appendRideSummary(summary);
+
   if (reason === 'navigated') {
-    appendRideSummary(summary);
     return;
   }
 
   if (ride.ftpTestSeconds === undefined || ftpTestAverageWatts === undefined) {
-    saveSummaryAndLeave(summary);
+    navigate('#/summary/' + summary.id);
     return;
   }
 
@@ -492,7 +535,12 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
     return;
   }
 
-  if (tracks.length === 0 || state.phase === 'finished') {
+  if (state.phase === 'finished') {
+    return;
+  }
+
+  if (tracks.length === 0) {
+    state.elements.status.textContent = 'Playlist has no tracks';
     return;
   }
 
@@ -518,6 +566,9 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   });
   startButton.disabled = true;
   const endButton: HTMLButtonElement = buildButton('End ride', (): void => {
+    if (!window.confirm('End ride?')) {
+      return;
+    }
     finishRide(state, ride, 'ended');
   });
   endButton.className = 'ride-end';

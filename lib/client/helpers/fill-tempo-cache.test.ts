@@ -84,4 +84,21 @@ describe('fillTempoCache', () => {
     expect(saveTempoCache).not.toHaveBeenCalled();
     expect(onProgress).not.toHaveBeenCalled();
   });
+
+  it('rejects when every lookup fails', async () => {
+    // Arrange
+    vi.mocked(lookupTempo)
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    const onProgress = vi.fn();
+
+    // Act
+    const promise = fillTempoCache('key', [track('a'), track('b')], {}, onProgress);
+    const assertion = expect(promise).rejects.toThrow('Tempo lookup failed: every request failed');
+    await vi.advanceTimersByTimeAsync(1100);
+
+    // Assert
+    await assertion;
+    expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
+  });
 });

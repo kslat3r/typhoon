@@ -8,7 +8,17 @@ export default function loadHistory(): RideSummary[] {
   }
   try {
     const stored: unknown = JSON.parse(raw);
-    return Array.isArray(stored) ? (stored as RideSummary[]) : [];
+    if (!Array.isArray(stored)) {
+      return [];
+    }
+    return stored.filter(
+      (entry: unknown): boolean =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        typeof (entry as { id?: unknown }).id === 'string' &&
+        Array.isArray((entry as { secondsInZone?: unknown }).secondsInZone) &&
+        (entry as { secondsInZone: unknown[] }).secondsInZone.length === 7,
+    ) as RideSummary[];
   } catch {
     return [];
   }

@@ -11,6 +11,7 @@ export default async function fillTempoCache(
   const filled: TempoCache = { ...cache };
   const missing = tracks.filter((track) => !(track.id in filled));
   let done = 0;
+  let failed = 0;
 
   for (const [index, track] of missing.entries()) {
     if (index > 0) {
@@ -27,6 +28,7 @@ export default async function fillTempoCache(
       }
 
       // Left out of the cache so it is retried next time
+      failed += 1;
       done += 1;
       onProgress(done, missing.length);
       continue;
@@ -36,6 +38,10 @@ export default async function fillTempoCache(
     done += 1;
     saveTempoCache(filled);
     onProgress(done, missing.length);
+  }
+
+  if (missing.length > 0 && failed === missing.length) {
+    throw new Error('Tempo lookup failed: every request failed');
   }
 
   return filled;
