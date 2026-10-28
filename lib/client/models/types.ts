@@ -28,3 +28,38 @@ export interface BikeSample {
 }
 
 export type BikeListener = (sample: BikeSample) => void;
+
+export interface IntervalPosition {
+  index: number;
+  interval: RideInterval;
+  secondsIntoInterval: number;
+  secondsLeftInInterval: number;
+  secondsLeftInRide: number;
+}
+
+export interface RideStats {
+  sampledSeconds: number;
+  missingSeconds: number;
+  wattSeconds: number;
+  maxWatts: number;
+  miles: number;
+  secondsInZone: [number, number, number, number, number, number, number];
+}
+
+export interface RideSummary {
+  id: string;
+  rideId: string;
+  rideName: string;
+  difficulty: number;
+  startedAt: string;
+  durationSeconds: number;
+  averageWatts: number;
+  maxWatts: number;
+  miles: number;
+  averageMph: number;
+  secondsInZone: RideStats['secondsInZone'];
+  missingSeconds: number;
+  ftpUsed: number;
+  ftpTestSeconds?: 60 | 180 | 300;
+  ftpTestAverageWatts?: number;
+}
