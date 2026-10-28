@@ -25,7 +25,13 @@ export default async function connectWattbike(
     throw new Error('GATT connect failed');
   }
 
-  await subscribePowerMeasurements(server, onSample);
+  try {
+    await subscribePowerMeasurements(server, onSample);
+  } catch {
+    device.removeEventListener('gattserverdisconnected', onDisconnect);
+    server.disconnect();
+    throw new Error('Notifications failed');
+  }
 
   return device;
 }

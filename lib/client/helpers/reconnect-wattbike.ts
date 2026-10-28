@@ -10,7 +10,7 @@ export default async function reconnectWattbike(
     throw new Error('GATT connect failed: device has no GATT server');
   }
 
-  device.addEventListener('gattserverdisconnected', onDisconnect, { once: true });
+  device.addEventListener('gattserverdisconnected', onDisconnect);
 
   let server: BluetoothRemoteGATTServer;
   try {
@@ -19,5 +19,11 @@ export default async function reconnectWattbike(
     throw new Error('GATT connect failed');
   }
 
-  await subscribePowerMeasurements(server, onSample);
+  try {
+    await subscribePowerMeasurements(server, onSample);
+  } catch {
+    device.removeEventListener('gattserverdisconnected', onDisconnect);
+    server.disconnect();
+    throw new Error('Notifications failed');
+  }
 }

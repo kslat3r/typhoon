@@ -24,7 +24,7 @@ export default async function subscribePowerMeasurements(
 
   let previous: PowerMeasurement | null = null;
 
-  characteristic.addEventListener('characteristicvaluechanged', (event: Event): void => {
+  const handleValueChanged = (event: Event): void => {
     const target = event.target as BluetoothRemoteGATTCharacteristic;
     if (!target.value) {
       return;
@@ -48,11 +48,20 @@ export default async function subscribePowerMeasurements(
     previous = current;
 
     onSample({ watts: current.watts, rpm, receivedAt: performance.now() });
-  });
+  };
+
+  const handleDisconnected = (): void => {
+    characteristic.removeEventListener('characteristicvaluechanged', handleValueChanged);
+    server.device.removeEventListener('gattserverdisconnected', handleDisconnected);
+  };
+
+  characteristic.addEventListener('characteristicvaluechanged', handleValueChanged);
+  server.device.addEventListener('gattserverdisconnected', handleDisconnected);
 
   try {
     await characteristic.startNotifications();
   } catch {
+    handleDisconnected();
     throw new Error('Notifications failed');
   }
 }
