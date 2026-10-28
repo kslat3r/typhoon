@@ -27,10 +27,6 @@
 
 /* Base */
 
-[hidden] {
-  display: none !important;
-}
-
 html,
 body {
   margin: 0;
@@ -144,7 +140,7 @@ footer {
   color: var(--text-muted);
 }
 
-footer > a + a {
+footer > a:not(.ride-link) + a {
   margin-left: var(--space-5);
 }
 
@@ -338,6 +334,10 @@ form + section select {
   align-items: center;
   gap: var(--space-3);
   flex: none;
+}
+
+.ride-controls[hidden] {
+  display: none;
 }
 
 .ride-controls .ride-name {
