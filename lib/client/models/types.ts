@@ -1,1 +1,16 @@
 export type ZoneNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export interface RideInterval {
+  zone: ZoneNumber;
+  seconds: number;
+}
+
+export interface Ride {
+  id: string;
+  name: string;
+  lengthSeconds: number;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  archetype: 'climb' | 'time-trial' | 'hiit' | 'over-under' | 'endurance' | 'mash-up' | 'ftp-test';
+  intervals: RideInterval[];
+  ftpTestSeconds?: 60 | 180 | 300;
+}
