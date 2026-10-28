@@ -37,3 +37,101 @@ a {
 .status {
   min-height: 1.2em;
 }
+
+.ride-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 8px 12px;
+}
+
+.ride-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.ride-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ride-artwork {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+}
+
+.ride-track-text {
+  min-width: 0;
+}
+
+.ride-track-title,
+.ride-track-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ride-top-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ride-interval {
+  text-align: right;
+}
+
+.ride-countdown {
+  font-size: 3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ride-zone-label,
+.ride-stat-label {
+  font-size: 0.75rem;
+}
+
+.ride-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ride-name {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.ride-profile-band {
+  flex: 1;
+  min-height: 0;
+}
+
+.ride-stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.ride-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ride-stat-value {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ride-ftp-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

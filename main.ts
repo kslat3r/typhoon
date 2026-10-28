@@ -1,5 +1,6 @@
 import '@/styles/app.css';
 import renderLibraryScreen from '@/components/LibraryScreen';
+import renderRideScreen from '@/components/RideScreen';
 import renderSettingsScreen from '@/components/SettingsScreen';
 import buildFtpTestRide from '@/lib/client/helpers/build-ftp-test-ride';
 import { RIDES } from '@/lib/client/models/rides';
@@ -31,14 +32,14 @@ function renderRoute(): void {
   if (route === 'ride') {
     const ride: Ride | undefined = RIDES.find((candidate: Ride): boolean => candidate.id === param);
     if (ride) {
-      renderPlaceholder(app, 'Ride screen coming in a later task');
+      renderRideScreen(app, ride);
       return;
     }
   } else if (route === 'ftp-test') {
     const seconds: number = Number(param);
     if (seconds === 60 || seconds === 180 || seconds === 300) {
       const ride: Ride = buildFtpTestRide(seconds);
-      renderPlaceholder(app, `Ride screen coming in a later task (${ride.name})`);
+      renderRideScreen(app, ride);
       return;
     }
   } else if (route === 'summary') {
