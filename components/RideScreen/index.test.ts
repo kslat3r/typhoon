@@ -294,6 +294,45 @@ describe('renderRideScreen', () => {
     expect(vi.mocked(playTrack).mock.calls[3][0]).toBe('spotify:track:b');
   });
 
+  it('retries the same track when Spotify answers 404 instead of skipping', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockRejectedValueOnce(new Error('Play failed: 404')).mockRejectedValueOnce(new Error('Play failed: 404')).mockResolvedValue(undefined);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
+
+    // Act
+    await vi.advanceTimersByTimeAsync(2500);
+
+    // Assert
+    expect(playTrack).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(playTrack).mock.calls.map((call) => call[0])).toEqual(['spotify:track:a', 'spotify:track:a', 'spotify:track:a']);
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track A');
+    expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('');
+  });
+
+  it('stays on the ride screen after End ride, with Done leading to the summary', async () => {
+    // Arrange
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Act
+    findButton(root, 'End ride').click();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    expect(location.hash).toBe('#/ride/test-ride');
+    expect(findButton(root, 'End ride').hidden).toBe(true);
+    expect(findButton(root, 'Done').hidden).toBe(false);
+    expect(root.querySelector('.ride-profile-line')).not.toBeNull();
+
+    // Act
+    findButton(root, 'Done').click();
+
+    // Assert
+    expect(location.hash.startsWith('#/summary/')).toBe(true);
+  });
+
   it('ignores a lagging player report right after a play call', async () => {
     // Arrange
     vi.mocked(playTrack).mockResolvedValue(undefined);

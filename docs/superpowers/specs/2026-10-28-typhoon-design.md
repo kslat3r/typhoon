@@ -217,7 +217,16 @@ defaulted. Use the frontend-design skill for the visual pass.
   played (Ed, 2026-10-29); Prev is the one exception. If the queued
   song does not start when the current one ends (the player reports it
   paused at its start), the app plays the pick itself.
-- Prev and Next buttons sit on the song display during a ride. Next
+- Confirming End ride keeps the ride screen as it was at that moment,
+  line and mask frozen, with a Done button in place of End ride that
+  leads to the summary (Ed, 2026-10-29). Only a ride that runs to its
+  end moves on by itself.
+- A play that Spotify answers with 404 is retried on the same track a
+  few times a second apart, because the tab's player can be registering
+  or just back online; the device id follows the player's ready and
+  not_ready events. Other failures skip as above.
+- Prev and Next buttons sit on the right of the top band, a gap from
+  End ride, during a ride. Next
   plays a fresh pick for the current block; Prev returns to the song
   played before it (or restarts the current one when there is none).
 - A failed play or a player error skips to another track fitting the

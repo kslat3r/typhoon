@@ -30,8 +30,10 @@ function loadSdk(): Promise<void> {
 }
 
 // Makes this browser tab a Spotify Connect device and resolves once it can stream.
+// onDevice reports every later device id change: null while the player is offline, a fresh id when it is back.
 export default async function connectSpotifyPlayer(
   onError: (message: string) => void,
+  onDevice: (deviceId: string | null) => void,
 ): Promise<{ player: SpotifyPlayer; deviceId: string }> {
   await loadSdk();
   const player: SpotifyPlayer = new (window.Spotify as NonNullable<Window['Spotify']>).Player({
@@ -45,8 +47,11 @@ export default async function connectSpotifyPlayer(
   });
 
   return new Promise((resolve, reject): void => {
-    player.addListener('ready', ({ device_id }: { device_id: string }): void => resolve({ player, deviceId: device_id }));
-    player.addListener('not_ready', (): void => onError('Spotify player went offline'));
+    player.addListener('ready', ({ device_id }: { device_id: string }): void => {
+      onDevice(device_id);
+      resolve({ player, deviceId: device_id });
+    });
+    player.addListener('not_ready', (): void => onDevice(null));
     player.addListener('initialization_error', ({ message }: { message: string }): void => reject(new Error(message)));
     player.addListener('authentication_error', ({ message }: { message: string }): void => reject(new Error(`${message} - reconnect Spotify in Settings`)));
     player.addListener('account_error', ({ message }: { message: string }): void => reject(new Error(message)));

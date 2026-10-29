@@ -34,6 +34,8 @@ const QUEUE_BEFORE_END_MS = 10000;
 // The player endpoint lags a play call by a second or two; polls inside this window are ignored
 const PLAY_GRACE_MS = 4000;
 const MAX_MUSIC_SKIPS = 3;
+const PLAY_ATTEMPTS = 4;
+const PLAY_RETRY_MS = 1000;
 // ponytail: test rides run at 4x so a 30 minute ride takes 7.5 minutes at the desk
 const TEST_SPEED = 4;
 
@@ -101,10 +103,10 @@ function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTM
   const nav: HTMLElement = buildElement('div', 'ride-track-nav', '');
   nav.append(prevButton, nextButton);
   const track: HTMLElement = buildElement('div', 'ride-track', '');
-  track.append(spinner, artwork, trackText, nav);
+  track.append(spinner, artwork, trackText);
 
   const actions: HTMLElement = buildElement('div', 'ride-actions', '');
-  band.append(track, actions);
+  band.append(track, nav, actions);
 
   return { band, elements: { artwork, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
 }
@@ -235,6 +237,23 @@ function markMusicFailed(state: RideScreenState, message: string): void {
   updateTrack(state);
 }
 
+// Spotify answers 404 while the tab's player is still registering or has just come back; wait and try again
+async function playWithRetry(uri: string, deviceId: string): Promise<void> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await playTrack(uri, deviceId);
+      return;
+    } catch (playError) {
+      if (attempt === PLAY_ATTEMPTS || errorMessage(playError) !== 'Play failed: 404') {
+        throw new Error(errorMessage(playError), { cause: playError });
+      }
+    }
+    await new Promise((resolve): void => {
+      setTimeout(resolve, PLAY_RETRY_MS);
+    });
+  }
+}
+
 async function playPending(state: RideScreenState): Promise<void> {
   const track: Track | null = state.pendingPlay;
   const deviceId: string | null = state.playerDeviceId;
@@ -246,7 +265,7 @@ async function playPending(state: RideScreenState): Promise<void> {
   state.track = track;
   state.played.add(track.id);
   await runSpotifyCall(state, async (): Promise<void> => {
-    await playTrack(track.uri, deviceId);
+    await playWithRetry(track.uri, deviceId);
     state.queuedTrack = null;
     state.lastPlayAt = performance.now();
     state.musicFailed = false;
@@ -390,8 +409,9 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   }
 
   state.elements.endButton.hidden = true;
+  state.elements.doneButton.hidden = reason !== 'ended';
   if (state.testMode || state.stats.sampledSeconds === 0) {
-    if (reason !== 'navigated') {
+    if (reason === 'completed') {
       navigate('#/');
     }
     return;
@@ -402,8 +422,9 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   const summary: RideSummary = summariseRide(ride, state.stats, state.settings.ftp, state.startedAtDate, ftpTestAverageWatts);
 
   appendRideSummary(summary);
+  state.summaryId = summary.id;
 
-  if (reason === 'navigated') {
+  if (reason !== 'completed') {
     return;
   }
 
@@ -586,7 +607,13 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
 async function connectPlayer(state: RideScreenState): Promise<void> {
   let connected: { player: SpotifyPlayer; deviceId: string };
   try {
-    connected = await connectSpotifyPlayer((message: string): void => markMusicFailed(state, `Music stopped: ${message}`));
+    connected = await connectSpotifyPlayer(
+      (message: string): void => markMusicFailed(state, `Music stopped: ${message}`),
+      (deviceId: string | null): void => {
+        state.playerDeviceId = deviceId;
+        state.elements.status.textContent = deviceId === null ? 'Spotify player offline' : '';
+      },
+    );
   } catch (playerError) {
     markMusicFailed(state, `No music: ${errorMessage(playerError)}`);
     return;
@@ -633,7 +660,11 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     finishRide(state, ride, 'ended');
   });
   endButton.hidden = true;
-  top.actions.append(testButton, connectButton, startButton, endButton);
+  const doneButton: HTMLButtonElement = buildButton('Done', (): void => {
+    navigate(state.summaryId === null ? '#/' : '#/summary/' + state.summaryId);
+  });
+  doneButton.hidden = true;
+  top.actions.append(testButton, connectButton, startButton, endButton, doneButton);
 
   const state: RideScreenState = {
     phase: 'ready',
@@ -653,6 +684,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     track: null,
     history: [],
     played: new Set(),
+    summaryId: null,
     musicFailed: false,
     musicSkips: 0,
     musicLoading: false,
@@ -678,6 +710,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
       startButton,
       testButton,
       endButton,
+      doneButton,
       statsStrip: stats.strip,
     },
   };

@@ -27,6 +27,7 @@ export type RideScreenElements = {
   startButton: HTMLButtonElement;
   testButton: HTMLButtonElement;
   endButton: HTMLButtonElement;
+  doneButton: HTMLButtonElement;
   statsStrip: HTMLElement;
 };
 
@@ -48,6 +49,7 @@ export type RideScreenState = {
   track: Track | null;
   history: Track[];
   played: Set<string>;
+  summaryId: string | null;
   musicFailed: boolean;
   musicSkips: number;
   musicLoading: boolean;

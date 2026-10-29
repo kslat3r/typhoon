@@ -25,7 +25,7 @@ describe('connectSpotifyPlayer', () => {
     const { listeners } = fakeSdk(true);
 
     // Act
-    const pending = connectSpotifyPlayer(vi.fn());
+    const pending = connectSpotifyPlayer(vi.fn(), vi.fn());
     await Promise.resolve();
     (listeners.get('ready') as Listener)({ device_id: 'tab-1' });
 
@@ -33,12 +33,29 @@ describe('connectSpotifyPlayer', () => {
     await expect(pending).resolves.toMatchObject({ deviceId: 'tab-1' });
   });
 
+  it('reports later device changes through onDevice', async () => {
+    // Arrange
+    const { listeners } = fakeSdk(true);
+    const onDevice = vi.fn();
+
+    // Act
+    const pending = connectSpotifyPlayer(vi.fn(), onDevice);
+    await Promise.resolve();
+    (listeners.get('ready') as Listener)({ device_id: 'tab-1' });
+    await pending;
+    (listeners.get('not_ready') as Listener)({ device_id: 'tab-1' });
+    (listeners.get('ready') as Listener)({ device_id: 'tab-2' });
+
+    // Assert
+    expect(onDevice.mock.calls).toEqual([['tab-1'], [null], ['tab-2']]);
+  });
+
   it('rejects with a reconnect hint on an authentication error', async () => {
     // Arrange
     const { listeners } = fakeSdk(true);
 
     // Act
-    const pending = connectSpotifyPlayer(vi.fn());
+    const pending = connectSpotifyPlayer(vi.fn(), vi.fn());
     await Promise.resolve();
     (listeners.get('authentication_error') as Listener)({ message: 'Authentication failed' });
 
@@ -51,6 +68,6 @@ describe('connectSpotifyPlayer', () => {
     fakeSdk(false);
 
     // Act / Assert
-    await expect(connectSpotifyPlayer(vi.fn())).rejects.toThrow('Spotify player could not connect');
+    await expect(connectSpotifyPlayer(vi.fn(), vi.fn())).rejects.toThrow('Spotify player could not connect');
   });
 });
