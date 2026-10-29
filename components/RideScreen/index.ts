@@ -381,7 +381,7 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   }
 
   const ftpTestAverageWatts: number | undefined =
-    ride.ftpTestSeconds === undefined ? undefined : state.ftpTestSeconds > 0 ? state.ftpTestWattSeconds / state.ftpTestSeconds : 0;
+    ride.ftpTest === undefined ? undefined : state.ftpTestSeconds > 0 ? state.ftpTestWattSeconds / state.ftpTestSeconds : 0;
   const summary: RideSummary = summariseRide(ride, state.stats, state.settings.ftp, state.startedAtDate, ftpTestAverageWatts);
 
   appendRideSummary(summary);
@@ -390,12 +390,12 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
     return;
   }
 
-  if (ride.ftpTestSeconds === undefined || ftpTestAverageWatts === undefined) {
+  if (ride.ftpTest === undefined || ftpTestAverageWatts === undefined) {
     navigate('#/summary/' + summary.id);
     return;
   }
 
-  showFtpResult(state, summary, calculateFtp(ftpTestAverageWatts, ride.ftpTestSeconds));
+  showFtpResult(state, summary, calculateFtp(ftpTestAverageWatts, ride.ftpTest.seconds));
 }
 
 function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): void {
@@ -442,8 +442,7 @@ function startRide(state: RideScreenState, ride: Ride): void {
     return;
   }
 
-  const testIntervalIndex: number =
-    ride.ftpTestSeconds === undefined ? -1 : ride.intervals.findIndex((interval: RideInterval): boolean => interval.zone === 4);
+  const testIntervalIndex: number = ride.ftpTest === undefined ? -1 : ride.ftpTest.intervalIndex;
   state.phase = 'riding';
   state.startedAt = performance.now();
   state.startedAtDate = new Date();

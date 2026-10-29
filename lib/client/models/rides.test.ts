@@ -96,6 +96,23 @@ describe('ride library', () => {
     }
   });
 
+  it.each(LENGTHS)('%i s rides bake in a 1, 3 and 5 minute FTP test as an all-out effort off a fresh lead-in', (length: number) => {
+    // Arrange
+    const tested: Ride[] = RIDES.filter((r) => r.lengthSeconds === length && r.ftpTest !== undefined);
+
+    // Act / Assert
+    expect(new Set(tested.map((r) => r.ftpTest?.seconds))).toEqual(new Set([60, 180, 300]));
+    for (const ride of tested) {
+      const { intervalIndex, seconds } = ride.ftpTest as { intervalIndex: number; seconds: number };
+      const effort: RideInterval = ride.intervals[intervalIndex];
+      expect(effort.seconds, ride.name).toBe(seconds);
+      expect(effort.zone, ride.name).toBeGreaterThanOrEqual(5);
+      expect(ride.intervals[intervalIndex - 1].zone, ride.name).toBeLessThanOrEqual(3);
+      expect(ride.intervals[intervalIndex + 1].zone, ride.name).toBe(2);
+      expect(ride.intervals[intervalIndex + 1].seconds, ride.name).toBeGreaterThanOrEqual(Math.max(120, seconds / 2));
+    }
+  });
+
   it('gives every ride of a length its own warm-up', () => {
     // Arrange
     const openings: string[] = RIDES.map((r) => `${r.lengthSeconds}:${JSON.stringify(r.intervals.slice(0, 5))}`);

@@ -4,7 +4,6 @@ import renderLibraryScreen from '@/components/LibraryScreen';
 import renderRideScreen from '@/components/RideScreen';
 import renderSettingsScreen from '@/components/SettingsScreen';
 import renderSummaryScreen from '@/components/SummaryScreen';
-import buildFtpTestRide from '@/lib/client/helpers/build-ftp-test-ride';
 import { RIDES } from '@/lib/client/models/rides';
 import type { Ride } from '@/lib/client/models/types';
 
@@ -33,13 +32,6 @@ function renderRoute(): void {
   if (route === 'ride') {
     const ride: Ride | undefined = RIDES.find((candidate: Ride): boolean => candidate.id === param);
     if (ride) {
-      renderRideScreen(app, ride);
-      return;
-    }
-  } else if (route === 'ftp-test') {
-    const seconds: number = Number(param);
-    if (seconds === 60 || seconds === 180 || seconds === 300) {
-      const ride: Ride = buildFtpTestRide(seconds);
       renderRideScreen(app, ride);
       return;
     }

@@ -127,7 +127,8 @@ coaching text is being replaced.
   threshold, endurance, and a "mash up" of several.
 - Every ride opens with a 60 to 90 s zone 2 spin, then a 2 to 3 minute
   zone 3 warm-up, and ends with a cool-down in zone 2.
-- The library list shows each ride's shape under its name.
+- The library list shows each ride's shape under its name, with History
+  and Settings as icons in the top right.
 
 ### Zones and FTP
 
@@ -146,12 +147,12 @@ FTP, including coasting, is zone 2.
 
 - FTP is stored on the phone. Default is 150 W when none has been set
   (Cyclone's own default for riders without one).
-- FTP test: a separate short ride consisting of a warm-up, a 1, 3 or 5
-  minute all-out seated effort, and a cool-down. FTP is set to 70, 80 or
-  85 percent of the average power over the test interval respectively.
-  Ed confirms the new value before it is saved.
-- The test is also offered as a standalone item in the ride library so
-  it can be redone every six to eight weeks.
+- FTP test: baked into some rides rather than a separate ride (Ed,
+  2026-10-29). Six rides carry one: a 1, 3 or 5 minute all-out seated
+  effort off a fresh lead-in, followed by an easy recovery, in each ride
+  length. The library marks them "N min FTP test". FTP is set to 70, 80
+  or 85 percent of the average power over the test interval
+  respectively. Ed confirms the new value before it is saved.
 
 ### The ride screen (Ed chose this from mockups)
 
@@ -167,9 +168,10 @@ Landscape. Three bands:
    position and the ridden part behind it is slightly masked. No effort
    dot and no zone label: the watts figure and the countdown colour
    carry that.
-3. **Bottom band**: one small stats strip. Watts (coloured by current
-   zone), rpm, mph, average mph, miles, time left in the current
-   interval (uncoloured), time remaining in the ride.
+3. **Bottom band**: one small stats strip of fixed-width cells centred
+   in the bar. Watts (coloured by current zone), rpm, mph, average mph,
+   miles, time left in the current interval (uncoloured), time
+   remaining in the ride.
 
 No gauge, no cadence target, no text cues.
 

@@ -156,6 +156,37 @@ footer > a:not(.ride-link) + a {
 
 /* Library and history: one list language, a row per ride */
 
+.library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.library-header nav {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--text-muted);
+  border-radius: 50%;
+}
+
+.icon-link svg {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-link:active {
+  background: var(--surface);
+  color: var(--text);
+}
+
 .ride-link {
   display: flex;
   justify-content: space-between;
@@ -386,16 +417,19 @@ form + section select {
 }
 
 .ride-stats {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) repeat(6, minmax(0, 1fr));
-  gap: var(--space-2);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
   flex: none;
 }
 
 .ride-stat {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  align-items: center;
+  width: 100px;
+  flex: none;
+  text-align: center;
 }
 
 .ride-stat-label,

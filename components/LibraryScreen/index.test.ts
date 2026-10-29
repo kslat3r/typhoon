@@ -15,5 +15,8 @@ describe('renderLibraryScreen', () => {
     expect(cards).toHaveLength(RIDES.length);
     expect(cards[0].querySelectorAll('.ride-shape .ride-profile-bar').length).toBeGreaterThanOrEqual(10);
     expect(cards[0].textContent).toContain('Moderate');
+    expect(root.querySelector('a[href="#/history"]')?.getAttribute('aria-label')).toBe('History');
+    expect(root.querySelector('a[href="#/settings"]')?.getAttribute('aria-label')).toBe('Settings');
+    expect(root.textContent).toContain('1 min FTP test');
   });
 });

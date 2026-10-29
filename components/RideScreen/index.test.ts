@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import renderRideScreen from '@/components/RideScreen';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
-import buildFtpTestRide from '@/lib/client/helpers/build-ftp-test-ride';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import playTrack from '@/lib/client/helpers/play-track';
@@ -209,7 +208,12 @@ describe('renderRideScreen', () => {
 
   it('saves the FTP test summary before proposing an FTP and saves the proposed FTP', async () => {
     // Arrange
-    const ride: Ride = buildFtpTestRide(60);
+    const ride: Ride = {
+      ...testRide,
+      lengthSeconds: 80,
+      intervals: [{ zone: 2, seconds: 10 }, { zone: 6, seconds: 60 }, { zone: 2, seconds: 10 }],
+      ftpTest: { intervalIndex: 1, seconds: 60 },
+    };
     const root: HTMLElement = await renderAndStart(ride);
     const { onSample } = capturedBikeCallbacks();
 

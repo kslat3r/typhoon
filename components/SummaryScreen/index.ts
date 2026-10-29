@@ -75,10 +75,7 @@ function buildSummary(summary: RideSummary): HTMLElement[] {
   heading.textContent = summary.rideName;
 
   const date: string = new Date(summary.startedAt).toLocaleString();
-  const isFtpTest: boolean = summary.ftpTestSeconds !== undefined;
-  const detail: string = isFtpTest
-    ? date
-    : `${date} - ${DIFFICULTY_LABELS[summary.difficulty as keyof typeof DIFFICULTY_LABELS]}`;
+  const detail: string = `${date} - ${DIFFICULTY_LABELS[summary.difficulty as keyof typeof DIFFICULTY_LABELS]}`;
 
   const elements: HTMLElement[] = [heading, buildElement('p', 'summary-detail', detail), buildStats(summary), buildZoneChart(summary)];
 

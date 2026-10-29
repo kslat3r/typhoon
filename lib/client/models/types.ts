@@ -10,9 +10,9 @@ export interface Ride {
   name: string;
   lengthSeconds: number;
   difficulty: 1 | 2 | 3 | 4 | 5;
-  archetype: 'climb' | 'time-trial' | 'hiit' | 'over-under' | 'endurance' | 'mash-up' | 'ftp-test';
+  archetype: 'climb' | 'time-trial' | 'hiit' | 'over-under' | 'endurance' | 'mash-up';
   intervals: RideInterval[];
-  ftpTestSeconds?: 60 | 180 | 300;
+  ftpTest?: { intervalIndex: number; seconds: 60 | 180 | 300 };
 }
 
 export interface PowerMeasurement {

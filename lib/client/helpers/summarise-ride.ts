@@ -21,8 +21,8 @@ export default function summariseRide(ride: Ride, stats: RideStats, ftp: number,
     ftpUsed: ftp,
   };
 
-  if (ride.ftpTestSeconds !== undefined) {
-    summary.ftpTestSeconds = ride.ftpTestSeconds;
+  if (ride.ftpTest !== undefined) {
+    summary.ftpTestSeconds = ride.ftpTest.seconds;
   }
 
   if (ftpTestAverageWatts !== undefined) {
