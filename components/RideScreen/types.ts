@@ -53,7 +53,6 @@ export type RideScreenState = {
   musicFailed: boolean;
   musicSkips: number;
   musicLoading: boolean;
-  queuedTrack: Track | null;
   lastPlayAt: number;
   player: SpotifyPlayer | null;
   playerDeviceId: string | null;

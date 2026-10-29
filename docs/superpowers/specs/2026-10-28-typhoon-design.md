@@ -215,9 +215,12 @@ defaulted. Use the frontend-design skill for the visual pass.
   ends, the next one is queued to fit the cadence band of the block the
   ride is in at that moment. Zone changes mid-song change nothing.
 - No track repeats during a ride until every track in the playlist has
-  played (Ed, 2026-10-29); Prev is the one exception. If the queued
-  song does not start when the current one ends (the player reports it
-  paused at its start), the app plays the pick itself.
+  played (Ed, 2026-10-29); Prev is the one exception. The app starts
+  the next song itself in the last moment of the current one, or once
+  it has ended and sits paused at its start. Spotify's own queue is
+  never used: it persists on the account across rides, and leftovers
+  from earlier rides replayed the same songs in the same order (Ed,
+  2026-10-29, "the same tracks keep coming up in the same order").
 - Confirming End ride keeps the ride screen as it was at that moment,
   line and mask frozen, with a Done button in place of End ride that
   leads to the summary (Ed, 2026-10-29). Only a ride that runs to its
@@ -260,12 +263,11 @@ defaulted. Use the frontend-design skill for the visual pass.
 These came from a reviewer reading the document as the builder. Each is
 my call, not Ed's; Ed can overrule any of them.
 
-- **The app owns the queue.** Playback is started per track by URI with
-  no playlist context, so Spotify never auto-advances on its own. The app
-  reads player state every couple of seconds, and a few seconds before
-  the current track ends it queues the next pick for the current zone so
-  Spotify's crossfade still works. Nothing else ever skips a song; only
-  the rider does, with Prev and Next.
+- **The app owns the order.** Playback is started per track by URI with
+  no playlist context and Spotify's queue is never used. The app reads
+  the tab's player state twice a second and starts the next pick for
+  the current zone in the last moment of the current track. Nothing
+  else ever skips a song; only the rider does, with Prev and Next.
 - **Pairing takes one tap per ride.** Web Bluetooth needs a user gesture
   to open the device picker. "Pair and forget" means the app remembers
   the bike's name so the picker is quick and the pairing is obvious.

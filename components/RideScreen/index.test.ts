@@ -4,13 +4,11 @@ import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import playTrack from '@/lib/client/helpers/play-track';
-import queueTrack from '@/lib/client/helpers/queue-track';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import { STORAGE_KEYS } from '@/lib/client/models/storage-keys';
 import type { BikeListener, Ride, RideSummary, SpotifyPlayerState, Track } from '@/lib/client/models/types';
 
 vi.mock('@/lib/client/helpers/play-track', () => ({ default: vi.fn(async () => Promise.reject(new Error('Play failed: 404'))) }));
-vi.mock('@/lib/client/helpers/queue-track', () => ({ default: vi.fn(async () => undefined) }));
 const fakePlayer = vi.hoisted(() => ({
   connect: vi.fn(async (): Promise<boolean> => true),
   disconnect: vi.fn(),
@@ -165,7 +163,7 @@ describe('renderRideScreen', () => {
     expect(vi.mocked(playTrack).mock.calls[0][0]).toBe('spotify:track:a');
   });
 
-  it('queues a track for the current block as a song ends and shows whatever the player reports', async () => {
+  it('starts a track for the current block as a song ends and shows whatever the player reports', async () => {
     // Arrange
     vi.mocked(playTrack).mockResolvedValue(undefined);
     const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 10 }, { zone: 5, seconds: 590 }] });
@@ -179,18 +177,20 @@ describe('renderRideScreen', () => {
     playerReports('a', 171000, 180000);
     await vi.advanceTimersByTimeAsync(12500);
 
-    // Assert: 176 bpm (88 rpm) fits the hard block, display unchanged until it plays
-    expect(queueTrack).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(queueTrack).mock.calls[0]).toEqual(['spotify:track:b', 'tab']);
+    // Assert: nothing happens yet
+    expect(playTrack).toHaveBeenCalledTimes(1);
     expect(title()).toBe('Track A');
 
-    // Act: the queued track starts
-    playerReports('b', 2000, 180000);
-    await vi.advanceTimersByTimeAsync(2500);
+    // Act: a is in its last second
+    playerReports('a', 179000, 180000);
+    await vi.advanceTimersByTimeAsync(1000);
 
-    // Assert: shown, no play call made
+    // Assert: 176 bpm fits the hard block, and the app starts it itself
+    expect(playTrack).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(playTrack).mock.calls[1]).toEqual(['spotify:track:b', 'tab']);
     expect(title()).toBe('Track B');
-    expect(playTrack).toHaveBeenCalledTimes(1);
+    playerReports('b', 2000, 180000);
+    await vi.advanceTimersByTimeAsync(4500);
 
     // Act: Spotify drifts to something outside the playlist
     playerReports('stray', 5000, 200000);
@@ -198,7 +198,7 @@ describe('renderRideScreen', () => {
 
     // Assert: shown as reported, never replaced
     expect(title()).toBe('Track STRAY');
-    expect(playTrack).toHaveBeenCalledTimes(1);
+    expect(playTrack).toHaveBeenCalledTimes(2);
   });
 
   it('next plays a track fitting the current block and prev goes back to the one before', async () => {
@@ -344,7 +344,6 @@ describe('renderRideScreen', () => {
     await vi.advanceTimersByTimeAsync(2500);
 
     // Assert
-    expect(queueTrack).not.toHaveBeenCalled();
     expect(playTrack).toHaveBeenCalledTimes(1);
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe(first);
   });

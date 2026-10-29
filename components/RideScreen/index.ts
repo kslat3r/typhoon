@@ -15,7 +15,6 @@ import loadTempoCache from '@/lib/client/helpers/load-tempo-cache';
 import navigate from '@/lib/client/helpers/navigate';
 import pickTrack from '@/lib/client/helpers/pick-track';
 import playTrack from '@/lib/client/helpers/play-track';
-import queueTrack from '@/lib/client/helpers/queue-track';
 import reconnectWattbike from '@/lib/client/helpers/reconnect-wattbike';
 import requestWakeLock from '@/lib/client/helpers/request-wake-lock';
 import saveSettings from '@/lib/client/helpers/save-settings';
@@ -27,10 +26,10 @@ import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
-const POLL_MS = 2000;
+const POLL_MS = 500;
 const RECONNECT_MS = 3000;
 const SAMPLE_MAX_AGE_MS = 3000;
-const QUEUE_BEFORE_END_MS = 10000;
+const NEXT_BEFORE_END_MS = 1500;
 // The player endpoint lags a play call by a second or two; polls inside this window are ignored
 const PLAY_GRACE_MS = 4000;
 const MAX_MUSIC_SKIPS = 3;
@@ -266,7 +265,6 @@ async function playPending(state: RideScreenState): Promise<void> {
   state.played.add(track.id);
   await runSpotifyCall(state, async (): Promise<void> => {
     await playWithRetry(track.uri, deviceId);
-    state.queuedTrack = null;
     state.lastPlayAt = performance.now();
     state.musicFailed = false;
     state.elements.status.textContent = '';
@@ -301,33 +299,16 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
   if (state.track === null || playing.id !== state.track.id) {
     state.track = playing;
     state.played.add(playing.id);
-    state.queuedTrack = null;
     updateTrack(state);
   }
 
-  // A song that has ended sits paused at its start; play the next pick ourselves if the queue did not
-  if (current.paused && current.position === 0) {
-    state.pendingPlay = state.queuedTrack ?? pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, playing.id, Math.random);
-    state.queuedTrack = null;
+  // The app starts the next song itself in the last moment of the current one (or once it has
+  // ended and sits paused at its start). Spotify's own queue is never used: it persists across
+  // rides, so leftovers would replay the same songs in the same order.
+  const ending: boolean = current.duration - current.position <= NEXT_BEFORE_END_MS || (current.paused && current.position === 0);
+  if (ending) {
+    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, playing.id, Math.random);
     void playPending(state);
-    return;
-  }
-
-  const msLeft: number = current.duration - current.position;
-  if (msLeft >= QUEUE_BEFORE_END_MS) {
-    state.queuedTrack = null;
-    return;
-  }
-  if (state.queuedTrack !== null) {
-    return;
-  }
-
-  const next: Track = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, playing.id, Math.random);
-  state.queuedTrack = next;
-  try {
-    await queueTrack(next.uri, state.playerDeviceId);
-  } catch {
-    // The end-of-song check above plays the pick instead
   }
 }
 
@@ -688,7 +669,6 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     musicFailed: false,
     musicSkips: 0,
     musicLoading: false,
-    queuedTrack: null,
     lastPlayAt: 0,
     player: null,
     playerDeviceId: null,
