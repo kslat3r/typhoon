@@ -23,14 +23,19 @@ describe('ride library', () => {
     expect(LENGTHS).toContain(ride.lengthSeconds);
   });
 
-  it.each(RIDES)('$name warms up and cools down in zone 2', (ride: Ride) => {
+  it.each(RIDES)('$name opens with a short spin, a 2 to 3 minute warm-up and cools down in zone 2', (ride: Ride) => {
     // Arrange / Act
-    const first = ride.intervals[0];
+    const spin = ride.intervals[0];
+    const warmUp = ride.intervals[1];
     const last = ride.intervals[ride.intervals.length - 1];
 
     // Assert
-    expect(first.zone).toBe(2);
-    expect(first.seconds).toBeGreaterThanOrEqual(180);
+    expect(spin.zone).toBe(2);
+    expect(spin.seconds).toBeGreaterThanOrEqual(60);
+    expect(spin.seconds).toBeLessThanOrEqual(90);
+    expect(warmUp.zone).toBe(3);
+    expect(warmUp.seconds).toBeGreaterThanOrEqual(120);
+    expect(warmUp.seconds).toBeLessThanOrEqual(180);
     expect(last.zone).toBe(2);
     expect(last.seconds).toBeGreaterThanOrEqual(120);
   });

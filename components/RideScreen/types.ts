@@ -8,6 +8,7 @@ export type BikeState = 'disconnected' | 'connecting' | 'connected' | 'reconnect
 
 export type RideScreenElements = {
   artwork: HTMLImageElement;
+  trackTitle: HTMLElement;
   trackArtist: HTMLElement;
   countdown: HTMLElement;
   zoneLabel: HTMLElement;
@@ -22,7 +23,6 @@ export type RideScreenElements = {
   connectButton: HTMLButtonElement;
   startButton: HTMLButtonElement;
   testButton: HTMLButtonElement;
-  controls: HTMLElement;
   endButton: HTMLButtonElement;
   statsStrip: HTMLElement;
 };

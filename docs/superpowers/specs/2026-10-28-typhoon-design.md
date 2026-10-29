@@ -125,7 +125,8 @@ coaching text is being replaced.
   zone 6 inside a zone 3 block), as well as long steady blocks. Rides
   follow the Cyclone archetypes: climbs, time trials, HIIT, under/over
   threshold, endurance, and a "mash up" of several.
-- Every ride starts with a warm-up and ends with a cool-down in zone 2.
+- Every ride opens with a 60 to 90 s zone 2 spin, then a 2 to 3 minute
+  zone 3 warm-up, and ends with a cool-down in zone 2.
 - The library list shows each ride's shape under its name.
 
 ### Zones and FTP
@@ -156,10 +157,11 @@ FTP, including coasting, is zone 2.
 
 Landscape. Three bands:
 
-1. **Top band**: the current track (small artwork and artist only, no
-   title, no bpm) on the left, the current interval countdown in the
-   middle coloured in the current target zone's colour, and the quiet
-   ghost buttons (Connect bike, Start, Test, End ride) on the right.
+1. **Top band**: the current track (small artwork, title and artist,
+   no bpm) on the left, the quiet ghost buttons (Connect bike, Start,
+   Test, End ride) in the middle, and the current interval countdown on
+   the far right coloured in the current target zone's colour. The ride
+   name is not shown on the ride screen.
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
    to zone. A white vertical line moves along the profile at the current

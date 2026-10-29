@@ -286,13 +286,25 @@ form + section select {
   border-radius: 3px;
 }
 
-.ride-track-artist {
+.ride-track-text {
   min-width: 0;
+}
+
+.ride-track-title,
+.ride-track-artist {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ride-track-title {
+  font-weight: 600;
+}
+
+.ride-track-artist {
+  color: var(--text-muted);
 }
 
 .ride-top-right {
@@ -325,7 +337,14 @@ form + section select {
   white-space: nowrap;
 }
 
-.ride-top-right button {
+.ride-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+  flex: none;
+}
+
+.ride-actions button {
   min-height: 36px;
   padding: 0 var(--space-3);
   font-size: 0.8125rem;
@@ -334,29 +353,8 @@ form + section select {
   border-color: var(--line);
 }
 
-.ride-top-right button[hidden] {
+.ride-actions button[hidden] {
   display: none;
-}
-
-.ride-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: none;
-}
-
-.ride-controls[hidden] {
-  display: none;
-}
-
-.ride-controls .ride-name {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font-size: 1.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .ride-status {

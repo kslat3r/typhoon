@@ -82,27 +82,31 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'trackArtist' | 'countdown' | 'zoneLabel'>; right: HTMLElement } {
+function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'trackTitle' | 'trackArtist' | 'countdown' | 'zoneLabel'>; actions: HTMLElement } {
   const band: HTMLElement = buildElement('section', 'ride-top', '');
 
   const artwork: HTMLImageElement = document.createElement('img');
   artwork.className = 'ride-artwork';
   artwork.alt = '';
   artwork.hidden = true;
-  const trackArtist: HTMLElement = buildElement('div', 'ride-track-artist', 'No music');
+  const trackTitle: HTMLElement = buildElement('div', 'ride-track-title', 'No music');
+  const trackArtist: HTMLElement = buildElement('div', 'ride-track-artist', '');
+  const trackText: HTMLElement = buildElement('div', 'ride-track-text', '');
+  trackText.append(trackTitle, trackArtist);
   const track: HTMLElement = buildElement('div', 'ride-track', '');
-  track.append(artwork, trackArtist);
+  track.append(artwork, trackText);
 
   const countdown: HTMLElement = buildElement('div', 'ride-countdown', '');
   const zoneLabel: HTMLElement = buildElement('div', 'ride-zone-label', '');
   const interval: HTMLElement = buildElement('div', 'ride-interval', '');
   interval.append(countdown, zoneLabel);
 
+  const actions: HTMLElement = buildElement('div', 'ride-actions', '');
   const right: HTMLElement = buildElement('div', 'ride-top-right', '');
   right.append(interval);
-  band.append(track, right);
+  band.append(track, actions, right);
 
-  return { band, elements: { artwork, trackArtist, countdown, zoneLabel }, right };
+  return { band, elements: { artwork, trackTitle, trackArtist, countdown, zoneLabel }, actions };
 }
 
 function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'remaining'> } {
@@ -129,16 +133,18 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
 }
 
 function updateTrack(state: RideScreenState): void {
-  const { artwork, trackArtist } = state.elements;
+  const { artwork, trackTitle, trackArtist } = state.elements;
   const shown: Track | null = state.musicFailed ? null : (state.pendingPlay ?? state.music.track);
 
   if (shown === null) {
-    trackArtist.textContent = 'No music';
+    trackTitle.textContent = 'No music';
+    trackArtist.textContent = '';
     artwork.hidden = true;
     artwork.removeAttribute('src');
     return;
   }
 
+  trackTitle.textContent = shown.name;
   trackArtist.textContent = shown.artist;
   if (shown.artworkUrl) {
     artwork.src = shown.artworkUrl;
@@ -450,7 +456,6 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.lastTickAt = state.startedAt;
   state.lastPollAt = state.startedAt;
   state.position = intervalAtElapsed(ride, 0);
-  state.elements.controls.hidden = true;
   state.elements.startButton.hidden = true;
   state.elements.testButton.hidden = true;
   state.elements.endButton.hidden = false;
@@ -576,7 +581,6 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const stats = buildStatsStrip();
   const profileRoot: HTMLElement = buildElement('section', 'ride-profile-band', '');
   const status: HTMLElement = buildElement('p', 'status ride-status', '');
-  const controls: HTMLElement = buildElement('section', 'ride-controls', '');
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
     void connectBike(state, ride, onSample, onDisconnect);
   });
@@ -594,8 +598,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     finishRide(state, ride, 'ended');
   });
   endButton.hidden = true;
-  top.right.append(connectButton, startButton, testButton, endButton);
-  controls.append(buildElement('h1', 'ride-name', ride.name));
+  top.actions.append(connectButton, startButton, testButton, endButton);
 
   const state: RideScreenState = {
     phase: 'ready',
@@ -633,7 +636,6 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
       startButton,
       testButton,
       endButton,
-      controls,
       statsStrip: stats.strip,
     },
   };
@@ -678,7 +680,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   );
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
-  screen.append(top.band, controls, status, profileRoot, stats.strip);
+  screen.append(top.band, status, profileRoot, stats.strip);
   root.replaceChildren(screen);
   updateReadyScreen(state, ride);
   void loadMusic(state, ride);

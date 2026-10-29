@@ -2,8 +2,8 @@ import type { Ride, RideInterval } from '@/lib/client/models/types';
 
 export default function buildFtpTestRide(testSeconds: 60 | 180 | 300): Ride {
   const intervals: RideInterval[] = [
-    { zone: 2, seconds: 300 },
-    { zone: 3, seconds: 60 },
+    { zone: 2, seconds: 90 },
+    { zone: 3, seconds: 150 },
     { zone: 4, seconds: testSeconds },
     { zone: 2, seconds: 180 },
   ];
