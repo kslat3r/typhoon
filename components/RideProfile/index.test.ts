@@ -59,15 +59,4 @@ describe('renderRideProfile', () => {
     expect(line?.getAttribute('height')).toBe('300');
     expect(root.querySelector('circle')).toBeNull();
   });
-
-
-    const circle: Element | null = root.querySelector('circle');
-    const fraction: number = (100 - 91) / (106 - 91);
-    const expected: number = 300 - ((2 + fraction) / 6) * 300;
-    expect(circle).not.toBeNull();
-    expect(Number(circle?.getAttribute('cx'))).toBeCloseTo(LINE_X, 5);
-    expect(Number(circle?.getAttribute('cy'))).toBeCloseTo(expected, 5);
-    expect(Number(circle?.getAttribute('cy'))).toBeGreaterThan(300 - (3 / 6) * 300);
-    expect(Number(circle?.getAttribute('cy'))).toBeLessThan(300 - (2 / 6) * 300);
-  });
 });

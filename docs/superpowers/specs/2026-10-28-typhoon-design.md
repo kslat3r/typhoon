@@ -197,7 +197,8 @@ defaulted. Use the frontend-design skill for the visual pass.
   - Never cut a track that has played for under about 60 seconds.
   - A zone jump of two or more usually brings a new track in the new
     zone's band.
-  - A step of one zone usually holds the current track.
+  - A step of one zone is a 50/50 (was 25% change until 2026-10-29,
+    when Ed found the music too static in test rides).
   - Zero change (same zone, new interval) always holds.
   - When a track ends naturally the next track is picked for the current
     zone.

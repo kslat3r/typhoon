@@ -10,8 +10,8 @@ describe('shouldChangeTrack', () => {
     // Arrange / Act / Assert
     expect(shouldChangeTrack(2, 5, 30, () => 0)).toBe(false);
     expect(shouldChangeTrack(4, 4, 120, () => 0)).toBe(false);
-    expect(shouldChangeTrack(3, 4, 120, () => 0.2)).toBe(true);
-    expect(shouldChangeTrack(3, 4, 120, () => 0.3)).toBe(false);
+    expect(shouldChangeTrack(3, 4, 120, () => 0.4)).toBe(true);
+    expect(shouldChangeTrack(3, 4, 120, () => 0.6)).toBe(false);
     expect(shouldChangeTrack(2, 5, 120, () => 0.7)).toBe(true);
     expect(shouldChangeTrack(2, 5, 120, () => 0.9)).toBe(false);
   });

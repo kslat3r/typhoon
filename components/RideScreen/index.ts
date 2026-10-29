@@ -82,19 +82,21 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'trackTitle' | 'trackArtist' | 'countdown'>; actions: HTMLElement } {
+function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'spinner' | 'trackTitle' | 'trackArtist' | 'countdown'>; actions: HTMLElement } {
   const band: HTMLElement = buildElement('section', 'ride-top', '');
 
   const artwork: HTMLImageElement = document.createElement('img');
   artwork.className = 'ride-artwork';
   artwork.alt = '';
   artwork.hidden = true;
-  const trackTitle: HTMLElement = buildElement('div', 'ride-track-title', 'No music');
+  const spinner: HTMLElement = buildElement('div', 'ride-spinner', '');
+  spinner.hidden = true;
+  const trackTitle: HTMLElement = buildElement('div', 'ride-track-title', '');
   const trackArtist: HTMLElement = buildElement('div', 'ride-track-artist', '');
   const trackText: HTMLElement = buildElement('div', 'ride-track-text', '');
   trackText.append(trackTitle, trackArtist);
   const track: HTMLElement = buildElement('div', 'ride-track', '');
-  track.append(artwork, trackText);
+  track.append(spinner, artwork, trackText);
 
   const countdown: HTMLElement = buildElement('div', 'ride-countdown', '');
   const interval: HTMLElement = buildElement('div', 'ride-interval', '');
@@ -105,7 +107,7 @@ function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements,
   right.append(interval);
   band.append(track, actions, right);
 
-  return { band, elements: { artwork, trackTitle, trackArtist, countdown }, actions };
+  return { band, elements: { artwork, spinner, trackTitle, trackArtist, countdown }, actions };
 }
 
 function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'remaining'> } {
@@ -132,11 +134,12 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
 }
 
 function updateTrack(state: RideScreenState): void {
-  const { artwork, trackTitle, trackArtist } = state.elements;
+  const { artwork, spinner, trackTitle, trackArtist } = state.elements;
   const shown: Track | null = state.musicFailed ? null : (state.pendingPlay ?? state.music.track);
+  spinner.hidden = shown !== null || !state.musicLoading;
 
   if (shown === null) {
-    trackTitle.textContent = 'No music';
+    trackTitle.textContent = '';
     trackArtist.textContent = '';
     artwork.hidden = true;
     artwork.removeAttribute('src');
@@ -536,12 +539,16 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
     return;
   }
 
+  state.musicLoading = true;
+  updateTrack(state);
   let tracks: Track[];
   try {
     tracks = await getPlaylistTracks(state.settings.spotifyPlaylistId);
   } catch (trackError) {
     state.elements.status.textContent = `No music: ${errorMessage(trackError)}`;
     return;
+  } finally {
+    state.musicLoading = false;
   }
 
   if (state.phase === 'finished') {
@@ -613,6 +620,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     tempos: {},
     music: { track: null, startedAt: 0, zone: ride.intervals[0].zone },
     musicFailed: false,
+    musicLoading: false,
     queuedForThisPlay: false,
     spotifyCallInFlight: false,
     reconnectInFlight: false,

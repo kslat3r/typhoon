@@ -16,8 +16,9 @@ export default function shouldChangeTrack(
     return false;
   }
 
+  // ponytail: tune after riding; 0.25 felt like the music never changed
   if (jump === 1) {
-    return random() < 0.25;
+    return random() < 0.5;
   }
 
   return random() < 0.8;

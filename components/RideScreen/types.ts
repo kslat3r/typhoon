@@ -8,6 +8,7 @@ export type BikeState = 'disconnected' | 'connecting' | 'connected' | 'reconnect
 
 export type RideScreenElements = {
   artwork: HTMLImageElement;
+  spinner: HTMLElement;
   trackTitle: HTMLElement;
   trackArtist: HTMLElement;
   countdown: HTMLElement;
@@ -43,6 +44,7 @@ export type RideScreenState = {
   tempos: TempoCache;
   music: MusicState;
   musicFailed: boolean;
+  musicLoading: boolean;
   queuedForThisPlay: boolean;
   spotifyCallInFlight: boolean;
   reconnectInFlight: boolean;

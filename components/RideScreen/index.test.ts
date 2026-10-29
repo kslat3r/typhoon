@@ -3,6 +3,8 @@ import renderRideScreen from '@/components/RideScreen';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import buildFtpTestRide from '@/lib/client/helpers/build-ftp-test-ride';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
+import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
+import playTrack from '@/lib/client/helpers/play-track';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import { STORAGE_KEYS } from '@/lib/client/models/storage-keys';
 import type { BikeListener, Ride, RideSummary, Track } from '@/lib/client/models/types';
@@ -82,6 +84,53 @@ describe('renderRideScreen', () => {
     vi.useRealTimers();
   });
 
+  it('spins while the playlist loads and then shows the first pick', async () => {
+    // Arrange
+    let finishLoad: () => void = (): void => {};
+    vi.mocked(getPlaylistTracks).mockReturnValueOnce(
+      new Promise((resolve): void => {
+        finishLoad = (): void => resolve([{ id: 'a', uri: 'spotify:track:a', name: 'Track A', artist: 'Artist A', artworkUrl: null, durationMs: 180000 }]);
+      }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+
+    // Act
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect((root.querySelector('.ride-spinner') as HTMLElement).hidden).toBe(false);
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('');
+
+    // Act
+    finishLoad();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect((root.querySelector('.ride-spinner') as HTMLElement).hidden).toBe(true);
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track A');
+  });
+
+  it('changes music at a zone jump in a test ride on the sped-up clock', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockResolvedValue(undefined);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const jumpRide: Ride = { ...testRide, lengthSeconds: 100, intervals: [{ zone: 2, seconds: 70 }, { zone: 6, seconds: 20 }, { zone: 2, seconds: 10 }] };
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, jumpRide);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Act: 70 ride seconds pass in 17.5 wall seconds at 4x
+    findButton(root, 'Test').click();
+    await vi.advanceTimersByTimeAsync(18000);
+
+    // Assert
+    expect(playTrack).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(playTrack).mock.calls[1][0]).not.toBe(vi.mocked(playTrack).mock.calls[0][0]);
+  });
+
   it('runs a test ride at 4x with simulated samples and saves nothing', async () => {
     // Arrange
     const root: HTMLElement = document.createElement('div');
@@ -125,7 +174,7 @@ describe('renderRideScreen', () => {
     await vi.advanceTimersByTimeAsync(1500);
 
     // Assert
-    expect((root.querySelector('.ride-top') as HTMLElement).textContent).toContain('No music');
+    expect((root.querySelector('.ride-top') as HTMLElement).textContent).not.toContain('No music');
     expect(countdown.textContent).toBe('0:08');
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
 
