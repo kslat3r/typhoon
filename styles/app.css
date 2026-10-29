@@ -450,8 +450,7 @@ form + section select {
   text-overflow: ellipsis;
 }
 
-.ride-stat-percent,
-.ride-stat-watts {
+.ride-stat-percent {
   transition: color 400ms ease;
 }
 
@@ -472,8 +471,7 @@ form + section select {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ride-stat-percent,
-  .ride-stat-watts {
+  .ride-stat-percent {
     transition: none;
   }
 }

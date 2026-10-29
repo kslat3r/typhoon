@@ -167,19 +167,15 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
   if (state.bikeState === 'reconnecting') {
     watts.textContent = 'Reconnecting';
     percent.textContent = '--';
-    watts.style.color = '';
     percent.style.color = '';
   } else if (sample === null) {
     watts.textContent = '--';
     percent.textContent = '--';
-    watts.style.color = '';
     percent.style.color = '';
   } else {
-    const colour: string = ZONES[zoneForWatts(sample.watts, ftp) - 2].colour;
     watts.textContent = String(Math.round(sample.watts));
     percent.textContent = `${Math.round((sample.watts / ftp) * 100)}%`;
-    watts.style.color = colour;
-    percent.style.color = colour;
+    percent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 2].colour;
   }
 
   rpm.textContent = sample === null || sample.rpm === null ? '--' : String(Math.round(sample.rpm));
