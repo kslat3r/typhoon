@@ -150,8 +150,9 @@ screen (final word, 2026-10-29):
 | 6 | 126 to 150 | dark red |
 | 7 | 151 and up | purple |
 
-Rides are written in these zones: the spin and cool-down are zone 1,
-the warm-up and mid-ride recoveries zone 2, threshold work zone 4, and
+Rides are written in these zones: the spin, cool-down and every
+mid-ride rest are zone 1 (blue, never green: Ed, 2026-10-29), the
+warm-up is the only zone 2 interval, threshold work is zone 4, and
 zone 7 sprints are 30 s or less.
 
 - FTP is stored on the phone. Default is 150 W when none has been set
