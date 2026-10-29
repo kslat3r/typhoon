@@ -169,7 +169,8 @@ Landscape. Three bands:
    dot and no zone label: the watts figure and the countdown colour
    carry that.
 3. **Bottom band**: one small stats strip of seven equal-width cells
-   with centred text. Watts (coloured by current zone), rpm, mph, average mph,
+   with centred text. Percent of FTP and watts (both coloured by the
+   zone actually being ridden), rpm, mph, average mph,
    miles, time left in the current interval (uncoloured), time
    remaining in the ride.
 

@@ -418,7 +418,7 @@ form + section select {
 
 .ride-stats {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: var(--space-2);
   flex: none;
 }
@@ -450,6 +450,7 @@ form + section select {
   text-overflow: ellipsis;
 }
 
+.ride-stat-percent,
 .ride-stat-watts {
   transition: color 400ms ease;
 }
@@ -471,6 +472,7 @@ form + section select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ride-stat-percent,
   .ride-stat-watts {
     transition: none;
   }

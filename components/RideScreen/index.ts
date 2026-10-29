@@ -105,8 +105,9 @@ function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements,
   return { band, elements: { artwork, spinner, trackTitle, trackArtist }, actions };
 }
 
-function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining'> } {
+function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining'> } {
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
+  const percent = buildStatCell('% FTP', 'ride-stat-percent');
   const watts = buildStatCell('Watts', 'ride-stat-watts');
   const rpm = buildStatCell('RPM', 'ride-stat-rpm');
   const mph = buildStatCell('MPH', 'ride-stat-mph');
@@ -114,11 +115,12 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
   const miles = buildStatCell('Miles', 'ride-stat-miles');
   const interval = buildStatCell('Interval', 'ride-stat-interval');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, interval.cell, remaining.cell);
+  strip.append(percent.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, interval.cell, remaining.cell);
 
   return {
     strip,
     elements: {
+      percent: percent.value,
       watts: watts.value,
       rpm: rpm.value,
       mph: mph.value,
@@ -159,18 +161,25 @@ function updateInterval(state: RideScreenState, position: IntervalPosition): voi
 }
 
 function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number): void {
-  const { watts, rpm, mph, averageMph, miles, remaining } = state.elements;
+  const { percent, watts, rpm, mph, averageMph, miles, remaining } = state.elements;
   const ftp: number = state.settings.ftp;
 
   if (state.bikeState === 'reconnecting') {
     watts.textContent = 'Reconnecting';
+    percent.textContent = '--';
     watts.style.color = '';
+    percent.style.color = '';
   } else if (sample === null) {
     watts.textContent = '--';
+    percent.textContent = '--';
     watts.style.color = '';
+    percent.style.color = '';
   } else {
+    const colour: string = ZONES[zoneForWatts(sample.watts, ftp) - 2].colour;
     watts.textContent = String(Math.round(sample.watts));
-    watts.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 2].colour;
+    percent.textContent = `${Math.round((sample.watts / ftp) * 100)}%`;
+    watts.style.color = colour;
+    percent.style.color = colour;
   }
 
   rpm.textContent = sample === null || sample.rpm === null ? '--' : String(Math.round(sample.rpm));
