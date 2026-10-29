@@ -86,10 +86,15 @@ coaching text is being replaced.
 - Spotify: Ed has Premium. The app is a Development Mode Spotify app
   registered to Ed (limit of five users is irrelevant for a one-user
   app). Login is the browser PKCE flow, so no client secret exists. The
-  app controls playback on the phone's Spotify app through the Web API
-  player endpoints (Spotify Connect), which keeps audio in the Spotify
-  app and out of the browser tab. The Web Playback SDK is a fallback only
-  if Connect proves unreliable on the phone.
+  browser tab plays the audio itself through the Web Playback SDK: the
+  tab registers as a Spotify Connect device named Typhoon and the app
+  starts and queues tracks on that device id through the Web API player
+  endpoints. Switched 2026-10-29 from driving the phone's Spotify app
+  over Connect, which needed the app awake and gave no signal when it
+  was not (Ed saw silence with nothing showing in Spotify). The tap that
+  starts a ride doubles as the user gesture browsers want before audio.
+  Login scopes include streaming, user-read-email and user-read-private
+  for the SDK.
 - Tempo: Spotify's Audio Features and Audio Analysis endpoints are
   deprecated for apps registered after 27 November 2024 and extended
   quota needs a business with 250k monthly users. Track tempo therefore
@@ -212,12 +217,13 @@ defaulted. Use the frontend-design skill for the visual pass.
   ride will be in when it starts, so a new song is not cut at the next
   boundary. It is queued on Spotify but the screen only shows it once
   the player reports it playing.
-- The app polls the player every two seconds and reconciles: a track it
-  did not expect is adopted if the app queued it or it fits the zone,
-  otherwise a fitting track is played in its place. Polls in the four
-  seconds after a play call are ignored because the player endpoint lags
-  (found 2026-10-29: a stale report of the old track near its end made
-  the app queue and display a new song seconds after a zone change).
+- The app reads the tab's own player state every two seconds and
+  reconciles: a track it did not expect is adopted if the app queued it
+  or it fits the zone, otherwise a fitting track is played in its place.
+  Reads in the four seconds after a play call are ignored because the
+  reported state lags the command (found 2026-10-29 with the Connect
+  design: a stale report of the old track near its end made the app
+  queue and display a new song seconds after a zone change).
 - The minimums and the bands live in small functions so they are easy
   to tune.
 - Spotify's own crossfade setting handles blending; the app only skips.
@@ -245,7 +251,7 @@ my call, not Ed's; Ed can overrule any of them.
 
 - **The app owns the queue.** Playback is started per track by URI with
   no playlist context, so Spotify never auto-advances on its own. The app
-  polls player state every couple of seconds, and a few seconds before
+  reads player state every couple of seconds, and a few seconds before
   the current track ends it queues the next pick for the current zone so
   Spotify's crossfade still works. Zone-boundary changes are an immediate
   skip to a fresh pick. "Hold" means doing nothing.
@@ -256,8 +262,9 @@ my call, not Ed's; Ed can overrule any of them.
   silently; otherwise one tap. Reconnect after a mid-ride drop retries
   automatically with no tap where the browser allows it.
 - **Music is optional.** A ride runs with the bike alone. If Spotify is
-  not connected or its token cannot be refreshed, the top band shows "no
-  music" and nothing else changes. Spotify is never a reason a ride
+  not connected, no playlist is chosen, the token cannot be refreshed or
+  the browser player fails, the status line says why and nothing else
+  changes. Spotify is never a reason a ride
   refuses to start. Token refresh runs before the ride starts and again
   in the background when due.
 - **The FTP test is a ride with a flag.** It uses the same engine and

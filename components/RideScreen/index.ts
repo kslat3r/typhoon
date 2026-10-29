@@ -4,13 +4,12 @@ import accumulateRideStats from '@/lib/client/helpers/accumulate-ride-stats';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import bandStretchSeconds from '@/lib/client/helpers/band-stretch-seconds';
 import calculateFtp from '@/lib/client/helpers/calculate-ftp';
+import connectSpotifyPlayer from '@/lib/client/helpers/connect-spotify-player';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import decideMusicAction from '@/lib/client/helpers/decide-music-action';
 import emptyRideStats from '@/lib/client/helpers/empty-ride-stats';
 import formatClock from '@/lib/client/helpers/format-clock';
-import getPlayerState from '@/lib/client/helpers/get-player-state';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
-import getSpotifyDevices from '@/lib/client/helpers/get-spotify-devices';
 import intervalAtElapsed from '@/lib/client/helpers/interval-at-elapsed';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import loadSpotifyAuth from '@/lib/client/helpers/load-spotify-auth';
@@ -28,7 +27,7 @@ import summariseRide from '@/lib/client/helpers/summarise-ride';
 import trackFitsZone from '@/lib/client/helpers/track-fits-zone';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
 import { ZONES } from '@/lib/client/models/zones';
-import type { BikeSample, IntervalPosition, PlayerState, Ride, RideInterval, RideSummary, SpotifyDevice, Track, ZoneNumber } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, PlayerState, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
 const POLL_MS = 2000;
@@ -225,50 +224,16 @@ function markMusicFailed(state: RideScreenState, message: string): void {
   updateTrack(state);
 }
 
-async function playWithDeviceFallback(state: RideScreenState, uri: string): Promise<boolean> {
-  try {
-    await playTrack(uri);
-    return true;
-  } catch (playError) {
-    if (errorMessage(playError) !== 'Play failed: 404') {
-      throw new Error(errorMessage(playError), { cause: playError });
-    }
-  }
-
-  let devices: SpotifyDevice[];
-  try {
-    devices = await getSpotifyDevices();
-  } catch (deviceError) {
-    throw new Error(`Finding a Spotify device failed: ${errorMessage(deviceError)}`, { cause: deviceError });
-  }
-
-  const device: SpotifyDevice | undefined =
-    devices.find((candidate: SpotifyDevice): boolean => candidate.type === 'Smartphone') ?? devices[0];
-  if (device === undefined) {
-    markMusicFailed(state, 'Open Spotify on the phone and press play once');
-    return false;
-  }
-
-  try {
-    await playTrack(uri, device.id);
-  } catch (retryError) {
-    throw new Error(`Play on ${device.name} failed: ${errorMessage(retryError)}`, { cause: retryError });
-  }
-  return true;
-}
-
 async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
   const track: Track | null = state.pendingPlay;
-  if (track === null || state.spotifyCallInFlight || state.phase !== 'riding') {
+  const deviceId: string | null = state.playerDeviceId;
+  if (track === null || deviceId === null || state.spotifyCallInFlight || state.phase !== 'riding') {
     return;
   }
 
   state.pendingPlay = null;
   await runSpotifyCall(state, async (): Promise<void> => {
-    const played: boolean = await playWithDeviceFallback(state, track.uri);
-    if (!played) {
-      return;
-    }
+    await playTrack(track.uri, deviceId);
     state.music = { track, startedAt: clock(state), zone: currentZone(state, ride) };
     state.queuedTrack = null;
     state.lastPlayAt = performance.now();
@@ -297,19 +262,20 @@ function reconcilePlayer(state: RideScreenState, ride: Ride, player: PlayerState
 
 async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
   const expected: Track | null = state.music.track;
-  if (state.musicFailed || expected === null) {
+  if (state.musicFailed || expected === null || state.player === null || state.playerDeviceId === null) {
     return;
   }
 
-  const result: { player: PlayerState | null } = { player: null };
-  await runSpotifyCall(state, async (): Promise<void> => {
-    result.player = await getPlayerState();
-  });
-
-  const player: PlayerState | null = result.player;
-  if (player === null || state.phase !== 'riding' || state.music.track !== expected || performance.now() - state.lastPlayAt < PLAY_GRACE_MS) {
+  const current: SpotifyPlayerState | null = await state.player.getCurrentState();
+  if (current === null || state.phase !== 'riding' || state.music.track !== expected || performance.now() - state.lastPlayAt < PLAY_GRACE_MS) {
     return;
   }
+  const player: PlayerState = {
+    trackId: current.track_window.current_track.uri.replace('spotify:track:', ''),
+    progressMs: current.position,
+    durationMs: current.duration,
+    isPlaying: !current.paused,
+  };
 
   if (player.trackId !== expected.id) {
     reconcilePlayer(state, ride, player, clock(state));
@@ -329,8 +295,9 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
   const elapsedAtStart: number = (clock(state) - state.startedAt + msLeft) / 1000;
   const zone: ZoneNumber = intervalAtElapsed(ride, elapsedAtStart)?.interval.zone ?? currentZone(state, ride);
   const next: Track = pickTrack(state.tracks, state.tempos, zone, expected.id, Math.random);
+  const deviceId: string = state.playerDeviceId;
   await runSpotifyCall(state, async (): Promise<void> => {
-    await queueTrack(next.uri);
+    await queueTrack(next.uri, deviceId);
     state.queuedTrack = next;
   });
 }
@@ -403,6 +370,7 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   }
   void releaseWakeLock(state);
   state.device?.gatt?.disconnect();
+  state.player?.disconnect();
 
   if (!wasRiding) {
     return;
@@ -490,6 +458,8 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.elements.endButton.hidden = false;
   state.elements.status.textContent = '';
 
+  // The tap that started the ride is the user gesture browsers want before audio
+  void state.player?.activateElement();
   void playPending(state, ride);
   void acquireWakeLock(state);
   state.tickHandle = setInterval((): void => {
@@ -600,6 +570,24 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
     state.pendingPlay = pickTrack(tracks, state.tempos, currentZone(state, ride), null, Math.random);
   }
   updateTrack(state);
+  void connectPlayer(state);
+}
+
+async function connectPlayer(state: RideScreenState): Promise<void> {
+  let connected: { player: SpotifyPlayer; deviceId: string };
+  try {
+    connected = await connectSpotifyPlayer((message: string): void => markMusicFailed(state, `Music stopped: ${message}`));
+  } catch (playerError) {
+    markMusicFailed(state, `No music: ${errorMessage(playerError)}`);
+    return;
+  }
+
+  if (state.phase === 'finished') {
+    connected.player.disconnect();
+    return;
+  }
+  state.player = connected.player;
+  state.playerDeviceId = connected.deviceId;
 }
 
 function startTestRide(state: RideScreenState, ride: Ride): void {
@@ -657,6 +645,8 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     musicLoading: false,
     queuedTrack: null,
     lastPlayAt: 0,
+    player: null,
+    playerDeviceId: null,
     spotifyCallInFlight: false,
     reconnectInFlight: false,
     pendingPlay: null,

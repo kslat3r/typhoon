@@ -1,4 +1,4 @@
-import type { BikeSample, IntervalPosition, MusicState, RideStats, Settings, TempoCache, Track } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, MusicState, RideStats, Settings, SpotifyPlayer, TempoCache, Track } from '@/lib/client/models/types';
 
 export type FinishReason = 'completed' | 'ended' | 'navigated';
 
@@ -48,6 +48,8 @@ export type RideScreenState = {
   musicLoading: boolean;
   queuedTrack: Track | null;
   lastPlayAt: number;
+  player: SpotifyPlayer | null;
+  playerDeviceId: string | null;
   spotifyCallInFlight: boolean;
   reconnectInFlight: boolean;
   pendingPlay: Track | null;

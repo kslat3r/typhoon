@@ -1,7 +1,7 @@
 import base64UrlEncode from '@/lib/client/helpers/base64-url-encode';
 
 const SCOPES =
-  'user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative';
+  'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative';
 
 export default async function startSpotifyLogin(clientId: string, redirectUri: string): Promise<void> {
   const verifier = base64UrlEncode(crypto.getRandomValues(new Uint8Array(64)));

@@ -2,17 +2,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import renderRideScreen from '@/components/RideScreen';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
-import getPlayerState from '@/lib/client/helpers/get-player-state';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import playTrack from '@/lib/client/helpers/play-track';
 import queueTrack from '@/lib/client/helpers/queue-track';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import { STORAGE_KEYS } from '@/lib/client/models/storage-keys';
-import type { BikeListener, Ride, RideSummary, Track } from '@/lib/client/models/types';
+import type { BikeListener, Ride, RideSummary, SpotifyPlayerState, Track } from '@/lib/client/models/types';
 
 vi.mock('@/lib/client/helpers/play-track', () => ({ default: vi.fn(async () => Promise.reject(new Error('Play failed: 404'))) }));
 vi.mock('@/lib/client/helpers/queue-track', () => ({ default: vi.fn(async () => undefined) }));
-vi.mock('@/lib/client/helpers/get-player-state', () => ({ default: vi.fn(async () => null) }));
+const fakePlayer = vi.hoisted(() => ({
+  connect: vi.fn(async (): Promise<boolean> => true),
+  disconnect: vi.fn(),
+  activateElement: vi.fn(async (): Promise<void> => undefined),
+  getCurrentState: vi.fn(async (): Promise<SpotifyPlayerState | null> => null),
+  addListener: vi.fn(),
+}));
+vi.mock('@/lib/client/helpers/connect-spotify-player', () => ({ default: vi.fn(async () => ({ player: fakePlayer, deviceId: 'tab' })) }));
 vi.mock('@/lib/client/helpers/load-spotify-auth', () => ({
   default: vi.fn(() => ({ accessToken: 'token', refreshToken: 'refresh', expiresAt: Date.now() + 3600000 })),
 }));
@@ -29,7 +35,6 @@ vi.mock('@/lib/client/helpers/connect-wattbike', () => ({
   }),
 }));
 vi.mock('@/lib/client/helpers/reconnect-wattbike', () => ({ default: vi.fn(async () => undefined) }));
-vi.mock('@/lib/client/helpers/get-spotify-devices', () => ({ default: vi.fn(async () => []) }));
 vi.mock('@/lib/client/helpers/append-ride-summary', () => ({ default: vi.fn() }));
 
 const testRide: Ride = {
@@ -44,6 +49,10 @@ const testRide: Ride = {
     { zone: 2, seconds: 10 },
   ],
 };
+
+function playerReports(id: string, position: number, duration: number): void {
+  fakePlayer.getCurrentState.mockResolvedValue({ paused: false, position, duration, track_window: { current_track: { uri: `spotify:track:${id}` } } });
+}
 
 function findButton(root: HTMLElement, label: string): HTMLButtonElement {
   const buttons: HTMLButtonElement[] = Array.from(root.querySelectorAll('button'));
@@ -76,6 +85,7 @@ describe('renderRideScreen', () => {
     // Finish any ride a previous test left running so it cannot save during this one
     window.dispatchEvent(new HashChangeEvent('hashchange'));
     vi.clearAllMocks();
+    fakePlayer.getCurrentState.mockResolvedValue(null);
     vi.useFakeTimers();
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200, spotifyPlaylistId: 'playlist' }));
@@ -156,10 +166,12 @@ describe('renderRideScreen', () => {
     const root: HTMLElement = await renderAndStart(longRide);
     const title = (): string => (root.querySelector('.ride-track-title') as HTMLElement).textContent ?? '';
     expect(playTrack).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(playTrack).mock.calls[0][1]).toBe('tab');
+    expect(fakePlayer.activateElement).toHaveBeenCalled();
     const first: string = title();
 
     // Act: the player reports the same track with 9 s left, after the grace window
-    vi.mocked(getPlayerState).mockResolvedValue({ trackId: first === 'Track A' ? 'a' : 'b', progressMs: 171000, durationMs: 180000, isPlaying: true });
+    playerReports(first === 'Track A' ? 'a' : 'b', 171000, 180000);
     await vi.advanceTimersByTimeAsync(6500);
 
     // Assert: next track queued, display unchanged
@@ -168,7 +180,7 @@ describe('renderRideScreen', () => {
 
     // Act: the queued track starts
     const queuedId: string = (vi.mocked(queueTrack).mock.calls[0][0] as string).replace('spotify:track:', '');
-    vi.mocked(getPlayerState).mockResolvedValue({ trackId: queuedId, progressMs: 2000, durationMs: 180000, isPlaying: true });
+    playerReports(queuedId, 2000, 180000);
     await vi.advanceTimersByTimeAsync(2500);
 
     // Assert: adopted, no new play call
@@ -176,7 +188,7 @@ describe('renderRideScreen', () => {
     expect(playTrack).toHaveBeenCalledTimes(1);
 
     // Act: Spotify drifts to something outside the playlist
-    vi.mocked(getPlayerState).mockResolvedValue({ trackId: 'stray', progressMs: 5000, durationMs: 200000, isPlaying: true });
+    playerReports('stray', 5000, 200000);
     await vi.advanceTimersByTimeAsync(2500);
 
     // Assert: replaced with a playlist track
@@ -191,7 +203,7 @@ describe('renderRideScreen', () => {
     const first: string = (root.querySelector('.ride-track-title') as HTMLElement).textContent ?? '';
 
     // Act: within 4 s of the play, the player still reports an old track near its end
-    vi.mocked(getPlayerState).mockResolvedValue({ trackId: 'old', progressMs: 175000, durationMs: 180000, isPlaying: true });
+    playerReports('old', 175000, 180000);
     await vi.advanceTimersByTimeAsync(2500);
 
     // Assert

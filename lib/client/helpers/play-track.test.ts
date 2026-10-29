@@ -13,19 +13,7 @@ describe('playTrack', () => {
     vi.unstubAllGlobals();
   });
 
-  it('plays on the active device when no device is given', async () => {
-    // Arrange
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    // Act
-    await playTrack('spotify:track:a');
-
-    // Assert
-    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/me/player/play');
-  });
-
-  it('appends the device_id query when a device is given', async () => {
+  it('plays the track on the given device', async () => {
     // Arrange
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', fetchMock);

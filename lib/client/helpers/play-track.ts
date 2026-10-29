@@ -1,7 +1,7 @@
 import spotifyFetch from '@/lib/client/helpers/spotify-fetch';
 
-export default async function playTrack(uri: string, deviceId?: string): Promise<void> {
-  const path: string = deviceId === undefined ? '/me/player/play' : `/me/player/play?device_id=${encodeURIComponent(deviceId)}`;
+export default async function playTrack(uri: string, deviceId: string): Promise<void> {
+  const path: string = `/me/player/play?device_id=${encodeURIComponent(deviceId)}`;
   let response: Response;
   try {
     response = await spotifyFetch(path, {

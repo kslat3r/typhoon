@@ -108,9 +108,17 @@ export type MusicState = {
 
 export type MusicAction = { kind: 'hold' } | { kind: 'play'; track: Track };
 
-export interface SpotifyDevice {
-  id: string;
-  name: string;
-  type: string;
-  isActive: boolean;
+export interface SpotifyPlayerState {
+  paused: boolean;
+  position: number;
+  duration: number;
+  track_window: { current_track: { uri: string } };
+}
+
+export interface SpotifyPlayer {
+  connect(): Promise<boolean>;
+  disconnect(): void;
+  activateElement(): Promise<void>;
+  getCurrentState(): Promise<SpotifyPlayerState | null>;
+  addListener(event: string, callback: (payload: never) => void): void;
 }
