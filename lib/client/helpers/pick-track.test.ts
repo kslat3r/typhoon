@@ -21,6 +21,16 @@ describe('pickTrack', () => {
     expect(pickTrack(tracks, tempos, 4, new Set(), 'a', () => 0).id).toBe('b');
   });
 
+  it('spreads picks across tracks close to the band, not only the nearest', () => {
+    // Arrange
+    const tracks = [track('a'), track('b'), track('c')];
+    const tempos = { a: 176, b: 170, c: 150 };
+
+    // Act / Assert
+    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0).id).toBe('a');
+    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0.99).id).toBe('b');
+  });
+
   it('never repeats a played track until every track has played', () => {
     // Arrange
     const tracks = [track('a'), track('b'), track('c')];

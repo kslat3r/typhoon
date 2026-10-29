@@ -1,7 +1,10 @@
 import tempoDistance from '@/lib/client/helpers/tempo-distance';
 import type { TempoCache, Track, ZoneNumber } from '@/lib/client/models/types';
 
-// Picks at random among the unplayed tracks whose tempo sits nearest the zone's cadence band.
+// Any track within this many bpm of the nearest fit is as good as the nearest, so picks vary
+const TEMPO_SLACK = 8;
+
+// Picks at random among the unplayed tracks whose tempo sits at or near the zone's tempo band.
 // Once every track has played, anything but the current one is fair game again.
 export default function pickTrack(
   tracks: Track[],
@@ -20,7 +23,7 @@ export default function pickTrack(
   const pool = unplayed.length > 0 ? unplayed : others.length > 0 ? others : tracks;
   const distances = pool.map((track) => tempoDistance(tempos[track.id] ?? null, zone));
   const nearest = Math.min(...distances);
-  const candidates = pool.filter((_, index) => distances[index] === nearest);
+  const candidates = pool.filter((_, index) => distances[index] <= nearest + TEMPO_SLACK);
 
   return candidates[Math.floor(random() * candidates.length)];
 }
