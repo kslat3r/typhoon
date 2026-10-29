@@ -143,8 +143,8 @@ describe('renderRideScreen', () => {
 
     // Assert
     const watts: number = Number((root.querySelector('.ride-stat-watts') as HTMLElement).textContent);
-    expect(watts).toBeGreaterThanOrEqual(80);
-    expect(watts).toBeLessThanOrEqual(112);
+    expect(watts).toBeGreaterThanOrEqual(110);
+    expect(watts).toBeLessThanOrEqual(152);
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:06');
     expect(findButton(root, 'Test').hidden).toBe(true);
 

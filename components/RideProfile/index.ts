@@ -9,8 +9,8 @@ const GAP = 1;
 const LINE_WIDTH = 3;
 
 function buildBar(interval: RideInterval, x: number, width: number): SVGRectElement {
-  const height: number = ((interval.zone - 1) / ZONES.length) * HEIGHT;
-  const colour: string = ZONES[interval.zone - 2].colour;
+  const height: number = (interval.zone / ZONES.length) * HEIGHT;
+  const colour: string = ZONES[interval.zone - 1].colour;
   const bar: SVGRectElement = document.createElementNS(SVG_NS, 'rect');
   bar.setAttribute('class', 'ride-profile-bar');
   bar.setAttribute('x', String(x));

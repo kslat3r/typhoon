@@ -21,10 +21,10 @@ const ride: Ride = {
 describe('bandStretchSeconds', () => {
   it('sums consecutive intervals that share a cadence band', () => {
     // Arrange / Act / Assert
-    expect(bandStretchSeconds(ride, 0)).toBe(150);
-    expect(bandStretchSeconds(ride, 1)).toBe(90);
-    expect(bandStretchSeconds(ride, 2)).toBe(90);
-    expect(bandStretchSeconds(ride, 3)).toBe(30);
+    expect(bandStretchSeconds(ride, 0)).toBe(60);
+    expect(bandStretchSeconds(ride, 1)).toBe(150);
+    expect(bandStretchSeconds(ride, 2)).toBe(60);
+    expect(bandStretchSeconds(ride, 3)).toBe(60);
     expect(bandStretchSeconds(ride, 4)).toBe(30);
     expect(bandStretchSeconds(ride, 5)).toBe(60);
   });

@@ -5,15 +5,15 @@ describe('simulateBikeSample', () => {
   it('keeps simulated watts and rpm inside the zone bands over time', () => {
     // Arrange / Act / Assert
     for (let now = 0; now < 60000; now += 250) {
-      const zoneFive = simulateBikeSample(5, 200, now);
-      expect(zoneFive.watts).toBeGreaterThanOrEqual(182);
-      expect(zoneFive.watts).toBeLessThanOrEqual(212);
-      expect(zoneFive.rpm).toBeGreaterThanOrEqual(85);
-      expect(zoneFive.rpm).toBeLessThanOrEqual(95);
-      expect(zoneFive.receivedAt).toBe(now);
-      expect(simulateBikeSample(2, 200, now).watts).toBeGreaterThanOrEqual(80);
-      expect(simulateBikeSample(2, 200, now).watts).toBeLessThanOrEqual(112);
-      expect(simulateBikeSample(7, 200, now).watts).toBeGreaterThanOrEqual(242);
+      const zoneFour = simulateBikeSample(4, 200, now);
+      expect(zoneFour.watts).toBeGreaterThanOrEqual(182);
+      expect(zoneFour.watts).toBeLessThanOrEqual(222);
+      expect(zoneFour.rpm).toBeGreaterThanOrEqual(85);
+      expect(zoneFour.rpm).toBeLessThanOrEqual(95);
+      expect(zoneFour.receivedAt).toBe(now);
+      expect(simulateBikeSample(1, 200, now).watts).toBeGreaterThanOrEqual(80);
+      expect(simulateBikeSample(1, 200, now).watts).toBeLessThanOrEqual(110);
+      expect(simulateBikeSample(7, 200, now).watts).toBeGreaterThanOrEqual(302);
     }
   });
 });

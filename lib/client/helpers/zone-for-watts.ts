@@ -10,5 +10,5 @@ export default function zoneForWatts(watts: number, ftp: number): ZoneNumber {
     }
   }
 
-  return 2;
+  return 1;
 }

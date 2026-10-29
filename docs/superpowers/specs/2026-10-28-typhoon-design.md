@@ -117,7 +117,7 @@ coaching text is being replaced.
   intervals, more steps up and shorter recoveries; easy rides the
   opposite. No ride is derived from another by scaling.
 - A ride is a flat ordered list of intervals. Each interval is a target
-  zone (2 to 7) and a duration in seconds. No names, no blocks, no
+  zone (1 to 7) and a duration in seconds. No names, no blocks, no
   cadence, no position.
 - Interval shapes must vary within a ride: short sprints (10 to 30 s),
   stepped ramps (zone 2, 3, 4, 5 in succession), pyramids, over/unders
@@ -125,29 +125,29 @@ coaching text is being replaced.
   zone 6 inside a zone 3 block), as well as long steady blocks. Rides
   follow the Cyclone archetypes: climbs, time trials, HIIT, under/over
   threshold, endurance, and a "mash up" of several.
-- Every ride opens with a 60 to 90 s zone 2 spin, then a 2 to 3 minute
-  zone 3 warm-up, and ends with a cool-down in zone 2.
+- Every ride opens with a 60 to 90 s zone 1 spin, then a 2 to 3 minute
+  zone 2 warm-up, and ends with a cool-down in zone 1.
 - The library list shows each ride's shape under its name, with History
   and Settings as icons in the top right.
 
 ### Zones and FTP
 
-Six zones as percentages of FTP, numbered 2 to 7 as Cyclone does (Ed,
-2026-10-29: there is no zone 1; the orange zone holds 100% of FTP, blue
-tops out at 55% and red at 120%, everything else is factored from that).
+Seven zones as percentages of FTP, as Ed reads them off the Cyclone
+screen (final word, 2026-10-29):
 
 | Zone | % of FTP | Colour |
 |---|---|---|
-| 2 | 0 to 55 | blue |
-| 3 | 56 to 75 | green |
-| 4 | 76 to 90 | yellow |
-| 5 | 91 to 105 | orange |
-| 6 | 106 to 120 | red |
-| 7 | 121 and up | purple |
+| 1 | 0 to 55 | blue |
+| 2 | 55 to 75 | green |
+| 3 | 76 to 90 | yellow |
+| 4 | 91 to 110 | orange |
+| 5 | 111 to 125 | red |
+| 6 | 126 to 150 | dark red |
+| 7 | 151 and up | purple |
 
-Rides are written in these zones: the spin and cool-down are zone 2,
-the warm-up and mid-ride recoveries zone 3, threshold work zone 5, and
-zone 7 efforts stay under a minute outside an FTP test.
+Rides are written in these zones: the spin and cool-down are zone 1,
+the warm-up and mid-ride recoveries zone 2, threshold work zone 4, and
+zone 7 sprints are 30 s or less.
 
 - FTP is stored on the phone. Default is 150 W when none has been set
   (Cyclone's own default for riders without one).
@@ -201,7 +201,7 @@ defaulted. Use the frontend-design skill for the visual pass.
 - Track changes follow the cadence bands, not the zone lines (redesigned
   2026-10-29 after Ed saw tracks cut off soon after starting). At a zone
   boundary the current track holds when any of these is true:
-  - the cadence band has not changed (zones 2 to 3, 4 to 5 and 6 to 7
+  - the cadence band has not changed (zones 1 to 2, 3 to 4 and 5 to 7
     share bands, so most steps are holds);
   - the track's tempo, half or double, still fits the new band;
   - the track has played for under 90 seconds;

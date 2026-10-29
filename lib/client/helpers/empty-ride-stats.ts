@@ -7,6 +7,6 @@ export default function emptyRideStats(): RideStats {
     wattSeconds: 0,
     maxWatts: 0,
     miles: 0,
-    secondsInZone: [0, 0, 0, 0, 0, 0],
+    secondsInZone: [0, 0, 0, 0, 0, 0, 0],
   };
 }

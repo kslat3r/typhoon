@@ -1,4 +1,4 @@
-export type ZoneNumber = 2 | 3 | 4 | 5 | 6 | 7;
+export type ZoneNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface RideInterval {
   zone: ZoneNumber;
@@ -43,7 +43,7 @@ export interface RideStats {
   wattSeconds: number;
   maxWatts: number;
   miles: number;
-  secondsInZone: [number, number, number, number, number, number];
+  secondsInZone: [number, number, number, number, number, number, number];
 }
 
 export interface RideSummary {

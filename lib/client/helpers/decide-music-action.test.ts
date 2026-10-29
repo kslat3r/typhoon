@@ -18,13 +18,13 @@ describe('decideMusicAction', () => {
 
   it('holds while the cadence band is unchanged, however many zones are crossed', () => {
     // Arrange / Act / Assert
-    expect(decideMusicAction({ ...PLAYING_A, zone: 2 }, 3, 600000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
-    expect(decideMusicAction({ ...PLAYING_A, zone: 4 }, 5, 600000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
-    expect(decideMusicAction({ ...PLAYING_A, zone: 6 }, 7, 600000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
+    expect(decideMusicAction({ ...PLAYING_A, zone: 1 }, 2, 600000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
+    expect(decideMusicAction({ ...PLAYING_A, zone: 3 }, 4, 600000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
+    expect(decideMusicAction({ ...PLAYING_A, zone: 5 }, 7, 600000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
   });
 
   it('holds when the current track still fits the new zone by tempo', () => {
-    // Arrange: 170 bpm halves to 85, inside the zone 4 to 5 band
+    // Arrange: 170 bpm halves to 85, inside the zone 3 to 4 band
     const tempos = { a: 170 };
 
     // Act / Assert
@@ -33,7 +33,7 @@ describe('decideMusicAction', () => {
 
   it('holds a track that has played under 90 seconds', () => {
     // Arrange / Act / Assert
-    expect(decideMusicAction(PLAYING_A, 6, 89000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
+    expect(decideMusicAction(PLAYING_A, 5, 89000, TRACKS, {}, () => 0, 600)).toEqual({ kind: 'hold' });
   });
 
   it('holds when the new band stretch is under 60 seconds', () => {
@@ -43,7 +43,7 @@ describe('decideMusicAction', () => {
 
   it('changes to another track when the band changes, the track no longer fits, and both minimums are met', () => {
     // Arrange / Act
-    const action = decideMusicAction(PLAYING_A, 6, 90000, TRACKS, {}, () => 0, 60);
+    const action = decideMusicAction(PLAYING_A, 5, 90000, TRACKS, {}, () => 0, 60);
 
     // Assert
     expect(action).toEqual({ kind: 'play', track: track('b') });

@@ -17,7 +17,7 @@ function buildSummary(id: string): RideSummary {
     maxWatts: 300,
     miles: 10,
     averageMph: 20,
-    secondsInZone: [0, 0, 0, 0, 0, 0],
+    secondsInZone: [0, 0, 0, 0, 0, 0, 0],
     missingSeconds: 0,
     ftpUsed: 150,
   };
@@ -50,7 +50,7 @@ describe('loadHistory', () => {
     const valid: RideSummary = buildSummary('valid');
     localStorage.setItem(
       'typhoon.history',
-      JSON.stringify([valid, null, 'text', { id: 7, secondsInZone: [0, 0, 0, 0, 0, 0] }, { id: 'short', secondsInZone: [0] }, { id: 'none' }]),
+      JSON.stringify([valid, null, 'text', { id: 7, secondsInZone: [0, 0, 0, 0, 0, 0, 0] }, { id: 'short', secondsInZone: [0] }, { id: 'none' }]),
     );
 
     // Act
@@ -60,15 +60,15 @@ describe('loadHistory', () => {
     expect(history).toEqual([valid]);
   });
 
-  it('folds zone 1 seconds of a seven zone entry into zone 2', () => {
+  it('gives a six zone entry an empty zone 1', () => {
     // Arrange
-    localStorage.setItem('typhoon.history', JSON.stringify([{ ...buildSummary('old'), secondsInZone: [30, 40, 1, 2, 3, 4, 5] }]));
+    localStorage.setItem('typhoon.history', JSON.stringify([{ ...buildSummary('old'), secondsInZone: [30, 40, 1, 2, 3, 4] }]));
 
     // Act
     const history = loadHistory();
 
     // Assert
-    expect(history[0].secondsInZone).toEqual([70, 1, 2, 3, 4, 5]);
+    expect(history[0].secondsInZone).toEqual([0, 30, 40, 1, 2, 3, 4]);
   });
 });
 

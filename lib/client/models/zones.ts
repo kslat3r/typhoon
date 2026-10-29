@@ -1,9 +1,10 @@
-// Cyclone's zones: the orange zone holds 100% of FTP, blue tops out at 55%, red at 120%
+// Cyclone's zones as Ed reads them off the studio screen
 export const ZONES = [
-  { zone: 2, minPercent: 0, maxPercent: 56, colour: '#3b8bff', name: 'Recovery' },
-  { zone: 3, minPercent: 56, maxPercent: 76, colour: '#2fd18b', name: 'Endurance' },
-  { zone: 4, minPercent: 76, maxPercent: 91, colour: '#ffd23f', name: 'Tempo' },
-  { zone: 5, minPercent: 91, maxPercent: 106, colour: '#ff8a1f', name: 'Threshold' },
-  { zone: 6, minPercent: 106, maxPercent: 121, colour: '#ff3b4e', name: 'VO2' },
-  { zone: 7, minPercent: 121, maxPercent: Infinity, colour: '#b45cff', name: 'Anaerobic' },
+  { zone: 1, minPercent: 0, maxPercent: 55, colour: '#3b8bff', name: 'Blue' },
+  { zone: 2, minPercent: 55, maxPercent: 76, colour: '#2fd18b', name: 'Green' },
+  { zone: 3, minPercent: 76, maxPercent: 91, colour: '#ffd23f', name: 'Yellow' },
+  { zone: 4, minPercent: 91, maxPercent: 111, colour: '#ff8a1f', name: 'Orange' },
+  { zone: 5, minPercent: 111, maxPercent: 126, colour: '#ff3b4e', name: 'Red' },
+  { zone: 6, minPercent: 126, maxPercent: 151, colour: '#b0122c', name: 'Dark red' },
+  { zone: 7, minPercent: 151, maxPercent: Infinity, colour: '#b45cff', name: 'Purple' },
 ] as const;

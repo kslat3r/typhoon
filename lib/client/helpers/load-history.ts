@@ -11,13 +11,13 @@ function isSummary(entry: unknown): entry is RideSummary {
   );
 }
 
-// Rides saved before zone 1 was dropped fold their zone 1 seconds into zone 2
+// Rides saved on the short-lived six zone scale get an empty zone 1
 function foldLegacyZones(summary: RideSummary): RideSummary {
   const zones: number[] = summary.secondsInZone;
-  if (zones.length === 6) {
+  if (zones.length === 7) {
     return summary;
   }
-  return { ...summary, secondsInZone: [zones[0] + zones[1], zones[2], zones[3], zones[4], zones[5], zones[6]] };
+  return { ...summary, secondsInZone: [0, zones[0], zones[1], zones[2], zones[3], zones[4], zones[5]] };
 }
 
 export default function loadHistory(): RideSummary[] {

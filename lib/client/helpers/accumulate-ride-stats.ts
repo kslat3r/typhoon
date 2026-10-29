@@ -12,7 +12,7 @@ export default function accumulateRideStats(stats: RideStats, sample: BikeSample
   }
 
   const secondsInZone = [...stats.secondsInZone] as RideStats['secondsInZone'];
-  secondsInZone[zoneForWatts(sample.watts, ftp) - 2] += deltaSeconds;
+  secondsInZone[zoneForWatts(sample.watts, ftp) - 1] += deltaSeconds;
 
   return {
     sampledSeconds: stats.sampledSeconds + deltaSeconds,

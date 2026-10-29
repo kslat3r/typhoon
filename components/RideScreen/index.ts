@@ -175,7 +175,7 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
   } else {
     watts.textContent = String(Math.round(sample.watts));
     percent.textContent = `${Math.round((sample.watts / ftp) * 100)}%`;
-    percent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 2].colour;
+    percent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 1].colour;
   }
 
   rpm.textContent = sample === null || sample.rpm === null ? '--' : String(Math.round(sample.rpm));
