@@ -8,8 +8,8 @@ describe('simulateBikeSample', () => {
       const zoneFour = simulateBikeSample(4, 200, now);
       expect(zoneFour.watts).toBeGreaterThanOrEqual(182);
       expect(zoneFour.watts).toBeLessThanOrEqual(222);
-      expect(zoneFour.rpm).toBeGreaterThanOrEqual(85);
-      expect(zoneFour.rpm).toBeLessThanOrEqual(95);
+      expect(zoneFour.rpm).toBeGreaterThanOrEqual(87);
+      expect(zoneFour.rpm).toBeLessThanOrEqual(90);
       expect(zoneFour.receivedAt).toBe(now);
       expect(simulateBikeSample(1, 200, now).watts).toBeGreaterThanOrEqual(80);
       expect(simulateBikeSample(1, 200, now).watts).toBeLessThanOrEqual(110);

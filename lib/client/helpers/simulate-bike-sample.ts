@@ -1,4 +1,4 @@
-import { CADENCE_BANDS } from '@/lib/client/models/cadence-bands';
+import { TEMPO_BANDS } from '@/lib/client/models/tempo-bands';
 import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, ZoneNumber } from '@/lib/client/models/types';
 
@@ -12,8 +12,8 @@ export default function simulateBikeSample(zone: ZoneNumber, ftp: number, now: n
   const top: number = Number.isFinite(band.maxPercent) ? band.maxPercent : TOP_ZONE_CEILING_PERCENT;
   const wobble: number = Math.sin(now / 1700) * 0.3 + Math.sin(now / 430) * 0.1;
   const percent: number = (bottom + top) / 2 + ((top - bottom) / 2) * wobble;
-  const cadence = CADENCE_BANDS[zone];
-  const rpm: number = (cadence.min + cadence.max) / 2 + ((cadence.max - cadence.min) / 2) * Math.sin(now / 900);
+  const tempo = TEMPO_BANDS[zone];
+  const rpm: number = ((tempo.min + tempo.max) / 2 + ((tempo.max - tempo.min) / 2) * Math.sin(now / 900)) / 2;
 
   return { watts: Math.round((ftp * percent) / 100), rpm: Math.round(rpm), receivedAt: now };
 }

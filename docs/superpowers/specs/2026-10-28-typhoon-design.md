@@ -202,12 +202,12 @@ defaulted. Use the frontend-design skill for the visual pass.
 - Tempo: each track's bpm is looked up once from ReccoBeats and cached
   on the phone. Tracks with no result are still playable and are treated
   as unknown tempo.
-- Zone to tempo band (Ed, 2026-10-29): green 70 to 80 rpm, yellow 80
-  to 82, orange and every zone above 87 to 90. Blue shares green's
-  band. A track's tempo is its bpm, half or double, whichever sits
-  nearest the band; the pick is random among the tracks nearest the
-  band, so a track inside it always wins. Tracks of unknown tempo come
-  last.
+- Zone to tempo band in song bpm (Ed, 2026-10-29, his second word on
+  it): green 140 to 160, yellow 161 to 174, orange and every zone
+  above 175 to 180. Blue shares green's band. A track's tempo is its
+  bpm, half or double, whichever sits nearest the band; the pick is
+  random among the tracks nearest the band, so a track inside it
+  always wins. Tracks of unknown tempo come last.
 - The app never cuts a song (Ed, 2026-10-29: "do not choose songs
   yourself"). The first track is picked to fit the cadence of the first
   block. A song then plays to its end whatever the ride does; as it
