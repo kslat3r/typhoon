@@ -206,9 +206,10 @@ defaulted. Use the frontend-design skill for the visual pass.
   it): green 140 to 160, yellow 161 to 174, orange and every zone
   above 175 to 180. Blue shares green's band. A track's tempo is its
   bpm, half or double, whichever sits nearest the band; the pick is
-  random among the tracks within 8 bpm of the nearest fit, so the same
-  one or two exact fits do not open every ride (Ed, 2026-10-29).
-  Tracks of unknown tempo come last.
+  random among the tracks within 8 bpm of the nearest fit, never fewer
+  than the ten nearest, so the same one or two exact fits do not open
+  every ride (Ed, 2026-10-29, twice). Tracks of unknown tempo come
+  last.
 - The app never cuts a song (Ed, 2026-10-29: "do not choose songs
   yourself"). The first track is picked to fit the cadence of the first
   block. A song then plays to its end whatever the ride does; as it

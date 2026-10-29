@@ -21,14 +21,14 @@ describe('pickTrack', () => {
     expect(pickTrack(tracks, tempos, 4, new Set(), 'a', () => 0).id).toBe('b');
   });
 
-  it('spreads picks across tracks close to the band, not only the nearest', () => {
-    // Arrange
-    const tracks = [track('a'), track('b'), track('c')];
-    const tempos = { a: 176, b: 170, c: 150 };
+  it('spreads picks across the ten nearest tracks when few sit close to the band', () => {
+    // Arrange: tempos 180, 177, 174 ... 147, so only the first five are within 8 bpm of the band
+    const tracks = Array.from({ length: 12 }, (_, index) => track(`t${index}`));
+    const tempos = Object.fromEntries(tracks.map((entry, index) => [entry.id, 180 - index * 3]));
 
     // Act / Assert
-    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0).id).toBe('a');
-    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0.99).id).toBe('b');
+    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0).id).toBe('t0');
+    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0.99).id).toBe('t9');
   });
 
   it('never repeats a played track until every track has played', () => {
