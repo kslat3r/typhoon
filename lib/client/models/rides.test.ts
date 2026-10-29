@@ -49,6 +49,14 @@ describe('ride library', () => {
     expect(last.seconds).toBeGreaterThanOrEqual(120);
   });
 
+  it.each(RIDES)('$name rests in blue after work, green only as active easy riding', (ride: Ride) => {
+    // Arrange / Act
+    const greenAfterWork = ride.intervals.filter((interval, index) => index > 0 && interval.zone === 2 && ride.intervals[index - 1].zone >= 4);
+
+    // Assert
+    expect(greenAfterWork).toEqual([]);
+  });
+
   it.each(RIDES)('$name varies its interval shapes', (ride: Ride) => {
     // Arrange / Act
     const durations: Set<number> = new Set(ride.intervals.map((i) => i.seconds));

@@ -154,8 +154,10 @@ screen (final word, 2026-10-29):
 | 7 | 151 and up | purple |
 
 Rides are written in these zones: the spin and cool-down are zone 1,
-mid-ride rests are zone 1 (blue) with green allowed for easy riding,
-threshold work is zone 4, and zone 7 sprints are 30 s or less.
+every rest after zone 4 or harder work is zone 1 (blue: Ed,
+2026-10-29, "green is not a rest zone"), green appears sparingly as
+active easy riding after zone 3 or as a warm-up step, threshold work
+is zone 4, and zone 7 sprints are 30 s or less.
 
 - FTP is stored on the phone. Default is 150 W when none has been set
   (Cyclone's own default for riders without one).
