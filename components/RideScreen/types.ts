@@ -46,7 +46,8 @@ export type RideScreenState = {
   music: MusicState;
   musicFailed: boolean;
   musicLoading: boolean;
-  queuedForThisPlay: boolean;
+  queuedTrack: Track | null;
+  lastPlayAt: number;
   spotifyCallInFlight: boolean;
   reconnectInFlight: boolean;
   pendingPlay: Track | null;

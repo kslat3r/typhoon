@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import renderRideScreen from '@/components/RideScreen';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
+import getPlayerState from '@/lib/client/helpers/get-player-state';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import playTrack from '@/lib/client/helpers/play-track';
+import queueTrack from '@/lib/client/helpers/queue-track';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import { STORAGE_KEYS } from '@/lib/client/models/storage-keys';
 import type { BikeListener, Ride, RideSummary, Track } from '@/lib/client/models/types';
@@ -71,6 +73,8 @@ async function renderAndStart(ride: Ride): Promise<HTMLElement> {
 
 describe('renderRideScreen', () => {
   beforeEach(() => {
+    // Finish any ride a previous test left running so it cannot save during this one
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
     vi.clearAllMocks();
     vi.useFakeTimers();
     localStorage.clear();
@@ -128,6 +132,57 @@ describe('renderRideScreen', () => {
     // Assert
     expect(playTrack).toHaveBeenCalledTimes(2);
     expect(vi.mocked(playTrack).mock.calls[1][0]).not.toBe(vi.mocked(playTrack).mock.calls[0][0]);
+  });
+
+  it('queues near the end, shows the queued track only once it plays, and replaces a stray track', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockResolvedValue(undefined);
+    const longRide: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 300 }, { zone: 4, seconds: 300 }] };
+    const root: HTMLElement = await renderAndStart(longRide);
+    const title = (): string => (root.querySelector('.ride-track-title') as HTMLElement).textContent ?? '';
+    expect(playTrack).toHaveBeenCalledTimes(1);
+    const first: string = title();
+
+    // Act: the player reports the same track with 9 s left, after the grace window
+    vi.mocked(getPlayerState).mockResolvedValue({ trackId: first === 'Track A' ? 'a' : 'b', progressMs: 171000, durationMs: 180000, isPlaying: true });
+    await vi.advanceTimersByTimeAsync(6500);
+
+    // Assert: next track queued, display unchanged
+    expect(queueTrack).toHaveBeenCalledTimes(1);
+    expect(title()).toBe(first);
+
+    // Act: the queued track starts
+    const queuedId: string = (vi.mocked(queueTrack).mock.calls[0][0] as string).replace('spotify:track:', '');
+    vi.mocked(getPlayerState).mockResolvedValue({ trackId: queuedId, progressMs: 2000, durationMs: 180000, isPlaying: true });
+    await vi.advanceTimersByTimeAsync(2500);
+
+    // Assert: adopted, no new play call
+    expect(title()).toBe(queuedId === 'a' ? 'Track A' : 'Track B');
+    expect(playTrack).toHaveBeenCalledTimes(1);
+
+    // Act: Spotify drifts to something outside the playlist
+    vi.mocked(getPlayerState).mockResolvedValue({ trackId: 'stray', progressMs: 5000, durationMs: 200000, isPlaying: true });
+    await vi.advanceTimersByTimeAsync(2500);
+
+    // Assert: replaced with a playlist track
+    expect(playTrack).toHaveBeenCalledTimes(2);
+    expect(title()).not.toBe('');
+  });
+
+  it('ignores a lagging player report right after a play call', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockResolvedValue(undefined);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 300 }, { zone: 4, seconds: 300 }] });
+    const first: string = (root.querySelector('.ride-track-title') as HTMLElement).textContent ?? '';
+
+    // Act: within 4 s of the play, the player still reports an old track near its end
+    vi.mocked(getPlayerState).mockResolvedValue({ trackId: 'old', progressMs: 175000, durationMs: 180000, isPlaying: true });
+    await vi.advanceTimersByTimeAsync(2500);
+
+    // Assert
+    expect(queueTrack).not.toHaveBeenCalled();
+    expect(playTrack).toHaveBeenCalledTimes(1);
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe(first);
   });
 
   it('runs a test ride at 4x with simulated samples and saves nothing', async () => {

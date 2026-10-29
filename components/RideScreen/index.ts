@@ -25,6 +25,7 @@ import saveSettings from '@/lib/client/helpers/save-settings';
 import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
+import trackFitsZone from '@/lib/client/helpers/track-fits-zone';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
 import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, PlayerState, Ride, RideInterval, RideSummary, SpotifyDevice, Track, ZoneNumber } from '@/lib/client/models/types';
@@ -34,6 +35,8 @@ const POLL_MS = 2000;
 const RECONNECT_MS = 3000;
 const SAMPLE_MAX_AGE_MS = 3000;
 const QUEUE_BEFORE_END_MS = 10000;
+// The player endpoint lags a play call by a second or two; polls inside this window are ignored
+const PLAY_GRACE_MS = 4000;
 // ponytail: test rides run at 4x so a 30 minute ride takes 7.5 minutes at the desk
 const TEST_SPEED = 4;
 
@@ -267,15 +270,34 @@ async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
       return;
     }
     state.music = { track, startedAt: clock(state), zone: currentZone(state, ride) };
-    state.queuedForThisPlay = false;
+    state.queuedTrack = null;
+    state.lastPlayAt = performance.now();
     state.musicFailed = false;
     updateTrack(state);
   });
 }
 
+// Spotify is playing something other than what we expect: our queued track, a leftover
+// from an earlier queue, or autoplay. Adopt it if we chose it or it fits, else replace it.
+function reconcilePlayer(state: RideScreenState, ride: Ride, player: PlayerState, now: number): void {
+  const zone: ZoneNumber = currentZone(state, ride);
+  const actual: Track | undefined = state.tracks.find((track: Track): boolean => track.id === player.trackId);
+  const chosen: boolean = state.queuedTrack !== null && state.queuedTrack.id === player.trackId;
+  state.queuedTrack = null;
+
+  if (actual !== undefined && (chosen || trackFitsZone(state.tempos[actual.id] ?? null, zone))) {
+    state.music = { track: actual, startedAt: now - player.progressMs, zone };
+    updateTrack(state);
+    return;
+  }
+
+  state.pendingPlay = pickTrack(state.tracks, state.tempos, zone, player.trackId, Math.random);
+  void playPending(state, ride);
+}
+
 async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
-  const playing: Track | null = state.music.track;
-  if (state.musicFailed || playing === null) {
+  const expected: Track | null = state.music.track;
+  if (state.musicFailed || expected === null) {
     return;
   }
 
@@ -285,26 +307,31 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
   });
 
   const player: PlayerState | null = result.player;
-  if (player === null || state.phase !== 'riding' || state.music.track !== playing) {
+  if (player === null || state.phase !== 'riding' || state.music.track !== expected || performance.now() - state.lastPlayAt < PLAY_GRACE_MS) {
+    return;
+  }
+
+  if (player.trackId !== expected.id) {
+    reconcilePlayer(state, ride, player, clock(state));
     return;
   }
 
   const msLeft: number = player.durationMs - player.progressMs;
-  if (player.trackId === playing.id && msLeft >= QUEUE_BEFORE_END_MS) {
-    state.queuedForThisPlay = false;
+  if (msLeft >= QUEUE_BEFORE_END_MS) {
+    state.queuedTrack = null;
+    return;
   }
-  if (msLeft >= QUEUE_BEFORE_END_MS || state.queuedForThisPlay) {
+  if (state.queuedTrack !== null) {
     return;
   }
 
   // Pick for the zone the ride will be in when the queued track actually starts
   const elapsedAtStart: number = (clock(state) - state.startedAt + msLeft) / 1000;
   const zone: ZoneNumber = intervalAtElapsed(ride, elapsedAtStart)?.interval.zone ?? currentZone(state, ride);
-  const next: Track = pickTrack(state.tracks, state.tempos, zone, playing.id, Math.random);
+  const next: Track = pickTrack(state.tracks, state.tempos, zone, expected.id, Math.random);
   await runSpotifyCall(state, async (): Promise<void> => {
     await queueTrack(next.uri);
-    state.queuedForThisPlay = true;
-    state.music = { track: next, startedAt: clock(state) + msLeft, zone };
+    state.queuedTrack = next;
   });
 }
 
@@ -623,7 +650,8 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     music: { track: null, startedAt: 0, zone: ride.intervals[0].zone },
     musicFailed: false,
     musicLoading: false,
-    queuedForThisPlay: false,
+    queuedTrack: null,
+    lastPlayAt: 0,
     spotifyCallInFlight: false,
     reconnectInFlight: false,
     pendingPlay: null,
