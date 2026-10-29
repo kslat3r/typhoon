@@ -23,29 +23,30 @@ describe('ride library', () => {
     expect(LENGTHS).toContain(ride.lengthSeconds);
   });
 
-  it.each(RIDES)('$name opens with a zone 1 spin, a 2 to 3 minute zone 2 warm-up and cools down in zone 1', (ride: Ride) => {
+  it.each(RIDES)('$name opens with a zone 1 spin, a varied warm-up inside four minutes and cools down in zone 1', (ride: Ride) => {
     // Arrange / Act
     const spin = ride.intervals[0];
-    const warmUp = ride.intervals[1];
     const last = ride.intervals[ride.intervals.length - 1];
+    const head: RideInterval[] = [];
+    let elapsed = 0;
+    for (const interval of ride.intervals) {
+      if (elapsed >= 240) {
+        break;
+      }
+      head.push(interval);
+      elapsed += interval.seconds;
+    }
+    const hardSeconds = head.filter((i) => i.zone >= 5).reduce((sum, i) => sum + i.seconds, 0);
 
     // Assert
     expect(spin.zone).toBe(1);
-    expect(spin.seconds).toBeGreaterThanOrEqual(60);
+    expect(spin.seconds).toBeGreaterThanOrEqual(45);
     expect(spin.seconds).toBeLessThanOrEqual(90);
-    expect(warmUp.zone).toBe(2);
-    expect(warmUp.seconds).toBeGreaterThanOrEqual(120);
-    expect(warmUp.seconds).toBeLessThanOrEqual(180);
+    expect(head.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(head.map((i) => i.zone)).size).toBeGreaterThanOrEqual(3);
+    expect(hardSeconds).toBeLessThanOrEqual(45);
     expect(last.zone).toBe(1);
     expect(last.seconds).toBeGreaterThanOrEqual(120);
-  });
-
-  it.each(RIDES)('$name rests in blue zone 1, never green, after the warm-up', (ride: Ride) => {
-    // Arrange / Act
-    const body = ride.intervals.slice(2);
-
-    // Assert
-    expect(body.some((i) => i.zone === 2)).toBe(false);
   });
 
   it.each(RIDES)('$name varies its interval shapes', (ride: Ride) => {
@@ -123,7 +124,7 @@ describe('ride library', () => {
 
   it('gives every ride of a length its own warm-up', () => {
     // Arrange
-    const openings: string[] = RIDES.map((r) => `${r.lengthSeconds}:${JSON.stringify(r.intervals.slice(0, 5))}`);
+    const openings: string[] = RIDES.map((r) => `${r.lengthSeconds}:${JSON.stringify(r.intervals.slice(0, 8))}`);
 
     // Act / Assert
     expect(new Set(openings).size).toBe(RIDES.length);

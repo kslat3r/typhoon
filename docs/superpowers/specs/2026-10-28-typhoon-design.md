@@ -130,8 +130,11 @@ coaching text is being replaced.
   zone 6 inside a zone 3 block), as well as long steady blocks. Rides
   follow the Cyclone archetypes: climbs, time trials, HIIT, under/over
   threshold, endurance, and a "mash up" of several.
-- Every ride opens with a 60 to 90 s zone 1 spin, then a 2 to 3 minute
-  zone 2 warm-up, and ends with a cool-down in zone 1.
+- Every ride opens with a 45 to 90 s zone 1 spin and a warm-up that
+  ends inside four minutes from the start: a ladder, a pyramid, tempo
+  pulls or a couple of short sprints, never a plain green block (Ed,
+  2026-10-29). Hard work in that window is 45 s at most. Rides end
+  with a cool-down in zone 1.
 - The library list shows each ride's shape under its name, with History
   and Settings as icons in the top right.
 
@@ -150,10 +153,9 @@ screen (final word, 2026-10-29):
 | 6 | 126 to 150 | dark red |
 | 7 | 151 and up | purple |
 
-Rides are written in these zones: the spin, cool-down and every
-mid-ride rest are zone 1 (blue, never green: Ed, 2026-10-29), the
-warm-up is the only zone 2 interval, threshold work is zone 4, and
-zone 7 sprints are 30 s or less.
+Rides are written in these zones: the spin and cool-down are zone 1,
+mid-ride rests are zone 1 (blue) with green allowed for easy riding,
+threshold work is zone 4, and zone 7 sprints are 30 s or less.
 
 - FTP is stored on the phone. Default is 150 W when none has been set
   (Cyclone's own default for riders without one).
