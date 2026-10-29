@@ -8,6 +8,7 @@ export type BikeState = 'disconnected' | 'connecting' | 'connected' | 'reconnect
 
 export type RideScreenElements = {
   artwork: HTMLImageElement;
+  placeholder: HTMLElement;
   spinner: HTMLElement;
   trackTitle: HTMLElement;
   trackArtist: HTMLElement;
@@ -50,7 +51,7 @@ export type RideScreenState = {
   history: Track[];
   played: Set<string>;
   summaryId: string | null;
-  musicFailed: boolean;
+  musicMessage: string | null;
   musicSkips: number;
   musicLoading: boolean;
   lastPlayAt: number;

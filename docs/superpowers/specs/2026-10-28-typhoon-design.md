@@ -236,7 +236,11 @@ defaulted. Use the frontend-design skill for the visual pass.
   played before it (or restarts the current one when there is none).
 - A failed play or a player error skips to another track fitting the
   current block (Ed, 2026-10-29). After three failures in a row with
-  nothing having played, the music stops and the message stays.
+  nothing having played, the song display becomes a placeholder
+  square with "Music unavailable" and the reason as its copy; Prev is
+  disabled and Next plays another pick. No music error ever goes in
+  the status line (Ed, 2026-10-29). The same placeholder shows when
+  Spotify is not connected, no playlist is chosen or the player fails.
 - The screen shows whatever the tab's player reports every two seconds,
   playlist track or not, and never replaces it. Reads in the four
   seconds after a play call are ignored because the reported state lags
@@ -277,7 +281,7 @@ my call, not Ed's; Ed can overrule any of them.
   automatically with no tap where the browser allows it.
 - **Music is optional.** A ride runs with the bike alone. If Spotify is
   not connected, no playlist is chosen, the token cannot be refreshed or
-  the browser player fails, the status line says why and nothing else
+  the browser player fails, the song display says why and nothing else
   changes. Spotify is never a reason a ride
   refuses to start. Token refresh runs before the ride starts and again
   in the background when due.

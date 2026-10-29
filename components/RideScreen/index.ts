@@ -84,13 +84,15 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'spinner' | 'trackTitle' | 'trackArtist' | 'prevButton' | 'nextButton'>; actions: HTMLElement } {
+function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'placeholder' | 'spinner' | 'trackTitle' | 'trackArtist' | 'prevButton' | 'nextButton'>; actions: HTMLElement } {
   const band: HTMLElement = buildElement('section', 'ride-top', '');
 
   const artwork: HTMLImageElement = document.createElement('img');
   artwork.className = 'ride-artwork';
   artwork.alt = '';
   artwork.hidden = true;
+  const placeholder: HTMLElement = buildElement('div', 'ride-artwork-placeholder', '');
+  placeholder.hidden = true;
   const spinner: HTMLElement = buildElement('div', 'ride-spinner', '');
   spinner.hidden = true;
   const trackTitle: HTMLElement = buildElement('div', 'ride-track-title', '');
@@ -102,12 +104,12 @@ function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTM
   const nav: HTMLElement = buildElement('div', 'ride-track-nav', '');
   nav.append(prevButton, nextButton);
   const track: HTMLElement = buildElement('div', 'ride-track', '');
-  track.append(spinner, artwork, trackText);
+  track.append(spinner, artwork, placeholder, trackText);
 
   const actions: HTMLElement = buildElement('div', 'ride-actions', '');
   band.append(track, nav, actions);
 
-  return { band, elements: { artwork, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
+  return { band, elements: { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
 }
 
 function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining'> } {
@@ -138,15 +140,19 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
 }
 
 function updateTrack(state: RideScreenState): void {
-  const { artwork, spinner, trackTitle, trackArtist, prevButton, nextButton } = state.elements;
-  const shown: Track | null = state.musicFailed ? null : (state.pendingPlay ?? state.track);
-  spinner.hidden = shown !== null || !state.musicLoading;
-  prevButton.hidden = shown === null || state.phase !== 'riding';
+  const { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton } = state.elements;
+  const failed: boolean = state.musicMessage !== null;
+  const shown: Track | null = failed ? null : (state.pendingPlay ?? state.track);
+  spinner.hidden = failed || shown !== null || !state.musicLoading;
+  placeholder.hidden = !failed;
+  prevButton.hidden = state.phase !== 'riding' || (shown === null && !failed);
   nextButton.hidden = prevButton.hidden;
+  prevButton.disabled = failed || state.history.length === 0;
+  nextButton.disabled = state.tracks.length === 0;
 
   if (shown === null) {
-    trackTitle.textContent = '';
-    trackArtist.textContent = '';
+    trackTitle.textContent = failed ? 'Music unavailable' : '';
+    trackArtist.textContent = state.musicMessage ?? '';
     artwork.hidden = true;
     artwork.removeAttribute('src');
     return;
@@ -223,16 +229,15 @@ async function runSpotifyCall(state: RideScreenState, call: () => Promise<void>)
   }
 }
 
-// A failed play or a player error skips to another track fitting the current block;
-// after a few failures in a row the music stops and the message stays.
+// A failed play or a player error skips to another track fitting the current block; after a
+// few failures in a row the song display becomes a placeholder with the reason, and Next retries.
 function markMusicFailed(state: RideScreenState, message: string): void {
-  state.elements.status.textContent = message;
   if (state.phase === 'riding' && state.position !== null && state.tracks.length > 0 && state.musicSkips < MAX_MUSIC_SKIPS) {
     state.musicSkips += 1;
     state.pendingPlay = pickTrack(state.tracks, state.tempos, state.position.interval.zone, state.played, state.track?.id ?? null, Math.random);
     return;
   }
-  state.musicFailed = true;
+  state.musicMessage = message;
   updateTrack(state);
 }
 
@@ -266,8 +271,7 @@ async function playPending(state: RideScreenState): Promise<void> {
   await runSpotifyCall(state, async (): Promise<void> => {
     await playWithRetry(track.uri, deviceId);
     state.lastPlayAt = performance.now();
-    state.musicFailed = false;
-    state.elements.status.textContent = '';
+    state.musicMessage = null;
     updateTrack(state);
   });
 }
@@ -283,7 +287,7 @@ function trackFromPlayer(state: RideScreenState, current: SpotifyPlayerState): T
 // The app never cuts a song: it shows what is playing and, as a song ends, lines up
 // the next one to match the cadence of the block the ride is in right now.
 async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
-  if (state.musicFailed || state.player === null || state.playerDeviceId === null) {
+  if (state.musicMessage !== null || state.player === null || state.playerDeviceId === null) {
     return;
   }
 
@@ -314,17 +318,20 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
 
 function skipTrack(state: RideScreenState, ride: Ride, direction: 'prev' | 'next'): void {
   const current: Track | null = state.track;
-  if (current === null || state.phase !== 'riding') {
+  if (state.phase !== 'riding' || state.tracks.length === 0) {
     return;
   }
 
   if (direction === 'next') {
-    state.history.push(current);
-    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, current.id, Math.random);
+    if (current !== null && state.musicMessage === null) {
+      state.history.push(current);
+    }
+    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, current?.id ?? null, Math.random);
   } else {
     state.pendingPlay = state.history.pop() ?? current;
   }
-  state.musicFailed = false;
+  state.musicSkips = 0;
+  state.musicMessage = null;
   void playPending(state);
 }
 
@@ -547,11 +554,11 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
 
 async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
   if (loadSpotifyAuth() === null) {
-    state.elements.status.textContent = 'Connect Spotify in Settings';
+    markMusicFailed(state, 'Connect Spotify in Settings');
     return;
   }
   if (state.settings.spotifyPlaylistId === '') {
-    state.elements.status.textContent = 'Choose a playlist in Settings';
+    markMusicFailed(state, 'Choose a playlist in Settings');
     return;
   }
 
@@ -561,7 +568,7 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
   try {
     tracks = await getPlaylistTracks(state.settings.spotifyPlaylistId);
   } catch (trackError) {
-    state.elements.status.textContent = `No music: ${errorMessage(trackError)}`;
+    markMusicFailed(state, errorMessage(trackError));
     return;
   } finally {
     state.musicLoading = false;
@@ -572,7 +579,7 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
   }
 
   if (tracks.length === 0) {
-    state.elements.status.textContent = 'Playlist has no tracks';
+    markMusicFailed(state, 'Playlist has no tracks');
     return;
   }
 
@@ -589,14 +596,16 @@ async function connectPlayer(state: RideScreenState): Promise<void> {
   let connected: { player: SpotifyPlayer; deviceId: string };
   try {
     connected = await connectSpotifyPlayer(
-      (message: string): void => markMusicFailed(state, `Music stopped: ${message}`),
+      (message: string): void => markMusicFailed(state, message),
       (deviceId: string | null): void => {
         state.playerDeviceId = deviceId;
-        state.elements.status.textContent = deviceId === null ? 'Spotify player offline' : '';
+        if (deviceId === null) {
+          markMusicFailed(state, 'Spotify player offline');
+        }
       },
     );
   } catch (playerError) {
-    markMusicFailed(state, `No music: ${errorMessage(playerError)}`);
+    markMusicFailed(state, errorMessage(playerError));
     return;
   }
 
@@ -666,7 +675,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     history: [],
     played: new Set(),
     summaryId: null,
-    musicFailed: false,
+    musicMessage: null,
     musicSkips: 0,
     musicLoading: false,
     lastPlayAt: 0,

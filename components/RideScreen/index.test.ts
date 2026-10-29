@@ -115,7 +115,10 @@ describe('renderRideScreen', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     // Assert
-    expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('Choose a playlist in Settings');
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Music unavailable');
+    expect((root.querySelector('.ride-track-artist') as HTMLElement).textContent).toBe('Choose a playlist in Settings');
+    expect((root.querySelector('.ride-artwork-placeholder') as HTMLElement).hidden).toBe(false);
+    expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('');
     expect(getPlaylistTracks).not.toHaveBeenCalled();
   });
 
@@ -232,6 +235,7 @@ describe('renderRideScreen', () => {
     vi.mocked(playTrack).mockRejectedValueOnce(new Error('Play failed: 403')).mockResolvedValue(undefined);
     const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
     const status = (): string => (root.querySelector('.ride-status') as HTMLElement).textContent ?? '';
+    const artist = (): string => (root.querySelector('.ride-track-artist') as HTMLElement).textContent ?? '';
 
     // Act
     await vi.advanceTimersByTimeAsync(300);
@@ -247,10 +251,25 @@ describe('renderRideScreen', () => {
     findButton(root, 'Next').click();
     await vi.advanceTimersByTimeAsync(2000);
 
-    // Assert: the skip budget (one already spent) runs out, then it gives up with the message showing
-    expect(playTrack).toHaveBeenCalledTimes(5);
-    expect(status()).toBe('Music stopped: Play failed: 502');
-    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('');
+    // Assert: Next restarts the skip budget, it runs out, then the placeholder shows the reason, Prev off, Next on
+    expect(playTrack).toHaveBeenCalledTimes(6);
+    expect(status()).toBe('');
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Music unavailable');
+    expect(artist()).toBe('Play failed: 502');
+    expect((root.querySelector('.ride-artwork-placeholder') as HTMLElement).hidden).toBe(false);
+    expect(findButton(root, 'Prev').hidden).toBe(false);
+    expect(findButton(root, 'Prev').disabled).toBe(true);
+    expect(findButton(root, 'Next').disabled).toBe(false);
+
+    // Act: Next tries again and this time it plays
+    vi.mocked(playTrack).mockResolvedValue(undefined);
+    findButton(root, 'Next').click();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(playTrack).toHaveBeenCalledTimes(7);
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toMatch(/^Track [AB]$/);
+    expect((root.querySelector('.ride-artwork-placeholder') as HTMLElement).hidden).toBe(true);
   });
 
   it('plays the next pick itself when a song ends without the queue starting, never repeating', async () => {
