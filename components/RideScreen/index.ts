@@ -33,6 +33,7 @@ const SAMPLE_MAX_AGE_MS = 3000;
 const QUEUE_BEFORE_END_MS = 10000;
 // The player endpoint lags a play call by a second or two; polls inside this window are ignored
 const PLAY_GRACE_MS = 4000;
+const MAX_MUSIC_SKIPS = 3;
 // ponytail: test rides run at 4x so a 30 minute ride takes 7.5 minutes at the desk
 const TEST_SPEED = 4;
 
@@ -221,9 +222,16 @@ async function runSpotifyCall(state: RideScreenState, call: () => Promise<void>)
   }
 }
 
+// A failed play or a player error skips to another track fitting the current block;
+// after a few failures in a row the music stops and the message stays.
 function markMusicFailed(state: RideScreenState, message: string): void {
-  state.musicFailed = true;
   state.elements.status.textContent = message;
+  if (state.phase === 'riding' && state.position !== null && state.tracks.length > 0 && state.musicSkips < MAX_MUSIC_SKIPS) {
+    state.musicSkips += 1;
+    state.pendingPlay = pickTrack(state.tracks, state.tempos, state.position.interval.zone, state.track?.id ?? null, Math.random);
+    return;
+  }
+  state.musicFailed = true;
   updateTrack(state);
 }
 
@@ -235,12 +243,13 @@ async function playPending(state: RideScreenState): Promise<void> {
   }
 
   state.pendingPlay = null;
+  state.track = track;
   await runSpotifyCall(state, async (): Promise<void> => {
     await playTrack(track.uri, deviceId);
-    state.track = track;
     state.queuedTrack = null;
     state.lastPlayAt = performance.now();
     state.musicFailed = false;
+    state.elements.status.textContent = '';
     updateTrack(state);
   });
 }
@@ -265,6 +274,9 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
     return;
   }
 
+  if (!current.paused) {
+    state.musicSkips = 0;
+  }
   const playing: Track = trackFromPlayer(state, current);
   if (state.track === null || playing.id !== state.track.id) {
     state.track = playing;
@@ -630,6 +642,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     track: null,
     history: [],
     musicFailed: false,
+    musicSkips: 0,
     musicLoading: false,
     queuedTrack: null,
     lastPlayAt: 0,

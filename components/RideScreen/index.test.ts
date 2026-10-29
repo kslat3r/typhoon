@@ -94,7 +94,7 @@ describe('renderRideScreen', () => {
     vi.useFakeTimers();
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200, spotifyPlaylistId: 'playlist' }));
-    localStorage.setItem(STORAGE_KEYS.tempoCache, JSON.stringify({ a: 80, b: 100 }));
+    localStorage.setItem(STORAGE_KEYS.tempoCache, JSON.stringify({ a: 80, b: 176 }));
     Object.defineProperty(navigator, 'wakeLock', { value: undefined, configurable: true });
     window.history.replaceState(null, '', '/#/ride/test-ride');
   });
@@ -159,7 +159,7 @@ describe('renderRideScreen', () => {
     findButton(root, 'Test').click();
     await vi.advanceTimersByTimeAsync(26000);
 
-    // Assert: 80 bpm fits the easy block, and the jump to zone 6 changes nothing
+    // Assert: 80 bpm fits the green block, and the jump to zone 6 changes nothing
     expect(playTrack).toHaveBeenCalledTimes(1);
     expect(vi.mocked(playTrack).mock.calls[0][0]).toBe('spotify:track:a');
   });
@@ -178,7 +178,7 @@ describe('renderRideScreen', () => {
     playerReports('a', 171000, 180000);
     await vi.advanceTimersByTimeAsync(12500);
 
-    // Assert: 100 bpm fits the hard block, display unchanged until it plays
+    // Assert: 176 bpm (88 rpm) fits the hard block, display unchanged until it plays
     expect(queueTrack).toHaveBeenCalledTimes(1);
     expect(vi.mocked(queueTrack).mock.calls[0]).toEqual(['spotify:track:b', 'tab']);
     expect(title()).toBe('Track A');
@@ -222,6 +222,32 @@ describe('renderRideScreen', () => {
     // Assert
     expect(vi.mocked(playTrack).mock.calls[2][0]).toBe('spotify:track:a');
     expect(title()).toBe('Track A');
+  });
+
+  it('skips to another fitting track when a play fails, and stops after repeated failures', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockRejectedValueOnce(new Error('Play failed: 403')).mockResolvedValue(undefined);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
+    const status = (): string => (root.querySelector('.ride-status') as HTMLElement).textContent ?? '';
+
+    // Act
+    await vi.advanceTimersByTimeAsync(300);
+
+    // Assert: the failed pick is replaced and the message cleared
+    expect(playTrack).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(playTrack).mock.calls[1][0]).toBe('spotify:track:b');
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track B');
+    expect(status()).toBe('');
+
+    // Act: every play now fails
+    vi.mocked(playTrack).mockRejectedValue(new Error('Play failed: 502'));
+    findButton(root, 'Next').click();
+    await vi.advanceTimersByTimeAsync(2000);
+
+    // Assert: the skip budget (one already spent) runs out, then it gives up with the message showing
+    expect(playTrack).toHaveBeenCalledTimes(5);
+    expect(status()).toBe('Music stopped: Play failed: 502');
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('');
   });
 
   it('ignores a lagging player report right after a play call', async () => {

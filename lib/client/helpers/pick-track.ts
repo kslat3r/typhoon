@@ -1,6 +1,7 @@
-import trackFitsZone from '@/lib/client/helpers/track-fits-zone';
+import tempoDistance from '@/lib/client/helpers/tempo-distance';
 import type { TempoCache, Track, ZoneNumber } from '@/lib/client/models/types';
 
+// Picks at random among the tracks whose tempo sits nearest the zone's cadence band
 export default function pickTrack(
   tracks: Track[],
   tempos: TempoCache,
@@ -13,10 +14,10 @@ export default function pickTrack(
   }
 
   const others = tracks.filter((track) => track.id !== excludeId);
-  const fitting = others.filter((track) => trackFitsZone(tempos[track.id] ?? null, zone));
-  const unknown = others.filter((track) => tempos[track.id] === undefined || tempos[track.id] === null);
-  const candidateLists = [fitting, unknown, others, tracks];
-  const candidates = candidateLists.find((list) => list.length > 0) as Track[];
+  const pool = others.length > 0 ? others : tracks;
+  const distances = pool.map((track) => tempoDistance(tempos[track.id] ?? null, zone));
+  const nearest = Math.min(...distances);
+  const candidates = pool.filter((_, index) => distances[index] === nearest);
 
   return candidates[Math.floor(random() * candidates.length)];
 }

@@ -48,6 +48,7 @@ export type RideScreenState = {
   track: Track | null;
   history: Track[];
   musicFailed: boolean;
+  musicSkips: number;
   musicLoading: boolean;
   queuedTrack: Track | null;
   lastPlayAt: number;

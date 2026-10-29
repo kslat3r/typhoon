@@ -11,14 +11,14 @@ describe('pickTrack', () => {
     vi.clearAllMocks();
   });
 
-  it('picks a fitting track and avoids the excluded one', () => {
+  it('picks the track nearest the band and avoids the excluded one', () => {
     // Arrange
     const tracks = [track('a'), track('b'), track('c')];
-    const tempos = { a: 90, b: 130, c: null };
+    const tempos = { a: 88, b: 130, c: null };
 
     // Act / Assert
-    expect(pickTrack(tracks, tempos, 4, 'a', () => 0).id).toBe('c');
     expect(pickTrack(tracks, tempos, 4, null, () => 0).id).toBe('a');
+    expect(pickTrack(tracks, tempos, 4, 'a', () => 0).id).toBe('b');
   });
 
   it('still returns a track when nothing fits', () => {

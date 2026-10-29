@@ -202,12 +202,12 @@ defaulted. Use the frontend-design skill for the visual pass.
 - Tempo: each track's bpm is looked up once from ReccoBeats and cached
   on the phone. Tracks with no result are still playable and are treated
   as unknown tempo.
-- Zone to tempo band: each zone maps to a cadence band, and a track fits
-  a zone if its bpm, half its bpm or double its bpm falls in the band.
-  The exact bands are left to the builder (start with roughly 75 to 85
-  rpm for zones 1 and 2, 85 to 95 for 3 and 4, 95 and up for 5 to 7, and
-  tune after riding). Tracks of unknown tempo are eligible for any zone
-  but never preferred.
+- Zone to tempo band (Ed, 2026-10-29): green 70 to 80 rpm, yellow 80
+  to 82, orange and every zone above 87 to 90. Blue shares green's
+  band. A track's tempo is its bpm, half or double, whichever sits
+  nearest the band; the pick is random among the tracks nearest the
+  band, so a track inside it always wins. Tracks of unknown tempo come
+  last.
 - The app never cuts a song (Ed, 2026-10-29: "do not choose songs
   yourself"). The first track is picked to fit the cadence of the first
   block. A song then plays to its end whatever the ride does; as it
@@ -216,6 +216,9 @@ defaulted. Use the frontend-design skill for the visual pass.
 - Prev and Next buttons sit on the song display during a ride. Next
   plays a fresh pick for the current block; Prev returns to the song
   played before it (or restarts the current one when there is none).
+- A failed play or a player error skips to another track fitting the
+  current block (Ed, 2026-10-29). After three failures in a row with
+  nothing having played, the music stops and the message stays.
 - The screen shows whatever the tab's player reports every two seconds,
   playlist track or not, and never replaces it. Reads in the four
   seconds after a play call are ignored because the reported state lags
@@ -282,7 +285,7 @@ my call, not Ed's; Ed can overrule any of them.
   per length (fifty rides) covering the archetypes, with mean zone 4+
   and zone 5+ time rising with each grade.
   Ed will ride them and ask for changes.
-- The cadence bands per zone, within the guidance above.
+- Nothing about the cadence bands: Ed set them.
 - The power-to-speed curve if the bike does not broadcast speed.
 - Parsing of the Cycling Power Measurement characteristic (flags, instant
   power, crank revolution data for cadence). Cadence must be derived
