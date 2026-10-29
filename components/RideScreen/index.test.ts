@@ -89,6 +89,8 @@ describe('renderRideScreen', () => {
     window.dispatchEvent(new HashChangeEvent('hashchange'));
     vi.clearAllMocks();
     fakePlayer.getCurrentState.mockResolvedValue(null);
+    // Picks are random within the nearest few tracks; pin them to the nearest so the tests can name songs
+    vi.spyOn(Math, 'random').mockReturnValue(0);
     vi.useFakeTimers();
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200, spotifyPlaylistId: 'playlist' }));
@@ -260,7 +262,6 @@ describe('renderRideScreen', () => {
       { id: 'c', uri: 'spotify:track:c', name: 'Track C', artist: 'Artist C', artworkUrl: null, durationMs: 180000 },
     ]);
     localStorage.setItem(STORAGE_KEYS.tempoCache, JSON.stringify({ a: 80, b: 176, c: 176 }));
-    vi.spyOn(Math, 'random').mockReturnValue(0);
     const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 5, seconds: 600 }] });
     expect(vi.mocked(playTrack).mock.calls[0][0]).toBe('spotify:track:b');
 
