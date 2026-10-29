@@ -190,7 +190,6 @@ function updateScreen(state: RideScreenState, ride: Ride, position: IntervalPosi
   renderRideProfile(state.elements.profileRoot, {
     ride,
     position: state.phase === 'riding' ? position : null,
-    percentOfFtp: sample === null ? null : (sample.watts / state.settings.ftp) * 100,
   });
 }
 
@@ -571,7 +570,6 @@ function startTestRide(state: RideScreenState, ride: Ride): void {
   state.bikeState = 'connected';
   state.elements.connectButton.hidden = true;
   startRide(state, ride);
-  state.elements.status.textContent = 'Test ride at 4x speed, nothing will be saved';
 }
 
 export default function renderRideScreen(root: HTMLElement, ride: Ride): void {

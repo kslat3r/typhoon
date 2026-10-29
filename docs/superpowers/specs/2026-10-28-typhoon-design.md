@@ -165,9 +165,9 @@ Landscape. Three bands:
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
    to zone. A white vertical line moves along the profile at the current
-   position and the ridden part behind it is slightly masked. A dot on
-   the line plots Ed's live effort vertically by his current percentage
-   of FTP, so he sees himself ride the shape.
+   position and the ridden part behind it is slightly masked. No effort
+   dot and no zone label: the watts figure and the countdown colour
+   carry that.
 3. **Bottom band**: one small stats strip. Watts (coloured by current
    zone), rpm, mph, average mph, miles, time remaining in the ride.
 

@@ -31,7 +31,7 @@ function buildRideCard(ride: Ride): HTMLAnchorElement {
   head.append(...link.childNodes);
   const shape: HTMLDivElement = document.createElement('div');
   shape.className = 'ride-shape';
-  renderRideProfile(shape, { ride, position: null, percentOfFtp: null });
+  renderRideProfile(shape, { ride, position: null });
   link.append(head, shape);
   return link;
 }
