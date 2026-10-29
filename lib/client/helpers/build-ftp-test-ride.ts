@@ -5,7 +5,7 @@ export default function buildFtpTestRide(testSeconds: 60 | 180 | 300): Ride {
     { zone: 2, seconds: 300 },
     { zone: 3, seconds: 60 },
     { zone: 4, seconds: testSeconds },
-    { zone: 1, seconds: 180 },
+    { zone: 2, seconds: 180 },
   ];
   const lengthSeconds: number = intervals.reduce((sum: number, interval: RideInterval) => sum + interval.seconds, 0);
 

@@ -23,6 +23,9 @@ const position: IntervalPosition = {
   secondsLeftInRide: 300,
 };
 
+const BAR_WIDTH: number = (1000 - 2) / 3;
+const LINE_X: number = BAR_WIDTH + 1 + BAR_WIDTH / 2;
+
 describe('renderRideProfile', () => {
   let root: HTMLElement;
 
@@ -30,19 +33,29 @@ describe('renderRideProfile', () => {
     root = document.createElement('div');
   });
 
-  it('draws one rect per interval', (): void => {
+  it('draws one bar per interval and nothing else before the ride starts', (): void => {
     renderRideProfile(root, { ride, position: null, percentOfFtp: null });
 
     expect(root.querySelectorAll('rect').length).toBe(3);
+    expect(root.querySelectorAll('.ride-profile-bar').length).toBe(3);
   });
 
-  it('strokes the current rect', (): void => {
+  it('scales bar height from zone 2 to zone 7', (): void => {
+    renderRideProfile(root, { ride, position: null, percentOfFtp: null });
+
+    const bars: NodeListOf<Element> = root.querySelectorAll('.ride-profile-bar');
+    expect(Number(bars[0].getAttribute('height'))).toBeCloseTo(50, 5);
+    expect(Number(bars[2].getAttribute('height'))).toBeCloseTo(250, 5);
+  });
+
+  it('masks the ridden part and draws the position line half way through the current interval', (): void => {
     renderRideProfile(root, { ride, position, percentOfFtp: null });
 
-    const current: Element = root.querySelectorAll('rect')[1];
-    expect(current.getAttribute('stroke')).toBe('#ffffff');
-    expect(current.getAttribute('class')).toBe('ride-profile-bar ride-profile-bar-current');
-    expect(root.querySelectorAll('rect')[0].getAttribute('fill-opacity')).toBe('0.45');
+    const mask: Element | null = root.querySelector('.ride-profile-mask');
+    const line: Element | null = root.querySelector('.ride-profile-line');
+    expect(Number(mask?.getAttribute('width'))).toBeCloseTo(LINE_X, 5);
+    expect(Number(line?.getAttribute('x'))).toBeCloseTo(LINE_X - 1.5, 5);
+    expect(line?.getAttribute('height')).toBe('300');
   });
 
   it('omits the circle when percentOfFtp is null', (): void => {
@@ -51,15 +64,16 @@ describe('renderRideProfile', () => {
     expect(root.querySelector('circle')).toBeNull();
   });
 
-  it('places the circle inside the zone 4 band at 100 percent', (): void => {
+  it('places the circle on the line inside the zone 4 band at 100 percent', (): void => {
     renderRideProfile(root, { ride, position, percentOfFtp: 100 });
 
     const circle: Element | null = root.querySelector('circle');
     const fraction: number = (100 - 91) / (106 - 91);
-    const expected: number = 300 - ((3 + fraction) / 7) * 300;
+    const expected: number = 300 - ((2 + fraction) / 6) * 300;
     expect(circle).not.toBeNull();
+    expect(Number(circle?.getAttribute('cx'))).toBeCloseTo(LINE_X, 5);
     expect(Number(circle?.getAttribute('cy'))).toBeCloseTo(expected, 5);
-    expect(Number(circle?.getAttribute('cy'))).toBeGreaterThan(300 - (4 / 7) * 300);
-    expect(Number(circle?.getAttribute('cy'))).toBeLessThan(300 - (3 / 7) * 300);
+    expect(Number(circle?.getAttribute('cy'))).toBeGreaterThan(300 - (3 / 6) * 300);
+    expect(Number(circle?.getAttribute('cy'))).toBeLessThan(300 - (2 / 6) * 300);
   });
 });

@@ -1,7 +1,7 @@
 export const DIFFICULTY_LABELS = {
-  1: 'Very easy',
-  2: 'Easy',
-  3: 'Moderate',
-  4: 'Hard',
-  5: 'Very hard',
+  1: 'Moderate',
+  2: 'Hard',
+  3: 'Very hard',
+  4: 'Severe',
+  5: 'Brutal',
 } as const;

@@ -61,7 +61,7 @@ function buildZoneChart(summary: RideSummary): HTMLElement {
     column.append(
       buildElement('span', 'zone-time', formatClock(seconds)),
       bar,
-      buildElement('span', 'zone-number', String(index + 1)),
+      buildElement('span', 'zone-number', String(index + 2)),
     );
     bars.append(column);
   });

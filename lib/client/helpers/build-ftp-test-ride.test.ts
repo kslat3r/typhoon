@@ -15,7 +15,7 @@ describe('buildFtpTestRide', () => {
       { zone: 2, seconds: 300 },
       { zone: 3, seconds: 60 },
       { zone: 4, seconds: 180 },
-      { zone: 1, seconds: 180 },
+      { zone: 2, seconds: 180 },
     ]);
     expect(ride.ftpTestSeconds).toBe(180);
     expect(ride.lengthSeconds).toBe(720);

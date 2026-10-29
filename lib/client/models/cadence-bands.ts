@@ -1,6 +1,5 @@
 // ponytail: tune after riding
 export const CADENCE_BANDS = {
-  1: { min: 75, max: 85 },
   2: { min: 75, max: 85 },
   3: { min: 85, max: 95 },
   4: { min: 85, max: 95 },

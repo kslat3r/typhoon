@@ -13,11 +13,11 @@ describe('accumulateRideStats', () => {
     // Assert
     expect(stats.sampledSeconds).toBe(5);
     expect(stats.wattSeconds).toBe(750);
-    expect(stats.secondsInZone[3]).toBe(5);
+    expect(stats.secondsInZone[2]).toBe(5);
     expect(stats.maxWatts).toBe(150);
     expect(stats.miles).toBeGreaterThan(0);
     expect(start.sampledSeconds).toBe(0);
-    expect(start.secondsInZone[3]).toBe(0);
+    expect(start.secondsInZone[2]).toBe(0);
   });
 
   it('excludes missing samples from averages', () => {

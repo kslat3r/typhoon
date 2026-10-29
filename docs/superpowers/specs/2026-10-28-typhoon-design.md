@@ -24,7 +24,7 @@ coaching text is being replaced.
 
 - Run a complete 30 or 45 minute Cyclone-style ride from the phone,
   reading live power and cadence from the Wattbike over Bluetooth.
-- A library of distinct rides spanning very easy to very hard, with real
+- A library of distinct rides spanning moderate to brutal, with real
   variety of interval shapes inside each ride.
 - Music from Ed's Spotify that follows the ride: track tempo chosen to
   suit the zone, with a dynamic mix of track changes and holds across
@@ -110,12 +110,14 @@ coaching text is being replaced.
 ### Rides
 
 - Lengths: 30 and 45 minutes only.
-- Difficulty: five levels, very easy to very hard. Each ride is written
+- Difficulty: five levels, Moderate, Hard, Very hard, Severe, Brutal
+  (Ed's 2026-10-29 regrade: the old moderate became the easiest grade
+  and two harder grades were added above the old very hard). Each ride is written
   by hand as its own interval plan. Hard rides have longer work
   intervals, more steps up and shorter recoveries; easy rides the
   opposite. No ride is derived from another by scaling.
 - A ride is a flat ordered list of intervals. Each interval is a target
-  zone (1 to 7) and a duration in seconds. No names, no blocks, no
+  zone (2 to 7) and a duration in seconds. No names, no blocks, no
   cadence, no position.
 - Interval shapes must vary within a ride: short sprints (10 to 30 s),
   stepped ramps (zone 2, 3, 4, 5 in succession), pyramids, over/unders
@@ -123,17 +125,18 @@ coaching text is being replaced.
   zone 6 inside a zone 3 block), as well as long steady blocks. Rides
   follow the Cyclone archetypes: climbs, time trials, HIIT, under/over
   threshold, endurance, and a "mash up" of several.
-- Every ride starts with a warm-up and ends with a cool-down in zones 1
-  and 2.
+- Every ride starts with a warm-up and ends with a cool-down in zone 2.
+- The library list shows each ride's shape under its name.
 
 ### Zones and FTP
 
-Seven zones as percentages of FTP, matching Stages Flight:
+Six zones as percentages of FTP, matching Stages Flight's zones 2 to 7.
+There is no zone 1 in Cyclone (Ed, 2026-10-29): anything under 76% of
+FTP, including coasting, is zone 2.
 
 | Zone | % of FTP | Colour |
 |---|---|---|
-| 1 | 0 to 55 | grey |
-| 2 | 56 to 75 | blue |
+| 2 | 0 to 75 | blue |
 | 3 | 76 to 90 | green |
 | 4 | 91 to 105 | yellow |
 | 5 | 106 to 120 | orange |
@@ -153,18 +156,24 @@ Seven zones as percentages of FTP, matching Stages Flight:
 
 Landscape. Three bands:
 
-1. **Top band**: the current track (artwork, title, artist, bpm) on the
-   left, the current interval countdown on the right, coloured in the
-   current target zone's colour.
+1. **Top band**: the current track (small artwork and artist only, no
+   title, no bpm) on the left, the current interval countdown in the
+   middle coloured in the current target zone's colour, and the quiet
+   ghost buttons (Connect bike, Start, Test, End ride) on the right.
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
-   to zone. Completed intervals dimmed, the current one outlined. A dot
-   plots Ed's live effort on the current bar, vertically by his current
-   percentage of FTP, so he sees himself ride the shape.
+   to zone. A white vertical line moves along the profile at the current
+   position and the ridden part behind it is slightly masked. A dot on
+   the line plots Ed's live effort vertically by his current percentage
+   of FTP, so he sees himself ride the shape.
 3. **Bottom band**: one small stats strip. Watts (coloured by current
    zone), rpm, mph, average mph, miles, time remaining in the ride.
 
-No gauge, no cadence target, no text cues. Styling is a first-class
+No gauge, no cadence target, no text cues.
+
+Test mode: the Test button runs the ride without a bike at 4x speed with
+simulated watts and rpm inside each zone's band, music transitions
+included. Test rides are never saved. Styling is a first-class
 requirement: dark, legible from the saddle, designed rather than
 defaulted. Use the frontend-design skill for the visual pass.
 
@@ -250,8 +259,9 @@ my call, not Ed's; Ed can overrule any of them.
 
 ## Left to the builder
 
-- The exact interval plans for the first library. Aim for at least two
-  rides per difficulty per length (twenty rides) covering the archetypes.
+- The exact interval plans for the library. Five rides per difficulty
+  per length (fifty rides) covering the archetypes, with mean zone 4+
+  and zone 5+ time rising with each grade.
   Ed will ride them and ask for changes.
 - The cadence bands per zone and the coin-flip weights, within the
   guidance above.

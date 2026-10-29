@@ -14,7 +14,7 @@ const SUMMARY: RideSummary = {
   maxWatts: 320,
   miles: 12.345,
   averageMph: 20.46,
-  secondsInZone: [10, 20, 30, 40, 0, 0, 5],
+  secondsInZone: [20, 30, 40, 0, 0, 5],
   missingSeconds: 0,
   ftpUsed: 200,
 };
@@ -24,7 +24,7 @@ describe('renderSummaryScreen', () => {
     localStorage.clear();
   });
 
-  it('shows average watts and seven zone bars', (): void => {
+  it('shows average watts and six zone bars', (): void => {
     // Arrange
     appendRideSummary(SUMMARY);
     const root: HTMLElement = document.createElement('div');
@@ -34,7 +34,7 @@ describe('renderSummaryScreen', () => {
 
     // Assert
     expect(root.textContent).toContain('187');
-    expect(root.querySelectorAll('.zone-bar')).toHaveLength(7);
+    expect(root.querySelectorAll('.zone-bar')).toHaveLength(6);
   });
 
   it('shows not found for an unknown id', (): void => {

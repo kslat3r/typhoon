@@ -11,7 +11,7 @@ const ride: Ride = {
   intervals: [
     { zone: 2, seconds: 300 },
     { zone: 4, seconds: 60 },
-    { zone: 1, seconds: 1440 },
+    { zone: 2, seconds: 1440 },
   ],
 };
 

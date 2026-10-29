@@ -8,7 +8,6 @@ export type BikeState = 'disconnected' | 'connecting' | 'connected' | 'reconnect
 
 export type RideScreenElements = {
   artwork: HTMLImageElement;
-  trackTitle: HTMLElement;
   trackArtist: HTMLElement;
   countdown: HTMLElement;
   zoneLabel: HTMLElement;
@@ -22,6 +21,7 @@ export type RideScreenElements = {
   status: HTMLElement;
   connectButton: HTMLButtonElement;
   startButton: HTMLButtonElement;
+  testButton: HTMLButtonElement;
   controls: HTMLElement;
   endButton: HTMLButtonElement;
   statsStrip: HTMLElement;
@@ -39,6 +39,7 @@ export type RideScreenState = {
   position: IntervalPosition | null;
   device: BluetoothDevice | null;
   bikeState: BikeState;
+  testMode: boolean;
   tracks: Track[];
   tempos: TempoCache;
   music: MusicState;

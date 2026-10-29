@@ -1,3 +1,4 @@
+import renderRideProfile from '@/components/RideProfile';
 import { DIFFICULTY_LABELS } from '@/lib/client/models/difficulty-labels';
 import { RIDES } from '@/lib/client/models/rides';
 import type { Ride } from '@/lib/client/models/types';
@@ -22,6 +23,19 @@ function buildLink(href: string, label: string, detail: string | null): HTMLAnch
   return link;
 }
 
+function buildRideCard(ride: Ride): HTMLAnchorElement {
+  const link: HTMLAnchorElement = buildLink(`#/ride/${ride.id}`, ride.name, DIFFICULTY_LABELS[ride.difficulty]);
+  link.classList.add('ride-card');
+  const head: HTMLDivElement = document.createElement('div');
+  head.className = 'ride-card-head';
+  head.append(...link.childNodes);
+  const shape: HTMLDivElement = document.createElement('div');
+  shape.className = 'ride-shape';
+  renderRideProfile(shape, { ride, position: null, percentOfFtp: null });
+  link.append(head, shape);
+  return link;
+}
+
 function buildSection(title: string): HTMLElement {
   const section: HTMLElement = document.createElement('section');
   const heading: HTMLHeadingElement = document.createElement('h2');
@@ -37,7 +51,7 @@ function buildRideSection(title: string, lengthSeconds: number): HTMLElement {
   );
 
   for (const ride of rides) {
-    section.append(buildLink(`#/ride/${ride.id}`, ride.name, DIFFICULTY_LABELS[ride.difficulty]));
+    section.append(buildRideCard(ride));
   }
 
   return section;

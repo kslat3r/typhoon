@@ -38,7 +38,7 @@ const testRide: Ride = {
   intervals: [
     { zone: 2, seconds: 10 },
     { zone: 4, seconds: 10 },
-    { zone: 1, seconds: 10 },
+    { zone: 2, seconds: 10 },
   ],
 };
 
@@ -80,6 +80,32 @@ describe('renderRideScreen', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('runs a test ride at 4x with simulated samples and saves nothing', async () => {
+    // Arrange
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Act
+    findButton(root, 'Test').click();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    // Assert
+    const watts: number = Number((root.querySelector('.ride-stat-watts') as HTMLElement).textContent);
+    expect(watts).toBeGreaterThanOrEqual(112);
+    expect(watts).toBeLessThanOrEqual(152);
+    expect((root.querySelector('.ride-countdown') as HTMLElement).textContent).toBe('0:06');
+    expect(findButton(root, 'Test').hidden).toBe(true);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(8000);
+
+    // Assert
+    expect(appendRideSummary).not.toHaveBeenCalled();
+    expect(location.hash).toBe('#/');
   });
 
   it('keeps riding with no music, updates the clock and saves the summary at the end', async () => {

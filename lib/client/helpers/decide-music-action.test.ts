@@ -24,7 +24,7 @@ describe('decideMusicAction', () => {
 
   it('holds when the current track has played under 60 seconds', () => {
     // Arrange
-    const state: MusicState = { track: track('a'), startedAt: 0, zone: 1 };
+    const state: MusicState = { track: track('a'), startedAt: 0, zone: 2 };
 
     // Act
     const action = decideMusicAction(state, 5, 30000, [track('a'), track('b')], {}, () => 0);
@@ -35,7 +35,7 @@ describe('decideMusicAction', () => {
 
   it('plays a different track on a jump of three', () => {
     // Arrange
-    const state: MusicState = { track: track('a'), startedAt: 0, zone: 1 };
+    const state: MusicState = { track: track('a'), startedAt: 0, zone: 2 };
 
     // Act
     const action = decideMusicAction(state, 4, 90000, [track('a'), track('b')], {}, () => 0);
@@ -46,7 +46,7 @@ describe('decideMusicAction', () => {
 
   it('holds when there are no tracks', () => {
     // Arrange
-    const state: MusicState = { track: null, startedAt: 0, zone: 1 };
+    const state: MusicState = { track: null, startedAt: 0, zone: 2 };
 
     // Act
     const action = decideMusicAction(state, 4, 90000, [], {}, () => 0);
