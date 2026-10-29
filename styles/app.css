@@ -306,6 +306,8 @@ form + section select {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex: 0 0 360px;
+  max-width: 60%;
   min-width: 0;
 }
 
@@ -338,6 +340,7 @@ form + section select {
 }
 
 .ride-track-text {
+  flex: 1;
   min-width: 0;
 }
 
