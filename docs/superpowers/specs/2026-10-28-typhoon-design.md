@@ -132,18 +132,22 @@ coaching text is being replaced.
 
 ### Zones and FTP
 
-Six zones as percentages of FTP, matching Stages Flight's zones 2 to 7.
-There is no zone 1 in Cyclone (Ed, 2026-10-29): anything under 76% of
-FTP, including coasting, is zone 2.
+Six zones as percentages of FTP, numbered 2 to 7 as Cyclone does (Ed,
+2026-10-29: there is no zone 1; the orange zone holds 100% of FTP, blue
+tops out at 55% and red at 120%, everything else is factored from that).
 
 | Zone | % of FTP | Colour |
 |---|---|---|
-| 2 | 0 to 75 | blue |
-| 3 | 76 to 90 | green |
-| 4 | 91 to 105 | yellow |
-| 5 | 106 to 120 | orange |
-| 6 | 121 to 150 | red |
-| 7 | 151 and up | purple |
+| 2 | 0 to 55 | blue |
+| 3 | 56 to 75 | green |
+| 4 | 76 to 90 | yellow |
+| 5 | 91 to 105 | orange |
+| 6 | 106 to 120 | red |
+| 7 | 121 and up | purple |
+
+Rides are written in these zones: the spin and cool-down are zone 2,
+the warm-up and mid-ride recoveries zone 3, threshold work zone 5, and
+zone 7 efforts stay under a minute outside an FTP test.
 
 - FTP is stored on the phone. Default is 150 W when none has been set
   (Cyclone's own default for riders without one).
@@ -197,8 +201,8 @@ defaulted. Use the frontend-design skill for the visual pass.
 - Track changes follow the cadence bands, not the zone lines (redesigned
   2026-10-29 after Ed saw tracks cut off soon after starting). At a zone
   boundary the current track holds when any of these is true:
-  - the cadence band has not changed (zones 3 to 4 and 5 to 7 share
-    bands, so most steps are holds);
+  - the cadence band has not changed (zones 2 to 3, 4 to 5 and 6 to 7
+    share bands, so most steps are holds);
   - the track's tempo, half or double, still fits the new band;
   - the track has played for under 90 seconds;
   - the new band stretch is under 60 seconds (a sprint is not worth a

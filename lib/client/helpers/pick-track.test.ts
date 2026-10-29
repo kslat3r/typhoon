@@ -17,8 +17,8 @@ describe('pickTrack', () => {
     const tempos = { a: 90, b: 130, c: null };
 
     // Act / Assert
-    expect(pickTrack(tracks, tempos, 3, 'a', () => 0).id).toBe('c');
-    expect(pickTrack(tracks, tempos, 3, null, () => 0).id).toBe('a');
+    expect(pickTrack(tracks, tempos, 4, 'a', () => 0).id).toBe('c');
+    expect(pickTrack(tracks, tempos, 4, null, () => 0).id).toBe('a');
   });
 
   it('still returns a track when nothing fits', () => {

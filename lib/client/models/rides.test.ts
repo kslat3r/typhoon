@@ -60,39 +60,38 @@ describe('ride library', () => {
     }
   });
 
-  it.each(RIDES.filter((r) => r.difficulty === 1))('$name keeps the easiest grade at zone 6 or below with short zone 6 efforts', (ride: Ride) => {
+  it.each(RIDES.filter((r) => r.difficulty === 1))('$name keeps the easiest grade to short zone 7 efforts', (ride: Ride) => {
     // Arrange / Act
-    const zoneSix: RideInterval[] = ride.intervals.filter((i) => i.zone === 6);
+    const zoneSeven: RideInterval[] = ride.intervals.filter((i) => i.zone === 7);
 
     // Assert
-    expect(Math.max(...ride.intervals.map((i) => i.zone))).toBeLessThanOrEqual(6);
-    for (const interval of zoneSix) {
+    for (const interval of zoneSeven) {
       expect(interval.seconds).toBeLessThanOrEqual(30);
     }
   });
 
-  it.each(RIDES)('$name keeps zone 7 sprints to 30 s or less', (ride: Ride) => {
+  it.each(RIDES)('$name keeps zone 7 efforts to 60 s or less outside an FTP test', (ride: Ride) => {
     // Arrange / Act
-    const sprints: RideInterval[] = ride.intervals.filter((i) => i.zone === 7);
+    const efforts: RideInterval[] = ride.intervals.filter((i, index) => i.zone === 7 && index !== ride.ftpTest?.intervalIndex);
 
     // Assert
-    for (const sprint of sprints) {
-      expect(sprint.seconds).toBeLessThanOrEqual(30);
+    for (const effort of efforts) {
+      expect(effort.seconds).toBeLessThanOrEqual(60);
     }
   });
 
-  it.each(LENGTHS)('%i s rides do more work at zone 4 and above, and at zone 5 and above, with each grade', (length: number) => {
+  it.each(LENGTHS)('%i s rides do more work at zone 5 and above, and at zone 6 and above, with each grade', (length: number) => {
     // Arrange
     const byGrade: Ride[][] = DIFFICULTIES.map((difficulty) => RIDES.filter((r) => r.lengthSeconds === length && r.difficulty === difficulty));
 
     // Act / Assert
     for (let index = 1; index < byGrade.length; index += 1) {
-      expect(meanSecondsAtOrAbove(byGrade[index], 4), `grade ${index + 1} zone 4+`).toBeGreaterThan(meanSecondsAtOrAbove(byGrade[index - 1], 4));
       expect(meanSecondsAtOrAbove(byGrade[index], 5), `grade ${index + 1} zone 5+`).toBeGreaterThan(meanSecondsAtOrAbove(byGrade[index - 1], 5));
+      expect(meanSecondsAtOrAbove(byGrade[index], 6), `grade ${index + 1} zone 6+`).toBeGreaterThan(meanSecondsAtOrAbove(byGrade[index - 1], 6));
     }
-    const easiest: number = Math.max(...byGrade[0].map((r) => secondsAtOrAbove(r, 4)));
+    const easiest: number = Math.max(...byGrade[0].map((r) => secondsAtOrAbove(r, 5)));
     for (const ride of byGrade[4]) {
-      expect(secondsAtOrAbove(ride, 4), ride.name).toBeGreaterThan(easiest);
+      expect(secondsAtOrAbove(ride, 5), ride.name).toBeGreaterThan(easiest);
     }
   });
 
@@ -106,9 +105,9 @@ describe('ride library', () => {
       const { intervalIndex, seconds } = ride.ftpTest as { intervalIndex: number; seconds: number };
       const effort: RideInterval = ride.intervals[intervalIndex];
       expect(effort.seconds, ride.name).toBe(seconds);
-      expect(effort.zone, ride.name).toBeGreaterThanOrEqual(5);
-      expect(ride.intervals[intervalIndex - 1].zone, ride.name).toBeLessThanOrEqual(3);
-      expect(ride.intervals[intervalIndex + 1].zone, ride.name).toBe(2);
+      expect(effort.zone, ride.name).toBeGreaterThanOrEqual(6);
+      expect(ride.intervals[intervalIndex - 1].zone, ride.name).toBeLessThanOrEqual(4);
+      expect(ride.intervals[intervalIndex + 1].zone, ride.name).toBeLessThanOrEqual(3);
       expect(ride.intervals[intervalIndex + 1].seconds, ride.name).toBeGreaterThanOrEqual(Math.max(120, seconds / 2));
     }
   });
