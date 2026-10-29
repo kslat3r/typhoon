@@ -246,13 +246,7 @@ export default function renderSettingsScreen(root: HTMLElement): void {
     );
   }
 
-  const footer: HTMLElement = document.createElement('footer');
-  const link: HTMLAnchorElement = document.createElement('a');
-  link.href = 'https://getsongbpm.com';
-  link.textContent = 'GetSongBPM';
-  footer.append('Tempo data from ', link);
-
-  root.replaceChildren(heading, form, spotify, status, footer, back);
+  root.replaceChildren(heading, form, spotify, status, back);
 
   if (connected && settings.spotifyPlaylistId !== '') {
     void fillFromPlaylist(settings.spotifyPlaylistId, settings, progress, status);

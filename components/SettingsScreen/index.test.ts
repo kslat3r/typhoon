@@ -23,17 +23,6 @@ describe('renderSettingsScreen', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('renders the GetSongBPM attribution link', () => {
-    // Arrange
-    const root: HTMLElement = document.createElement('div');
-
-    // Act
-    renderSettingsScreen(root);
-
-    // Assert
-    expect(root.querySelector('a[href="https://getsongbpm.com"]')).not.toBeNull();
-  });
-
   it('saves a valid FTP', () => {
     // Arrange
     const root: HTMLElement = document.createElement('div');

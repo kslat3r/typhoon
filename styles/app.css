@@ -51,6 +51,18 @@ body {
   padding: 0;
 }
 
+.credit {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+body:has(.ride-screen) .credit {
+  display: none;
+}
+
 h1,
 h2 {
   font-family: var(--font-display);
