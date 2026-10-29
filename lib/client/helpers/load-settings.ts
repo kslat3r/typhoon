@@ -6,7 +6,6 @@ export default function loadSettings(): Settings {
     ftp: 150,
     spotifyClientId: '',
     spotifyPlaylistId: '',
-    getSongBpmKey: '',
     bikeName: '',
   };
   const raw = localStorage.getItem(STORAGE_KEYS.settings);

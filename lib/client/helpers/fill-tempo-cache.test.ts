@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fillTempoCache from '@/lib/client/helpers/fill-tempo-cache';
-import lookupTempo from '@/lib/client/helpers/lookup-tempo';
+import lookupTempos from '@/lib/client/helpers/lookup-tempos';
 import saveTempoCache from '@/lib/client/helpers/save-tempo-cache';
 import type { Track } from '@/lib/client/models/types';
 
-vi.mock('@/lib/client/helpers/lookup-tempo');
+vi.mock('@/lib/client/helpers/lookup-tempos');
 vi.mock('@/lib/client/helpers/save-tempo-cache');
 
 function track(id: string): Track {
@@ -14,91 +14,65 @@ function track(id: string): Track {
 describe('fillTempoCache', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('skips cached ids, waits between lookups, saves and reports progress', async () => {
+  it('skips cached ids, marks unmatched ids null, saves and reports progress', async () => {
     // Arrange
-    vi.mocked(lookupTempo).mockResolvedValueOnce(120).mockResolvedValueOnce(null);
+    vi.mocked(lookupTempos).mockResolvedValueOnce({ b: 120 });
     const onProgress = vi.fn();
     const input = { a: 90 };
 
     // Act
-    const promise = fillTempoCache('key', [track('a'), track('b'), track('c')], input, onProgress);
-    await vi.advanceTimersByTimeAsync(0);
-    expect(lookupTempo).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(1099);
-    expect(lookupTempo).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(1);
-    const result = await promise;
+    const result = await fillTempoCache([track('a'), track('b'), track('c')], input, onProgress);
 
     // Assert
-    expect(lookupTempo).toHaveBeenCalledTimes(2);
+    expect(lookupTempos).toHaveBeenCalledTimes(1);
+    expect(lookupTempos).toHaveBeenCalledWith(['b', 'c']);
     expect(result).toEqual({ a: 90, b: 120, c: null });
     expect(input).toEqual({ a: 90 });
-    expect(saveTempoCache).toHaveBeenCalledTimes(2);
+    expect(saveTempoCache).toHaveBeenCalledTimes(1);
     expect(saveTempoCache).toHaveBeenLastCalledWith({ a: 90, b: 120, c: null });
-    expect(onProgress).toHaveBeenNthCalledWith(1, 1, 2);
-    expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
+    expect(onProgress).toHaveBeenCalledWith(2, 2);
   });
 
-  it('leaves a failed lookup out of the cache and continues', async () => {
+  it('splits lookups into batches of 40', async () => {
     // Arrange
-    vi.mocked(lookupTempo).mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(100);
-
-    // Act
-    const promise = fillTempoCache('key', [track('a'), track('b')], {}, vi.fn());
-    await vi.advanceTimersByTimeAsync(1100);
-    const result = await promise;
-
-    // Assert
-    expect(result).toEqual({ b: 100 });
-  });
-
-  it('reports progress for failed lookups too', async () => {
-    // Arrange
-    vi.mocked(lookupTempo).mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(100);
+    vi.mocked(lookupTempos).mockResolvedValue({});
+    const tracks = Array.from({ length: 41 }, (_, index) => track(`t${index}`));
     const onProgress = vi.fn();
 
     // Act
-    const promise = fillTempoCache('key', [track('a'), track('b')], {}, onProgress);
-    await vi.advanceTimersByTimeAsync(1100);
-    await promise;
+    await fillTempoCache(tracks, {}, onProgress);
 
     // Assert
-    expect(onProgress).toHaveBeenNthCalledWith(1, 1, 2);
-    expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
+    expect(lookupTempos).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(lookupTempos).mock.calls[0][0]).toHaveLength(40);
+    expect(vi.mocked(lookupTempos).mock.calls[1][0]).toEqual(['t40']);
+    expect(onProgress).toHaveBeenNthCalledWith(1, 40, 41);
+    expect(onProgress).toHaveBeenNthCalledWith(2, 41, 41);
   });
 
-  it('rejects on an unauthorised lookup without saving', async () => {
+  it('leaves a failed batch out of the cache, reports its progress and continues', async () => {
     // Arrange
-    vi.mocked(lookupTempo).mockRejectedValueOnce(new Error('Tempo lookup unauthorised: 401'));
+    vi.mocked(lookupTempos).mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ t40: 100 });
+    const tracks = Array.from({ length: 41 }, (_, index) => track(`t${index}`));
     const onProgress = vi.fn();
 
-    // Act / Assert
-    await expect(fillTempoCache('key', [track('a'), track('b')], {}, onProgress)).rejects.toThrow('Tempo lookup unauthorised');
-    expect(saveTempoCache).not.toHaveBeenCalled();
-    expect(onProgress).not.toHaveBeenCalled();
+    // Act
+    const result = await fillTempoCache(tracks, {}, onProgress);
+
+    // Assert
+    expect(result).toEqual({ t40: 100 });
+    expect(onProgress).toHaveBeenNthCalledWith(1, 40, 41);
+    expect(onProgress).toHaveBeenNthCalledWith(2, 41, 41);
   });
 
   it('rejects when every lookup fails', async () => {
     // Arrange
-    vi.mocked(lookupTempo)
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    const onProgress = vi.fn();
+    vi.mocked(lookupTempos).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
-    // Act
-    const promise = fillTempoCache('key', [track('a'), track('b')], {}, onProgress);
-    const assertion = expect(promise).rejects.toThrow('Tempo lookup failed: every request failed');
-    await vi.advanceTimersByTimeAsync(1100);
-
-    // Assert
-    await assertion;
-    expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
+    // Act / Assert
+    await expect(fillTempoCache([track('a'), track('b')], {}, vi.fn())).rejects.toThrow('Tempo lookup failed: every request failed');
+    expect(saveTempoCache).not.toHaveBeenCalled();
   });
 });

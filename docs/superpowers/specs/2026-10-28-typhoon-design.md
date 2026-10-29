@@ -93,12 +93,11 @@ coaching text is being replaced.
 - Tempo: Spotify's Audio Features and Audio Analysis endpoints are
   deprecated for apps registered after 27 November 2024 and extended
   quota needs a business with 250k monthly users. Track tempo therefore
-  comes from GetSongBPM (free API key, looked up by title and artist).
-  Their API base is `https://api.getsong.co/` and the key is sent as the
-  `api_key` query parameter (a custom header would force a CORS preflight
-  from the browser). Their terms require a visible link back to
-  GetSongBPM.com, which goes on the settings screen. The API key is pasted
-  into settings and kept in local storage, never committed.
+  comes from ReccoBeats (`GET https://api.reccobeats.com/v1/audio-features?ids=`
+  up to 40 Spotify track ids per call, no key, CORS allowed, free for
+  personal use, no attribution required). Tracks it does not know are
+  simply absent from the response. GetSongBPM was dropped on 2026-10-29
+  because its key signup rejected the GitHub Pages URL as a backlink.
 - Spotify's February 2026 Development Mode changes apply: playlist
   contents come from `GET /playlists/{id}/items` (entries carry `item`,
   not `track`) and only for playlists the user owns or collaborates on,
@@ -172,7 +171,7 @@ defaulted. Use the frontend-design skill for the visual pass.
 ### Music
 
 - Source: one Spotify playlist of Ed's, chosen in settings.
-- Tempo: each track's bpm is looked up once from GetSongBPM and cached
+- Tempo: each track's bpm is looked up once from ReccoBeats and cached
   on the phone. Tracks with no result are still playable and are treated
   as unknown tempo.
 - Zone to tempo band: each zone maps to a cadence band, and a track fits
@@ -209,7 +208,6 @@ defaulted. Use the frontend-design skill for the visual pass.
 
 - FTP (editable by hand as well as by test).
 - Spotify: connect and disconnect, playlist picker.
-- GetSongBPM API key, with the required link back to GetSongBPM.com.
 - Bike: pair and forget.
 
 ## Calls made after the builder check
@@ -246,8 +244,8 @@ my call, not Ed's; Ed can overrule any of them.
   cool-down.
 - **Tempo lookups run up front.** Choosing a playlist in settings looks
   up every track with a progress indicator and the results are cached
-  for good. Lookups are rate-limited to stay inside GetSongBPM's free
-  tier; if a lookup is interrupted it resumes next time settings opens,
+  for good. Lookups go in batches of 40 track ids; if a lookup is
+  interrupted it resumes next time settings opens,
   and unlooked-up tracks count as unknown tempo in the meantime.
 
 ## Left to the builder
@@ -276,5 +274,5 @@ my call, not Ed's; Ed can overrule any of them.
 
 - Confirm the gym's Wattbike monitors are Model B with Bluetooth, and
   that the Bluetooth setting is reachable on the gym-floor bikes.
-- Register the Spotify developer app and create a GetSongBPM key.
+- Register the Spotify developer app.
 - Choose the playlist.

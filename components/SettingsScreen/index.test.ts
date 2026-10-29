@@ -58,7 +58,7 @@ describe('renderSettingsScreen', () => {
     vi.mocked(fillTempoCache).mockReturnValue(new Promise((resolve): void => {
       finishFill = (): void => resolve({});
     }));
-    saveSettings({ ...loadSettings(), spotifyPlaylistId: 'p1', getSongBpmKey: 'key' });
+    saveSettings({ ...loadSettings(), spotifyPlaylistId: 'p1' });
     saveSpotifyAuth({ accessToken: 'a', refreshToken: 'r', expiresAt: Date.now() + 3600000 });
     const root: HTMLElement = document.createElement('div');
 

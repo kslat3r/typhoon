@@ -68,7 +68,6 @@ export interface Settings {
   ftp: number;
   spotifyClientId: string;
   spotifyPlaylistId: string;
-  getSongBpmKey: string;
   bikeName: string;
 }
 

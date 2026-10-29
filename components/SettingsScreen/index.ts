@@ -48,11 +48,6 @@ async function runFill(
   progress: HTMLProgressElement,
   status: HTMLElement,
 ): Promise<void> {
-  if (settings.getSongBpmKey === '') {
-    status.textContent = 'Add a GetSongBPM key and save to look up tempos';
-    return;
-  }
-
   status.textContent = 'Loading playlist tracks';
   let tracks: Track[];
   try {
@@ -68,12 +63,12 @@ async function runFill(
   status.textContent = 'Looking up tempos';
   const cache: TempoCache = loadTempoCache();
   try {
-    await fillTempoCache(settings.getSongBpmKey, tracks, cache, (done: number, total: number): void => {
+    await fillTempoCache(tracks, cache, (done: number, total: number): void => {
       progress.max = total;
       progress.value = done;
     });
   } catch (fillError) {
-    status.textContent = `Tempo lookup failed: ${errorMessage(fillError)}`;
+    status.textContent = errorMessage(fillError);
     return;
   }
 
@@ -177,7 +172,6 @@ export default function renderSettingsScreen(root: HTMLElement): void {
   const ftpField: HTMLLabelElement = buildField('FTP (watts)', 'ftp', 'number', String(settings.ftp));
   (ftpField.querySelector('input') as HTMLInputElement).min = '1';
   const clientIdField: HTMLLabelElement = buildField('Spotify client ID', 'spotifyClientId', 'text', settings.spotifyClientId);
-  const keyField: HTMLLabelElement = buildField('GetSongBPM key', 'getSongBpmKey', 'text', settings.getSongBpmKey);
   const bikeField: HTMLLabelElement = buildField('Bike', 'bikeName', 'text', settings.bikeName || 'Not paired');
   (bikeField.querySelector('input') as HTMLInputElement).readOnly = true;
 
@@ -193,7 +187,6 @@ export default function renderSettingsScreen(root: HTMLElement): void {
       ...loadSettings(),
       ftp,
       spotifyClientId: readInput('spotifyClientId'),
-      getSongBpmKey: readInput('getSongBpmKey'),
     });
     status.textContent = 'Saved';
   };
@@ -216,7 +209,7 @@ export default function renderSettingsScreen(root: HTMLElement): void {
   form.addEventListener('submit', (event: Event): void => {
     event.preventDefault();
   });
-  form.append(ftpField, clientIdField, keyField, bikeField, buildButton('Save', save));
+  form.append(ftpField, clientIdField, bikeField, buildButton('Save', save));
 
   const spotify: HTMLElement = document.createElement('section');
   if (connected) {

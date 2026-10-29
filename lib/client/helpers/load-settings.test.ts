@@ -19,7 +19,7 @@ describe('loadSettings', () => {
 
   it('returns saved values after saveSettings', () => {
     // Arrange
-    const saved = { ftp: 220, spotifyClientId: 'a', spotifyPlaylistId: 'b', getSongBpmKey: 'c', bikeName: 'Wattbike' };
+    const saved = { ftp: 220, spotifyClientId: 'a', spotifyPlaylistId: 'b', bikeName: 'Wattbike' };
     saveSettings(saved);
 
     // Act
