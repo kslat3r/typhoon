@@ -210,7 +210,14 @@ defaulted. Use the frontend-design skill for the visual pass.
   Otherwise a fitting track is picked for the new band. No coin flip.
 - When a track ends naturally the next track is picked for the zone the
   ride will be in when it starts, so a new song is not cut at the next
-  boundary.
+  boundary. It is queued on Spotify but the screen only shows it once
+  the player reports it playing.
+- The app polls the player every two seconds and reconciles: a track it
+  did not expect is adopted if the app queued it or it fits the zone,
+  otherwise a fitting track is played in its place. Polls in the four
+  seconds after a play call are ignored because the player endpoint lags
+  (found 2026-10-29: a stale report of the old track near its end made
+  the app queue and display a new song seconds after a zone change).
 - The minimums and the bands live in small functions so they are easy
   to tune.
 - Spotify's own crossfade setting handles blending; the app only skips.
