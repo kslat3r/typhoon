@@ -228,7 +228,7 @@ function markMusicFailed(state: RideScreenState, message: string): void {
   state.elements.status.textContent = message;
   if (state.phase === 'riding' && state.position !== null && state.tracks.length > 0 && state.musicSkips < MAX_MUSIC_SKIPS) {
     state.musicSkips += 1;
-    state.pendingPlay = pickTrack(state.tracks, state.tempos, state.position.interval.zone, state.track?.id ?? null, Math.random);
+    state.pendingPlay = pickTrack(state.tracks, state.tempos, state.position.interval.zone, state.played, state.track?.id ?? null, Math.random);
     return;
   }
   state.musicFailed = true;
@@ -244,6 +244,7 @@ async function playPending(state: RideScreenState): Promise<void> {
 
   state.pendingPlay = null;
   state.track = track;
+  state.played.add(track.id);
   await runSpotifyCall(state, async (): Promise<void> => {
     await playTrack(track.uri, deviceId);
     state.queuedTrack = null;
@@ -280,8 +281,17 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
   const playing: Track = trackFromPlayer(state, current);
   if (state.track === null || playing.id !== state.track.id) {
     state.track = playing;
+    state.played.add(playing.id);
     state.queuedTrack = null;
     updateTrack(state);
+  }
+
+  // A song that has ended sits paused at its start; play the next pick ourselves if the queue did not
+  if (current.paused && current.position === 0) {
+    state.pendingPlay = state.queuedTrack ?? pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, playing.id, Math.random);
+    state.queuedTrack = null;
+    void playPending(state);
+    return;
   }
 
   const msLeft: number = current.duration - current.position;
@@ -293,12 +303,13 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
     return;
   }
 
-  const next: Track = pickTrack(state.tracks, state.tempos, currentZone(state, ride), playing.id, Math.random);
-  const deviceId: string = state.playerDeviceId;
-  await runSpotifyCall(state, async (): Promise<void> => {
-    await queueTrack(next.uri, deviceId);
-    state.queuedTrack = next;
-  });
+  const next: Track = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, playing.id, Math.random);
+  state.queuedTrack = next;
+  try {
+    await queueTrack(next.uri, state.playerDeviceId);
+  } catch {
+    // The end-of-song check above plays the pick instead
+  }
 }
 
 function skipTrack(state: RideScreenState, ride: Ride, direction: 'prev' | 'next'): void {
@@ -309,7 +320,7 @@ function skipTrack(state: RideScreenState, ride: Ride, direction: 'prev' | 'next
 
   if (direction === 'next') {
     state.history.push(current);
-    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), current.id, Math.random);
+    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, current.id, Math.random);
   } else {
     state.pendingPlay = state.history.pop() ?? current;
   }
@@ -566,7 +577,7 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
   state.tracks = tracks;
   state.tempos = loadTempoCache();
   if (state.track === null && state.pendingPlay === null) {
-    state.pendingPlay = pickTrack(tracks, state.tempos, currentZone(state, ride), null, Math.random);
+    state.pendingPlay = pickTrack(tracks, state.tempos, currentZone(state, ride), state.played, null, Math.random);
   }
   updateTrack(state);
   void connectPlayer(state);
@@ -641,6 +652,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     tempos: {},
     track: null,
     history: [],
+    played: new Set(),
     musicFailed: false,
     musicSkips: 0,
     musicLoading: false,

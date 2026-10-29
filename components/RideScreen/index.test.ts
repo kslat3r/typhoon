@@ -50,9 +50,9 @@ const testRide: Ride = {
   ],
 };
 
-function playerReports(id: string, position: number, duration: number): void {
+function playerReports(id: string, position: number, duration: number, paused = false): void {
   fakePlayer.getCurrentState.mockResolvedValue({
-    paused: false,
+    paused,
     position,
     duration,
     track_window: { current_track: { uri: `spotify:track:${id}`, name: `Track ${id.toUpperCase()}`, artists: [{ name: 'Artist' }], album: { images: [] } } },
@@ -101,6 +101,7 @@ describe('renderRideScreen', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('says what is missing when no playlist has been chosen', async () => {
@@ -248,6 +249,36 @@ describe('renderRideScreen', () => {
     expect(playTrack).toHaveBeenCalledTimes(5);
     expect(status()).toBe('Music stopped: Play failed: 502');
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('');
+  });
+
+  it('plays the next pick itself when a song ends without the queue starting, never repeating', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockResolvedValue(undefined);
+    vi.mocked(getPlaylistTracks).mockResolvedValueOnce([
+      { id: 'a', uri: 'spotify:track:a', name: 'Track A', artist: 'Artist A', artworkUrl: null, durationMs: 180000 },
+      { id: 'b', uri: 'spotify:track:b', name: 'Track B', artist: 'Artist B', artworkUrl: null, durationMs: 180000 },
+      { id: 'c', uri: 'spotify:track:c', name: 'Track C', artist: 'Artist C', artworkUrl: null, durationMs: 180000 },
+    ]);
+    localStorage.setItem(STORAGE_KEYS.tempoCache, JSON.stringify({ a: 80, b: 176, c: 176 }));
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 5, seconds: 600 }] });
+    expect(vi.mocked(playTrack).mock.calls[0][0]).toBe('spotify:track:b');
+
+    // Act: b has ended and sits paused at its start
+    playerReports('b', 0, 180000, true);
+    await vi.advanceTimersByTimeAsync(6500);
+
+    // Assert: the only unplayed hard track plays next
+    expect(playTrack).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(playTrack).mock.calls[1][0]).toBe('spotify:track:c');
+
+    // Act: c ends too, every track has now played
+    playerReports('c', 0, 180000, true);
+    await vi.advanceTimersByTimeAsync(6500);
+
+    // Assert: repeats are allowed again, but not the song that just ended
+    expect(playTrack).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(playTrack).mock.calls[2][0]).toBe('spotify:track:b');
   });
 
   it('ignores a lagging player report right after a play call', async () => {

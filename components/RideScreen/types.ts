@@ -47,6 +47,7 @@ export type RideScreenState = {
   tempos: TempoCache;
   track: Track | null;
   history: Track[];
+  played: Set<string>;
   musicFailed: boolean;
   musicSkips: number;
   musicLoading: boolean;

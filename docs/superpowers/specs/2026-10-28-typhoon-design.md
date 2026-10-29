@@ -213,6 +213,10 @@ defaulted. Use the frontend-design skill for the visual pass.
   block. A song then plays to its end whatever the ride does; as it
   ends, the next one is queued to fit the cadence band of the block the
   ride is in at that moment. Zone changes mid-song change nothing.
+- No track repeats during a ride until every track in the playlist has
+  played (Ed, 2026-10-29); Prev is the one exception. If the queued
+  song does not start when the current one ends (the player reports it
+  paused at its start), the app plays the pick itself.
 - Prev and Next buttons sit on the song display during a ride. Next
   plays a fresh pick for the current block; Prev returns to the song
   played before it (or restarts the current one when there is none).

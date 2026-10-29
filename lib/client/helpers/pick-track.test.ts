@@ -17,8 +17,18 @@ describe('pickTrack', () => {
     const tempos = { a: 88, b: 130, c: null };
 
     // Act / Assert
-    expect(pickTrack(tracks, tempos, 4, null, () => 0).id).toBe('a');
-    expect(pickTrack(tracks, tempos, 4, 'a', () => 0).id).toBe('b');
+    expect(pickTrack(tracks, tempos, 4, new Set(), null, () => 0).id).toBe('a');
+    expect(pickTrack(tracks, tempos, 4, new Set(), 'a', () => 0).id).toBe('b');
+  });
+
+  it('never repeats a played track until every track has played', () => {
+    // Arrange
+    const tracks = [track('a'), track('b'), track('c')];
+    const tempos = { a: 88, b: 88, c: 130 };
+
+    // Act / Assert
+    expect(pickTrack(tracks, tempos, 4, new Set(['a']), 'b', () => 0).id).toBe('c');
+    expect(pickTrack(tracks, tempos, 4, new Set(['a', 'b', 'c']), 'c', () => 0).id).toBe('a');
   });
 
   it('still returns a track when nothing fits', () => {
@@ -26,11 +36,11 @@ describe('pickTrack', () => {
     const tracks = [track('a')];
 
     // Act / Assert
-    expect(pickTrack(tracks, { a: 200 }, 2, 'a', () => 0).id).toBe('a');
+    expect(pickTrack(tracks, { a: 200 }, 2, new Set(['a']), 'a', () => 0).id).toBe('a');
   });
 
   it('throws when there are no tracks', () => {
     // Act / Assert
-    expect(() => pickTrack([], {}, 2, null, () => 0)).toThrow('No tracks to pick from');
+    expect(() => pickTrack([], {}, 2, new Set(), null, () => 0)).toThrow('No tracks to pick from');
   });
 });
