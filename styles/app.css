@@ -365,7 +365,14 @@ form + section select {
   flex: none;
 }
 
-.ride-actions button {
+.ride-track-nav {
+  display: flex;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.ride-actions button,
+.ride-track-nav button {
   min-height: 36px;
   padding: 0 var(--space-3);
   font-size: 0.8125rem;
@@ -374,7 +381,8 @@ form + section select {
   border-color: var(--line);
 }
 
-.ride-actions button[hidden] {
+.ride-actions button[hidden],
+.ride-track-nav button[hidden] {
   display: none;
 }
 

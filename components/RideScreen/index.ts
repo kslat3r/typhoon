@@ -2,11 +2,9 @@ import renderRideProfile from '@/components/RideProfile';
 import type { FinishReason, RideScreenElements, RideScreenState } from '@/components/RideScreen/types';
 import accumulateRideStats from '@/lib/client/helpers/accumulate-ride-stats';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
-import bandStretchSeconds from '@/lib/client/helpers/band-stretch-seconds';
 import calculateFtp from '@/lib/client/helpers/calculate-ftp';
 import connectSpotifyPlayer from '@/lib/client/helpers/connect-spotify-player';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
-import decideMusicAction from '@/lib/client/helpers/decide-music-action';
 import emptyRideStats from '@/lib/client/helpers/empty-ride-stats';
 import formatClock from '@/lib/client/helpers/format-clock';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
@@ -24,10 +22,9 @@ import saveSettings from '@/lib/client/helpers/save-settings';
 import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
-import trackFitsZone from '@/lib/client/helpers/track-fits-zone';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
 import { ZONES } from '@/lib/client/models/zones';
-import type { BikeSample, IntervalPosition, PlayerState, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
 const POLL_MS = 2000;
@@ -85,7 +82,7 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'spinner' | 'trackTitle' | 'trackArtist'>; actions: HTMLElement } {
+function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'spinner' | 'trackTitle' | 'trackArtist' | 'prevButton' | 'nextButton'>; actions: HTMLElement } {
   const band: HTMLElement = buildElement('section', 'ride-top', '');
 
   const artwork: HTMLImageElement = document.createElement('img');
@@ -98,13 +95,17 @@ function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements,
   const trackArtist: HTMLElement = buildElement('div', 'ride-track-artist', '');
   const trackText: HTMLElement = buildElement('div', 'ride-track-text', '');
   trackText.append(trackTitle, trackArtist);
+  const prevButton: HTMLButtonElement = buildButton('Prev', (): void => onSkip('prev'));
+  const nextButton: HTMLButtonElement = buildButton('Next', (): void => onSkip('next'));
+  const nav: HTMLElement = buildElement('div', 'ride-track-nav', '');
+  nav.append(prevButton, nextButton);
   const track: HTMLElement = buildElement('div', 'ride-track', '');
-  track.append(spinner, artwork, trackText);
+  track.append(spinner, artwork, trackText, nav);
 
   const actions: HTMLElement = buildElement('div', 'ride-actions', '');
   band.append(track, actions);
 
-  return { band, elements: { artwork, spinner, trackTitle, trackArtist }, actions };
+  return { band, elements: { artwork, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
 }
 
 function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining'> } {
@@ -135,9 +136,11 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
 }
 
 function updateTrack(state: RideScreenState): void {
-  const { artwork, spinner, trackTitle, trackArtist } = state.elements;
-  const shown: Track | null = state.musicFailed ? null : (state.pendingPlay ?? state.music.track);
+  const { artwork, spinner, trackTitle, trackArtist, prevButton, nextButton } = state.elements;
+  const shown: Track | null = state.musicFailed ? null : (state.pendingPlay ?? state.track);
   spinner.hidden = shown !== null || !state.musicLoading;
+  prevButton.hidden = shown === null || state.phase !== 'riding';
+  nextButton.hidden = prevButton.hidden;
 
   if (shown === null) {
     trackTitle.textContent = '';
@@ -224,7 +227,7 @@ function markMusicFailed(state: RideScreenState, message: string): void {
   updateTrack(state);
 }
 
-async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
+async function playPending(state: RideScreenState): Promise<void> {
   const track: Track | null = state.pendingPlay;
   const deviceId: string | null = state.playerDeviceId;
   if (track === null || deviceId === null || state.spotifyCallInFlight || state.phase !== 'riding') {
@@ -234,7 +237,7 @@ async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
   state.pendingPlay = null;
   await runSpotifyCall(state, async (): Promise<void> => {
     await playTrack(track.uri, deviceId);
-    state.music = { track, startedAt: clock(state), zone: currentZone(state, ride) };
+    state.track = track;
     state.queuedTrack = null;
     state.lastPlayAt = performance.now();
     state.musicFailed = false;
@@ -242,47 +245,34 @@ async function playPending(state: RideScreenState, ride: Ride): Promise<void> {
   });
 }
 
-// Spotify is playing something other than what we expect: our queued track, a leftover
-// from an earlier queue, or autoplay. Adopt it if we chose it or it fits, else replace it.
-function reconcilePlayer(state: RideScreenState, ride: Ride, player: PlayerState, now: number): void {
-  const zone: ZoneNumber = currentZone(state, ride);
-  const actual: Track | undefined = state.tracks.find((track: Track): boolean => track.id === player.trackId);
-  const chosen: boolean = state.queuedTrack !== null && state.queuedTrack.id === player.trackId;
-  state.queuedTrack = null;
-
-  if (actual !== undefined && (chosen || trackFitsZone(state.tempos[actual.id] ?? null, zone))) {
-    state.music = { track: actual, startedAt: now - player.progressMs, zone };
-    updateTrack(state);
-    return;
-  }
-
-  state.pendingPlay = pickTrack(state.tracks, state.tempos, zone, player.trackId, Math.random);
-  void playPending(state, ride);
+// Builds a display entry for whatever the tab is playing, playlist track or not
+function trackFromPlayer(state: RideScreenState, current: SpotifyPlayerState): Track {
+  const playing = current.track_window.current_track;
+  const id: string = playing.uri.replace('spotify:track:', '');
+  const known: Track | undefined = state.tracks.find((track: Track): boolean => track.id === id);
+  return known ?? { id, uri: playing.uri, name: playing.name, artist: playing.artists[0]?.name ?? '', artworkUrl: playing.album.images[0]?.url ?? null, durationMs: current.duration };
 }
 
+// The app never cuts a song: it shows what is playing and, as a song ends, lines up
+// the next one to match the cadence of the block the ride is in right now.
 async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
-  const expected: Track | null = state.music.track;
-  if (state.musicFailed || expected === null || state.player === null || state.playerDeviceId === null) {
+  if (state.musicFailed || state.player === null || state.playerDeviceId === null) {
     return;
   }
 
   const current: SpotifyPlayerState | null = await state.player.getCurrentState();
-  if (current === null || state.phase !== 'riding' || state.music.track !== expected || performance.now() - state.lastPlayAt < PLAY_GRACE_MS) {
-    return;
-  }
-  const player: PlayerState = {
-    trackId: current.track_window.current_track.uri.replace('spotify:track:', ''),
-    progressMs: current.position,
-    durationMs: current.duration,
-    isPlaying: !current.paused,
-  };
-
-  if (player.trackId !== expected.id) {
-    reconcilePlayer(state, ride, player, clock(state));
+  if (current === null || state.phase !== 'riding' || performance.now() - state.lastPlayAt < PLAY_GRACE_MS) {
     return;
   }
 
-  const msLeft: number = player.durationMs - player.progressMs;
+  const playing: Track = trackFromPlayer(state, current);
+  if (state.track === null || playing.id !== state.track.id) {
+    state.track = playing;
+    state.queuedTrack = null;
+    updateTrack(state);
+  }
+
+  const msLeft: number = current.duration - current.position;
   if (msLeft >= QUEUE_BEFORE_END_MS) {
     state.queuedTrack = null;
     return;
@@ -291,10 +281,7 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
     return;
   }
 
-  // Pick for the zone the ride will be in when the queued track actually starts
-  const elapsedAtStart: number = (clock(state) - state.startedAt + msLeft) / 1000;
-  const zone: ZoneNumber = intervalAtElapsed(ride, elapsedAtStart)?.interval.zone ?? currentZone(state, ride);
-  const next: Track = pickTrack(state.tracks, state.tempos, zone, expected.id, Math.random);
+  const next: Track = pickTrack(state.tracks, state.tempos, currentZone(state, ride), playing.id, Math.random);
   const deviceId: string = state.playerDeviceId;
   await runSpotifyCall(state, async (): Promise<void> => {
     await queueTrack(next.uri, deviceId);
@@ -302,17 +289,20 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
   });
 }
 
-function changeMusicForZone(state: RideScreenState, ride: Ride, zone: ZoneNumber, now: number): void {
-  state.musicFailed = false;
-  const stretchSeconds: number = state.position === null ? 0 : bandStretchSeconds(ride, state.position.index);
-  const action = decideMusicAction(state.music, zone, now, state.tracks, state.tempos, Math.random, stretchSeconds);
-  if (action.kind === 'hold') {
-    state.music = { ...state.music, zone };
+function skipTrack(state: RideScreenState, ride: Ride, direction: 'prev' | 'next'): void {
+  const current: Track | null = state.track;
+  if (current === null || state.phase !== 'riding') {
     return;
   }
 
-  state.pendingPlay = action.track;
-  void playPending(state, ride);
+  if (direction === 'next') {
+    state.history.push(current);
+    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), current.id, Math.random);
+  } else {
+    state.pendingPlay = state.history.pop() ?? current;
+  }
+  state.musicFailed = false;
+  void playPending(state);
 }
 
 async function releaseWakeLock(state: RideScreenState): Promise<void> {
@@ -425,12 +415,9 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
     state.ftpTestSeconds += deltaSeconds;
   }
 
-  const previousZone: ZoneNumber = currentZone(state, ride);
   state.position = position;
-  if (position.interval.zone !== previousZone) {
-    changeMusicForZone(state, ride, position.interval.zone, now);
-  } else if (state.pendingPlay !== null) {
-    void playPending(state, ride);
+  if (state.pendingPlay !== null) {
+    void playPending(state);
   }
 
   if (performance.now() - state.lastPollAt >= POLL_MS) {
@@ -460,7 +447,7 @@ function startRide(state: RideScreenState, ride: Ride): void {
 
   // The tap that started the ride is the user gesture browsers want before audio
   void state.player?.activateElement();
-  void playPending(state, ride);
+  void playPending(state);
   void acquireWakeLock(state);
   state.tickHandle = setInterval((): void => {
     tick(state, ride, testIntervalIndex);
@@ -566,7 +553,7 @@ async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
 
   state.tracks = tracks;
   state.tempos = loadTempoCache();
-  if (state.music.track === null && state.pendingPlay === null) {
+  if (state.track === null && state.pendingPlay === null) {
     state.pendingPlay = pickTrack(tracks, state.tempos, currentZone(state, ride), null, Math.random);
   }
   updateTrack(state);
@@ -602,7 +589,7 @@ function startTestRide(state: RideScreenState, ride: Ride): void {
 }
 
 export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
-  const top = buildTopBand();
+  const top = buildTopBand((direction: 'prev' | 'next'): void => skipTrack(state, ride, direction));
   const stats = buildStatsStrip();
   const profileRoot: HTMLElement = buildElement('section', 'ride-profile-band', '');
   const status: HTMLElement = buildElement('p', 'status ride-status', '');
@@ -640,7 +627,8 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     testMode: false,
     tracks: [],
     tempos: {},
-    music: { track: null, startedAt: 0, zone: ride.intervals[0].zone },
+    track: null,
+    history: [],
     musicFailed: false,
     musicLoading: false,
     queuedTrack: null,

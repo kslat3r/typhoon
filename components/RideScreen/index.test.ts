@@ -51,7 +51,12 @@ const testRide: Ride = {
 };
 
 function playerReports(id: string, position: number, duration: number): void {
-  fakePlayer.getCurrentState.mockResolvedValue({ paused: false, position, duration, track_window: { current_track: { uri: `spotify:track:${id}` } } });
+  fakePlayer.getCurrentState.mockResolvedValue({
+    paused: false,
+    position,
+    duration,
+    track_window: { current_track: { uri: `spotify:track:${id}`, name: `Track ${id.toUpperCase()}`, artists: [{ name: 'Artist' }], album: { images: [] } } },
+  });
 }
 
 function findButton(root: HTMLElement, label: string): HTMLButtonElement {
@@ -89,6 +94,7 @@ describe('renderRideScreen', () => {
     vi.useFakeTimers();
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200, spotifyPlaylistId: 'playlist' }));
+    localStorage.setItem(STORAGE_KEYS.tempoCache, JSON.stringify({ a: 80, b: 100 }));
     Object.defineProperty(navigator, 'wakeLock', { value: undefined, configurable: true });
     window.history.replaceState(null, '', '/#/ride/test-ride');
   });
@@ -140,10 +146,9 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track A');
   });
 
-  it('changes music at a zone jump in a test ride on the sped-up clock', async () => {
+  it('starts with a track fitting the first block and holds it across a zone jump', async () => {
     // Arrange
     vi.mocked(playTrack).mockResolvedValue(undefined);
-    vi.spyOn(Math, 'random').mockReturnValue(0);
     const jumpRide: Ride = { ...testRide, lengthSeconds: 180, intervals: [{ zone: 2, seconds: 100 }, { zone: 6, seconds: 70 }, { zone: 2, seconds: 10 }] };
     const root: HTMLElement = document.createElement('div');
     document.body.replaceChildren(root);
@@ -154,46 +159,69 @@ describe('renderRideScreen', () => {
     findButton(root, 'Test').click();
     await vi.advanceTimersByTimeAsync(26000);
 
-    // Assert
-    expect(playTrack).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(playTrack).mock.calls[1][0]).not.toBe(vi.mocked(playTrack).mock.calls[0][0]);
+    // Assert: 80 bpm fits the easy block, and the jump to zone 6 changes nothing
+    expect(playTrack).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(playTrack).mock.calls[0][0]).toBe('spotify:track:a');
   });
 
-  it('queues near the end, shows the queued track only once it plays, and replaces a stray track', async () => {
+  it('queues a track for the current block as a song ends and shows whatever the player reports', async () => {
     // Arrange
     vi.mocked(playTrack).mockResolvedValue(undefined);
-    const longRide: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 300 }, { zone: 4, seconds: 300 }] };
-    const root: HTMLElement = await renderAndStart(longRide);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 10 }, { zone: 5, seconds: 590 }] });
     const title = (): string => (root.querySelector('.ride-track-title') as HTMLElement).textContent ?? '';
     expect(playTrack).toHaveBeenCalledTimes(1);
     expect(vi.mocked(playTrack).mock.calls[0][1]).toBe('tab');
     expect(fakePlayer.activateElement).toHaveBeenCalled();
-    const first: string = title();
+    expect(title()).toBe('Track A');
 
-    // Act: the player reports the same track with 9 s left, after the grace window
-    playerReports(first === 'Track A' ? 'a' : 'b', 171000, 180000);
-    await vi.advanceTimersByTimeAsync(6500);
+    // Act: in the zone 5 block the player reports track a with 9 s left
+    playerReports('a', 171000, 180000);
+    await vi.advanceTimersByTimeAsync(12500);
 
-    // Assert: next track queued, display unchanged
+    // Assert: 100 bpm fits the hard block, display unchanged until it plays
     expect(queueTrack).toHaveBeenCalledTimes(1);
-    expect(title()).toBe(first);
+    expect(vi.mocked(queueTrack).mock.calls[0]).toEqual(['spotify:track:b', 'tab']);
+    expect(title()).toBe('Track A');
 
     // Act: the queued track starts
-    const queuedId: string = (vi.mocked(queueTrack).mock.calls[0][0] as string).replace('spotify:track:', '');
-    playerReports(queuedId, 2000, 180000);
+    playerReports('b', 2000, 180000);
     await vi.advanceTimersByTimeAsync(2500);
 
-    // Assert: adopted, no new play call
-    expect(title()).toBe(queuedId === 'a' ? 'Track A' : 'Track B');
+    // Assert: shown, no play call made
+    expect(title()).toBe('Track B');
     expect(playTrack).toHaveBeenCalledTimes(1);
 
     // Act: Spotify drifts to something outside the playlist
     playerReports('stray', 5000, 200000);
     await vi.advanceTimersByTimeAsync(2500);
 
-    // Assert: replaced with a playlist track
-    expect(playTrack).toHaveBeenCalledTimes(2);
-    expect(title()).not.toBe('');
+    // Assert: shown as reported, never replaced
+    expect(title()).toBe('Track STRAY');
+    expect(playTrack).toHaveBeenCalledTimes(1);
+  });
+
+  it('next plays a track fitting the current block and prev goes back to the one before', async () => {
+    // Arrange
+    vi.mocked(playTrack).mockResolvedValue(undefined);
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 10 }, { zone: 5, seconds: 590 }] });
+    const title = (): string => (root.querySelector('.ride-track-title') as HTMLElement).textContent ?? '';
+    await vi.advanceTimersByTimeAsync(12000);
+
+    // Act
+    findButton(root, 'Next').click();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(vi.mocked(playTrack).mock.calls[1][0]).toBe('spotify:track:b');
+    expect(title()).toBe('Track B');
+
+    // Act
+    findButton(root, 'Prev').click();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(vi.mocked(playTrack).mock.calls[2][0]).toBe('spotify:track:a');
+    expect(title()).toBe('Track A');
   });
 
   it('ignores a lagging player report right after a play call', async () => {

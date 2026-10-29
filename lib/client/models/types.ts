@@ -88,31 +88,16 @@ export interface Track {
   durationMs: number;
 }
 
-export interface PlayerState {
-  trackId: string | null;
-  progressMs: number;
-  durationMs: number;
-  isPlaying: boolean;
-}
-
 export interface SpotifyPlaylist {
   id: string;
   name: string;
 }
 
-export type MusicState = {
-  track: Track | null;
-  startedAt: number;
-  zone: ZoneNumber;
-};
-
-export type MusicAction = { kind: 'hold' } | { kind: 'play'; track: Track };
-
 export interface SpotifyPlayerState {
   paused: boolean;
   position: number;
   duration: number;
-  track_window: { current_track: { uri: string } };
+  track_window: { current_track: { uri: string; name: string; artists: { name: string }[]; album: { images: { url: string }[] } } };
 }
 
 export interface SpotifyPlayer {

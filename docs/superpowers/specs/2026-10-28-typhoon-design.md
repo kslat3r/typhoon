@@ -206,29 +206,18 @@ defaulted. Use the frontend-design skill for the visual pass.
   rpm for zones 1 and 2, 85 to 95 for 3 and 4, 95 and up for 5 to 7, and
   tune after riding). Tracks of unknown tempo are eligible for any zone
   but never preferred.
-- Track changes follow the cadence bands, not the zone lines (redesigned
-  2026-10-29 after Ed saw tracks cut off soon after starting). At a zone
-  boundary the current track holds when any of these is true:
-  - the cadence band has not changed (zones 1 to 2, 3 to 4 and 5 to 7
-    share bands, so most steps are holds);
-  - the track's tempo, half or double, still fits the new band;
-  - the track has played for under 90 seconds;
-  - the new band stretch is under 60 seconds (a sprint is not worth a
-    new song).
-  Otherwise a fitting track is picked for the new band. No coin flip.
-- When a track ends naturally the next track is picked for the zone the
-  ride will be in when it starts, so a new song is not cut at the next
-  boundary. It is queued on Spotify but the screen only shows it once
-  the player reports it playing.
-- The app reads the tab's own player state every two seconds and
-  reconciles: a track it did not expect is adopted if the app queued it
-  or it fits the zone, otherwise a fitting track is played in its place.
-  Reads in the four seconds after a play call are ignored because the
-  reported state lags the command (found 2026-10-29 with the Connect
-  design: a stale report of the old track near its end made the app
-  queue and display a new song seconds after a zone change).
-- The minimums and the bands live in small functions so they are easy
-  to tune.
+- The app never cuts a song (Ed, 2026-10-29: "do not choose songs
+  yourself"). The first track is picked to fit the cadence of the first
+  block. A song then plays to its end whatever the ride does; as it
+  ends, the next one is queued to fit the cadence band of the block the
+  ride is in at that moment. Zone changes mid-song change nothing.
+- Prev and Next buttons sit on the song display during a ride. Next
+  plays a fresh pick for the current block; Prev returns to the song
+  played before it (or restarts the current one when there is none).
+- The screen shows whatever the tab's player reports every two seconds,
+  playlist track or not, and never replaces it. Reads in the four
+  seconds after a play call are ignored because the reported state lags
+  the command.
 - Spotify's own crossfade setting handles blending; the app only skips.
 - Ed likes riding to a fixed beat across several zones and working the
   resistance lever to move between zones. The hold behaviour above is
@@ -256,8 +245,8 @@ my call, not Ed's; Ed can overrule any of them.
   no playlist context, so Spotify never auto-advances on its own. The app
   reads player state every couple of seconds, and a few seconds before
   the current track ends it queues the next pick for the current zone so
-  Spotify's crossfade still works. Zone-boundary changes are an immediate
-  skip to a fresh pick. "Hold" means doing nothing.
+  Spotify's crossfade still works. Nothing else ever skips a song; only
+  the rider does, with Prev and Next.
 - **Pairing takes one tap per ride.** Web Bluetooth needs a user gesture
   to open the device picker. "Pair and forget" means the app remembers
   the bike's name so the picker is quick and the pairing is obvious.
@@ -277,9 +266,8 @@ my call, not Ed's; Ed can overrule any of them.
   out of average watts, time in zone and distance, and the summary
   records how many seconds were missing. They are never counted as zero.
 - **A ride has a ready state.** Pair the bike, see the first track
-  picked for the warm-up zone, then tap Start. Music and clock start
-  together. The band rules apply at every boundary including into the
-  cool-down.
+  picked for the opening block, then tap Start. Music and clock start
+  together.
 - **Tempo lookups run up front.** Choosing a playlist in settings looks
   up every track with a progress indicator and the results are cached
   for good. Lookups go in batches of 40 track ids; if a lookup is
@@ -292,8 +280,7 @@ my call, not Ed's; Ed can overrule any of them.
   per length (fifty rides) covering the archetypes, with mean zone 4+
   and zone 5+ time rising with each grade.
   Ed will ride them and ask for changes.
-- The cadence bands per zone and the music minimums, within the
-  guidance above.
+- The cadence bands per zone, within the guidance above.
 - The power-to-speed curve if the bike does not broadcast speed.
 - Parsing of the Cycling Power Measurement characteristic (flags, instant
   power, crank revolution data for cadence). Cadence must be derived

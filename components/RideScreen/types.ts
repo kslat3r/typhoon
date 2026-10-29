@@ -1,4 +1,4 @@
-import type { BikeSample, IntervalPosition, MusicState, RideStats, Settings, SpotifyPlayer, TempoCache, Track } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, RideStats, Settings, SpotifyPlayer, TempoCache, Track } from '@/lib/client/models/types';
 
 export type FinishReason = 'completed' | 'ended' | 'navigated';
 
@@ -11,6 +11,8 @@ export type RideScreenElements = {
   spinner: HTMLElement;
   trackTitle: HTMLElement;
   trackArtist: HTMLElement;
+  prevButton: HTMLButtonElement;
+  nextButton: HTMLButtonElement;
   interval: HTMLElement;
   percent: HTMLElement;
   watts: HTMLElement;
@@ -43,7 +45,8 @@ export type RideScreenState = {
   testMode: boolean;
   tracks: Track[];
   tempos: TempoCache;
-  music: MusicState;
+  track: Track | null;
+  history: Track[];
   musicFailed: boolean;
   musicLoading: boolean;
   queuedTrack: Track | null;
