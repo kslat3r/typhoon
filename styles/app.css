@@ -330,13 +330,6 @@ form + section select {
   transition: color 400ms ease;
 }
 
-.ride-zone-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
 .ride-actions {
   display: flex;
   gap: var(--space-2);

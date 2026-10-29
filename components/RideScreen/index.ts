@@ -82,7 +82,7 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'trackTitle' | 'trackArtist' | 'countdown' | 'zoneLabel'>; actions: HTMLElement } {
+function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'trackTitle' | 'trackArtist' | 'countdown'>; actions: HTMLElement } {
   const band: HTMLElement = buildElement('section', 'ride-top', '');
 
   const artwork: HTMLImageElement = document.createElement('img');
@@ -97,16 +97,15 @@ function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements,
   track.append(artwork, trackText);
 
   const countdown: HTMLElement = buildElement('div', 'ride-countdown', '');
-  const zoneLabel: HTMLElement = buildElement('div', 'ride-zone-label', '');
   const interval: HTMLElement = buildElement('div', 'ride-interval', '');
-  interval.append(countdown, zoneLabel);
+  interval.append(countdown);
 
   const actions: HTMLElement = buildElement('div', 'ride-actions', '');
   const right: HTMLElement = buildElement('div', 'ride-top-right', '');
   right.append(interval);
   band.append(track, actions, right);
 
-  return { band, elements: { artwork, trackTitle, trackArtist, countdown, zoneLabel }, actions };
+  return { band, elements: { artwork, trackTitle, trackArtist, countdown }, actions };
 }
 
 function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'remaining'> } {
@@ -159,7 +158,6 @@ function updateInterval(state: RideScreenState, position: IntervalPosition): voi
   const zone: ZoneNumber = position.interval.zone;
   state.elements.countdown.textContent = formatClock(position.secondsLeftInInterval);
   state.elements.countdown.style.color = ZONES[zone - 2].colour;
-  state.elements.zoneLabel.textContent = `Zone ${zone}`;
 }
 
 function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number): void {

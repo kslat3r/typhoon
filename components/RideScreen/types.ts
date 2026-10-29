@@ -11,7 +11,6 @@ export type RideScreenElements = {
   trackTitle: HTMLElement;
   trackArtist: HTMLElement;
   countdown: HTMLElement;
-  zoneLabel: HTMLElement;
   watts: HTMLElement;
   rpm: HTMLElement;
   mph: HTMLElement;
