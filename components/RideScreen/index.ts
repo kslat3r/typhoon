@@ -223,7 +223,7 @@ async function runSpotifyCall(state: RideScreenState, call: () => Promise<void>)
   try {
     await call();
   } catch (spotifyError) {
-    markMusicFailed(state, `Music stopped: ${errorMessage(spotifyError)}`);
+    markMusicFailed(state, errorMessage(spotifyError));
   } finally {
     state.spotifyCallInFlight = false;
   }
