@@ -158,10 +158,9 @@ FTP, including coasting, is zone 2.
 Landscape. Three bands:
 
 1. **Top band**: the current track (small artwork, title and artist,
-   no bpm) on the left, the quiet ghost buttons (Connect bike, Start,
-   Test, End ride) in the middle, and the current interval countdown on
-   the far right coloured in the current target zone's colour. The ride
-   name is not shown on the ride screen.
+   no bpm) on the left and the quiet ghost buttons on the right, in the
+   order Test, Connect bike, Start before the ride and End ride during
+   it. The ride name is not shown on the ride screen.
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
    to zone. A white vertical line moves along the profile at the current
@@ -169,7 +168,8 @@ Landscape. Three bands:
    dot and no zone label: the watts figure and the countdown colour
    carry that.
 3. **Bottom band**: one small stats strip. Watts (coloured by current
-   zone), rpm, mph, average mph, miles, time remaining in the ride.
+   zone), rpm, mph, average mph, miles, time left in the current
+   interval (uncoloured), time remaining in the ride.
 
 No gauge, no cadence target, no text cues.
 

@@ -82,7 +82,7 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'spinner' | 'trackTitle' | 'trackArtist' | 'countdown'>; actions: HTMLElement } {
+function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'spinner' | 'trackTitle' | 'trackArtist'>; actions: HTMLElement } {
   const band: HTMLElement = buildElement('section', 'ride-top', '');
 
   const artwork: HTMLImageElement = document.createElement('img');
@@ -98,27 +98,22 @@ function buildTopBand(): { band: HTMLElement; elements: Pick<RideScreenElements,
   const track: HTMLElement = buildElement('div', 'ride-track', '');
   track.append(spinner, artwork, trackText);
 
-  const countdown: HTMLElement = buildElement('div', 'ride-countdown', '');
-  const interval: HTMLElement = buildElement('div', 'ride-interval', '');
-  interval.append(countdown);
-
   const actions: HTMLElement = buildElement('div', 'ride-actions', '');
-  const right: HTMLElement = buildElement('div', 'ride-top-right', '');
-  right.append(interval);
-  band.append(track, actions, right);
+  band.append(track, actions);
 
-  return { band, elements: { artwork, spinner, trackTitle, trackArtist, countdown }, actions };
+  return { band, elements: { artwork, spinner, trackTitle, trackArtist }, actions };
 }
 
-function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'remaining'> } {
+function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining'> } {
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
   const watts = buildStatCell('Watts', 'ride-stat-watts');
   const rpm = buildStatCell('RPM', 'ride-stat-rpm');
   const mph = buildStatCell('MPH', 'ride-stat-mph');
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');
+  const interval = buildStatCell('Interval', 'ride-stat-interval');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, remaining.cell);
+  strip.append(watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, interval.cell, remaining.cell);
 
   return {
     strip,
@@ -128,6 +123,7 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
       mph: mph.value,
       averageMph: averageMph.value,
       miles: miles.value,
+      interval: interval.value,
       remaining: remaining.value,
     },
   };
@@ -158,9 +154,7 @@ function updateTrack(state: RideScreenState): void {
 }
 
 function updateInterval(state: RideScreenState, position: IntervalPosition): void {
-  const zone: ZoneNumber = position.interval.zone;
-  state.elements.countdown.textContent = formatClock(position.secondsLeftInInterval);
-  state.elements.countdown.style.color = ZONES[zone - 2].colour;
+  state.elements.interval.textContent = formatClock(position.secondsLeftInInterval);
 }
 
 function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number): void {
@@ -601,7 +595,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     finishRide(state, ride, 'ended');
   });
   endButton.hidden = true;
-  top.actions.append(connectButton, startButton, testButton, endButton);
+  top.actions.append(testButton, connectButton, startButton, endButton);
 
   const state: RideScreenState = {
     phase: 'ready',

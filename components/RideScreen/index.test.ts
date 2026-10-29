@@ -146,7 +146,7 @@ describe('renderRideScreen', () => {
     const watts: number = Number((root.querySelector('.ride-stat-watts') as HTMLElement).textContent);
     expect(watts).toBeGreaterThanOrEqual(112);
     expect(watts).toBeLessThanOrEqual(152);
-    expect((root.querySelector('.ride-countdown') as HTMLElement).textContent).toBe('0:06');
+    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:06');
     expect(findButton(root, 'Test').hidden).toBe(true);
 
     // Act
@@ -163,7 +163,7 @@ describe('renderRideScreen', () => {
     document.body.replaceChildren(root);
     renderRideScreen(root, testRide);
     await vi.advanceTimersByTimeAsync(0);
-    const countdown: HTMLElement = root.querySelector('.ride-countdown') as HTMLElement;
+    const countdown: HTMLElement = root.querySelector('.ride-stat-interval') as HTMLElement;
     expect(countdown.textContent).toBe('0:10');
 
     // Act
@@ -235,7 +235,7 @@ describe('renderRideScreen', () => {
     // Arrange
     const root: HTMLElement = await renderAndStart(testRide);
     await vi.advanceTimersByTimeAsync(1000);
-    const countdown: HTMLElement = root.querySelector('.ride-countdown') as HTMLElement;
+    const countdown: HTMLElement = root.querySelector('.ride-stat-interval') as HTMLElement;
 
     // Act
     location.hash = '#/';

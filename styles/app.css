@@ -327,29 +327,6 @@ form + section select {
   color: var(--text-muted);
 }
 
-.ride-top-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  flex: none;
-}
-
-.ride-interval {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.ride-countdown {
-  font-family: var(--font-display);
-  font-size: 3.75rem;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  transition: color 400ms ease;
-}
-
 .ride-actions {
   display: flex;
   gap: var(--space-2);
@@ -410,7 +387,7 @@ form + section select {
 
 .ride-stats {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) repeat(5, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.4fr) repeat(6, minmax(0, 1fr));
   gap: var(--space-2);
   flex: none;
 }
@@ -461,7 +438,6 @@ form + section select {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ride-countdown,
   .ride-stat-watts {
     transition: none;
   }
