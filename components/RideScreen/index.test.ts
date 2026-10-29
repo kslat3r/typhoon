@@ -265,20 +265,33 @@ describe('renderRideScreen', () => {
     expect(vi.mocked(playTrack).mock.calls[0][0]).toBe('spotify:track:b');
 
     // Act: b has ended and sits paused at its start
+    await vi.advanceTimersByTimeAsync(4000);
     playerReports('b', 0, 180000, true);
-    await vi.advanceTimersByTimeAsync(6500);
+    await vi.advanceTimersByTimeAsync(2500);
 
     // Assert: the only unplayed hard track plays next
     expect(playTrack).toHaveBeenCalledTimes(2);
     expect(vi.mocked(playTrack).mock.calls[1][0]).toBe('spotify:track:c');
 
-    // Act: c ends too, every track has now played
+    // Act: c plays, then ends too
+    playerReports('c', 5000, 180000);
+    await vi.advanceTimersByTimeAsync(4500);
     playerReports('c', 0, 180000, true);
-    await vi.advanceTimersByTimeAsync(6500);
+    await vi.advanceTimersByTimeAsync(2500);
 
-    // Assert: repeats are allowed again, but not the song that just ended
+    // Assert: the unplayed easy track beats a repeat of a fitting one
     expect(playTrack).toHaveBeenCalledTimes(3);
-    expect(vi.mocked(playTrack).mock.calls[2][0]).toBe('spotify:track:b');
+    expect(vi.mocked(playTrack).mock.calls[2][0]).toBe('spotify:track:a');
+
+    // Act: a plays and ends, so every track has now played
+    playerReports('a', 5000, 180000);
+    await vi.advanceTimersByTimeAsync(4500);
+    playerReports('a', 0, 180000, true);
+    await vi.advanceTimersByTimeAsync(2500);
+
+    // Assert: repeats are allowed again, nearest tempo first, never the song that just ended
+    expect(playTrack).toHaveBeenCalledTimes(4);
+    expect(vi.mocked(playTrack).mock.calls[3][0]).toBe('spotify:track:b');
   });
 
   it('ignores a lagging player report right after a play call', async () => {
