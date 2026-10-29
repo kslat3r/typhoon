@@ -564,7 +564,12 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
 }
 
 async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
-  if (loadSpotifyAuth() === null || state.settings.spotifyPlaylistId === '') {
+  if (loadSpotifyAuth() === null) {
+    state.elements.status.textContent = 'Connect Spotify in Settings';
+    return;
+  }
+  if (state.settings.spotifyPlaylistId === '') {
+    state.elements.status.textContent = 'Choose a playlist in Settings';
     return;
   }
 

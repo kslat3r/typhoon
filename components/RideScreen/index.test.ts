@@ -87,6 +87,21 @@ describe('renderRideScreen', () => {
     vi.useRealTimers();
   });
 
+  it('says what is missing when no playlist has been chosen', async () => {
+    // Arrange
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200 }));
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+
+    // Act
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('Choose a playlist in Settings');
+    expect(getPlaylistTracks).not.toHaveBeenCalled();
+  });
+
   it('spins while the playlist loads and then shows the first pick', async () => {
     // Arrange
     let finishLoad: () => void = (): void => {};
