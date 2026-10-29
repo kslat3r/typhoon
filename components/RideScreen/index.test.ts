@@ -115,15 +115,15 @@ describe('renderRideScreen', () => {
     // Arrange
     vi.mocked(playTrack).mockResolvedValue(undefined);
     vi.spyOn(Math, 'random').mockReturnValue(0);
-    const jumpRide: Ride = { ...testRide, lengthSeconds: 100, intervals: [{ zone: 2, seconds: 70 }, { zone: 6, seconds: 20 }, { zone: 2, seconds: 10 }] };
+    const jumpRide: Ride = { ...testRide, lengthSeconds: 180, intervals: [{ zone: 2, seconds: 100 }, { zone: 6, seconds: 70 }, { zone: 2, seconds: 10 }] };
     const root: HTMLElement = document.createElement('div');
     document.body.replaceChildren(root);
     renderRideScreen(root, jumpRide);
     await vi.advanceTimersByTimeAsync(0);
 
-    // Act: 70 ride seconds pass in 17.5 wall seconds at 4x
+    // Act: 100 ride seconds pass in 25 wall seconds at 4x
     findButton(root, 'Test').click();
-    await vi.advanceTimersByTimeAsync(18000);
+    await vi.advanceTimersByTimeAsync(26000);
 
     // Assert
     expect(playTrack).toHaveBeenCalledTimes(2);

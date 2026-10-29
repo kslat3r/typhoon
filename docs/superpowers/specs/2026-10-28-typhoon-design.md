@@ -168,8 +168,8 @@ Landscape. Three bands:
    position and the ridden part behind it is slightly masked. No effort
    dot and no zone label: the watts figure and the countdown colour
    carry that.
-3. **Bottom band**: one small stats strip of fixed-width cells centred
-   in the bar. Watts (coloured by current zone), rpm, mph, average mph,
+3. **Bottom band**: one small stats strip of seven equal-width cells
+   with centred text. Watts (coloured by current zone), rpm, mph, average mph,
    miles, time left in the current interval (uncoloured), time
    remaining in the ride.
 
@@ -193,19 +193,21 @@ defaulted. Use the frontend-design skill for the visual pass.
   rpm for zones 1 and 2, 85 to 95 for 3 and 4, 95 and up for 5 to 7, and
   tune after riding). Tracks of unknown tempo are eligible for any zone
   but never preferred.
-- Track selection at a zone boundary is a weighted coin flip, Ed's
-  explicit wish being "mix it up so the soundtrack is interesting and
-  dynamic":
-  - Never cut a track that has played for under about 60 seconds.
-  - A zone jump of two or more usually brings a new track in the new
-    zone's band.
-  - A step of one zone is a 50/50 (was 25% change until 2026-10-29,
-    when Ed found the music too static in test rides).
-  - Zero change (same zone, new interval) always holds.
-  - When a track ends naturally the next track is picked for the current
-    zone.
-- The coin flip and the bands live in one small function so they are
-  easy to tune.
+- Track changes follow the cadence bands, not the zone lines (redesigned
+  2026-10-29 after Ed saw tracks cut off soon after starting). At a zone
+  boundary the current track holds when any of these is true:
+  - the cadence band has not changed (zones 3 to 4 and 5 to 7 share
+    bands, so most steps are holds);
+  - the track's tempo, half or double, still fits the new band;
+  - the track has played for under 90 seconds;
+  - the new band stretch is under 60 seconds (a sprint is not worth a
+    new song).
+  Otherwise a fitting track is picked for the new band. No coin flip.
+- When a track ends naturally the next track is picked for the zone the
+  ride will be in when it starts, so a new song is not cut at the next
+  boundary.
+- The minimums and the bands live in small functions so they are easy
+  to tune.
 - Spotify's own crossfade setting handles blending; the app only skips.
 - Ed likes riding to a fixed beat across several zones and working the
   resistance lever to move between zones. The hold behaviour above is
@@ -254,7 +256,7 @@ my call, not Ed's; Ed can overrule any of them.
   records how many seconds were missing. They are never counted as zero.
 - **A ride has a ready state.** Pair the bike, see the first track
   picked for the warm-up zone, then tap Start. Music and clock start
-  together. The coin flip applies at every boundary including into the
+  together. The band rules apply at every boundary including into the
   cool-down.
 - **Tempo lookups run up front.** Choosing a playlist in settings looks
   up every track with a progress indicator and the results are cached
@@ -268,7 +270,7 @@ my call, not Ed's; Ed can overrule any of them.
   per length (fifty rides) covering the archetypes, with mean zone 4+
   and zone 5+ time rising with each grade.
   Ed will ride them and ask for changes.
-- The cadence bands per zone and the coin-flip weights, within the
+- The cadence bands per zone and the music minimums, within the
   guidance above.
 - The power-to-speed curve if the bike does not broadcast speed.
 - Parsing of the Cycling Power Measurement characteristic (flags, instant

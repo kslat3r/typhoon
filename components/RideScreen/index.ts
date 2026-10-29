@@ -2,6 +2,7 @@ import renderRideProfile from '@/components/RideProfile';
 import type { FinishReason, RideScreenElements, RideScreenState } from '@/components/RideScreen/types';
 import accumulateRideStats from '@/lib/client/helpers/accumulate-ride-stats';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
+import bandStretchSeconds from '@/lib/client/helpers/band-stretch-seconds';
 import calculateFtp from '@/lib/client/helpers/calculate-ftp';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import decideMusicAction from '@/lib/client/helpers/decide-music-action';
@@ -291,7 +292,9 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
     return;
   }
 
-  const zone: ZoneNumber = currentZone(state, ride);
+  // Pick for the zone the ride will be in when the queued track actually starts
+  const elapsedAtStart: number = (clock(state) - state.startedAt + msLeft) / 1000;
+  const zone: ZoneNumber = intervalAtElapsed(ride, elapsedAtStart)?.interval.zone ?? currentZone(state, ride);
   const next: Track = pickTrack(state.tracks, state.tempos, zone, playing.id, Math.random);
   await runSpotifyCall(state, async (): Promise<void> => {
     await queueTrack(next.uri);
@@ -302,7 +305,8 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
 
 function changeMusicForZone(state: RideScreenState, ride: Ride, zone: ZoneNumber, now: number): void {
   state.musicFailed = false;
-  const action = decideMusicAction(state.music, zone, now, state.tracks, state.tempos, Math.random);
+  const stretchSeconds: number = state.position === null ? 0 : bandStretchSeconds(ride, state.position.index);
+  const action = decideMusicAction(state.music, zone, now, state.tracks, state.tempos, Math.random, stretchSeconds);
   if (action.kind === 'hold') {
     state.music = { ...state.music, zone };
     return;
