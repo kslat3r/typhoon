@@ -13,6 +13,8 @@ const fakePlayer = vi.hoisted(() => ({
   connect: vi.fn(async (): Promise<boolean> => true),
   disconnect: vi.fn(),
   activateElement: vi.fn(async (): Promise<void> => undefined),
+  pause: vi.fn(async (): Promise<void> => undefined),
+  resume: vi.fn(async (): Promise<void> => undefined),
   getCurrentState: vi.fn(async (): Promise<SpotifyPlayerState | null> => null),
   addListener: vi.fn(),
 }));
@@ -327,6 +329,33 @@ describe('renderRideScreen', () => {
     expect(vi.mocked(playTrack).mock.calls.map((call) => call[0])).toEqual(['spotify:track:a', 'spotify:track:a', 'spotify:track:a']);
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track A');
     expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('');
+  });
+
+  it('freezes the clock and the music on Pause and carries on from the same point on Resume', async () => {
+    // Arrange
+    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
+    const remaining = root.querySelector('.ride-stat-remaining') as HTMLElement;
+    expect(findButton(root, 'Pause').hidden).toBe(false);
+    await vi.advanceTimersByTimeAsync(3000);
+    const beforePause: string = remaining.textContent ?? '';
+
+    // Act
+    findButton(root, 'Pause').click();
+    await vi.advanceTimersByTimeAsync(10000);
+
+    // Assert
+    expect(fakePlayer.pause).toHaveBeenCalledTimes(1);
+    expect(remaining.textContent).toBe(beforePause);
+    expect(findButton(root, 'Resume').hidden).toBe(false);
+
+    // Act
+    findButton(root, 'Resume').click();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    // Assert
+    expect(fakePlayer.resume).toHaveBeenCalledTimes(1);
+    expect(remaining.textContent).toBe('9:56');
+    expect(findButton(root, 'Pause').hidden).toBe(false);
   });
 
   it('stays on the ride screen after End ride, with Done leading to the summary', async () => {

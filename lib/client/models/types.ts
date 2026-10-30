@@ -104,6 +104,8 @@ export interface SpotifyPlayer {
   connect(): Promise<boolean>;
   disconnect(): void;
   activateElement(): Promise<void>;
+  pause(): Promise<void>;
+  resume(): Promise<void>;
   getCurrentState(): Promise<SpotifyPlayerState | null>;
   addListener(event: string, callback: (payload: never) => void): void;
 }

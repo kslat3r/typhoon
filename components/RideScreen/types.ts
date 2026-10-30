@@ -27,6 +27,7 @@ export type RideScreenElements = {
   connectButton: HTMLButtonElement;
   startButton: HTMLButtonElement;
   testButton: HTMLButtonElement;
+  pauseButton: HTMLButtonElement;
   endButton: HTMLButtonElement;
   doneButton: HTMLButtonElement;
   statsStrip: HTMLElement;
@@ -37,6 +38,9 @@ export type RideScreenState = {
   settings: Settings;
   startedAt: number;
   startedAtDate: Date;
+  paused: boolean;
+  pausedAt: number;
+  pausedMs: number;
   lastTickAt: number;
   lastPollAt: number;
   stats: RideStats;

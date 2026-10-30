@@ -66,7 +66,8 @@ function buildStatCell(label: string, className: string): { cell: HTMLElement; v
 
 function clock(state: RideScreenState): number {
   const real: number = performance.now();
-  return state.testMode ? state.startedAt + (real - state.startedAt) * TEST_SPEED : real;
+  const scaled: number = state.testMode ? state.startedAt + (real - state.startedAt) * TEST_SPEED : real;
+  return scaled - state.pausedMs;
 }
 
 function totalSeconds(ride: Ride): number {
@@ -396,6 +397,7 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
     return;
   }
 
+  state.elements.pauseButton.hidden = true;
   state.elements.endButton.hidden = true;
   state.elements.doneButton.hidden = reason !== 'ended';
   if (state.testMode || state.stats.sampledSeconds === 0) {
@@ -425,6 +427,10 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
 }
 
 function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): void {
+  if (state.paused) {
+    return;
+  }
+
   const now: number = clock(state);
   const rideEnd: number = state.startedAt + totalSeconds(ride) * 1000;
   if (state.testMode) {
@@ -474,6 +480,7 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.position = intervalAtElapsed(ride, 0);
   state.elements.startButton.hidden = true;
   state.elements.testButton.hidden = true;
+  state.elements.pauseButton.hidden = false;
   state.elements.endButton.hidden = false;
   state.elements.status.textContent = '';
 
@@ -484,6 +491,23 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.tickHandle = setInterval((): void => {
     tick(state, ride, testIntervalIndex);
   }, TICK_MS);
+}
+
+function togglePause(state: RideScreenState): void {
+  if (state.phase !== 'riding') {
+    return;
+  }
+
+  if (state.paused) {
+    state.pausedMs += clock(state) - state.pausedAt;
+    state.paused = false;
+    void state.player?.resume();
+  } else {
+    state.pausedAt = clock(state);
+    state.paused = true;
+    void state.player?.pause();
+  }
+  state.elements.pauseButton.textContent = state.paused ? 'Resume' : 'Pause';
 }
 
 async function attemptReconnect(
@@ -643,6 +667,10 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const testButton: HTMLButtonElement = buildButton('Test', (): void => {
     startTestRide(state, ride);
   });
+  const pauseButton: HTMLButtonElement = buildButton('Pause', (): void => {
+    togglePause(state);
+  });
+  pauseButton.hidden = true;
   const endButton: HTMLButtonElement = buildButton('End ride', (): void => {
     if (!window.confirm('End ride?')) {
       return;
@@ -654,13 +682,16 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     navigate(state.summaryId === null ? '#/' : '#/summary/' + state.summaryId);
   });
   doneButton.hidden = true;
-  top.actions.append(testButton, connectButton, startButton, endButton, doneButton);
+  top.actions.append(testButton, connectButton, startButton, pauseButton, endButton, doneButton);
 
   const state: RideScreenState = {
     phase: 'ready',
     settings: loadSettings(),
     startedAt: 0,
     startedAtDate: new Date(),
+    paused: false,
+    pausedAt: 0,
+    pausedMs: 0,
     lastTickAt: 0,
     lastPollAt: 0,
     stats: emptyRideStats(),
@@ -698,6 +729,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
       connectButton,
       startButton,
       testButton,
+      pauseButton,
       endButton,
       doneButton,
       statsStrip: stats.strip,

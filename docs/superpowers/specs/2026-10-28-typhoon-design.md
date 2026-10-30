@@ -174,8 +174,8 @@ Landscape. Three bands:
 
 1. **Top band**: the current track (small artwork, title and artist,
    no bpm) on the left and the quiet ghost buttons on the right, in the
-   order Test, Connect bike, Start before the ride and End ride during
-   it. The ride name is not shown on the ride screen.
+   order Test, Connect bike, Start before the ride and Pause, End ride
+   during it. The ride name is not shown on the ride screen.
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
    to zone. A white vertical line moves along the profile at the current
@@ -226,6 +226,10 @@ defaulted. Use the frontend-design skill for the visual pass.
   line and mask frozen, with a Done button in place of End ride that
   leads to the summary (Ed, 2026-10-29). Only a ride that runs to its
   end moves on by itself.
+- Pause (Ed, 2026-10-30) freezes the ride clock, the line and the stats
+  and pauses the music; the button reads Resume until tapped again, when
+  the ride carries on from the same point and the music resumes. Paused
+  time is not ridden time: it is cut from the clock, not counted.
 - A play that Spotify answers with 404 is retried on the same track a
   few times a second apart, because the tab's player can be registering
   or just back online; the device id follows the player's ready and
