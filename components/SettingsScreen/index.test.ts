@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fillTempoCache from '@/lib/client/helpers/fill-tempo-cache';
 import saveSettings from '@/lib/client/helpers/save-settings';
 import saveSpotifyAuth from '@/lib/client/helpers/save-spotify-auth';
@@ -21,6 +21,10 @@ describe('renderSettingsScreen', () => {
   beforeEach(() => {
     localStorage.clear();
     window.history.replaceState(null, '', '/');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('saves a valid FTP', () => {
@@ -50,6 +54,83 @@ describe('renderSettingsScreen', () => {
     // Assert
     expect(loadSettings().ftp).toBe(150);
     expect(root.querySelector('.status')?.textContent).not.toBe('');
+  });
+
+  it('saves the music toggle and keeps it across a reload', () => {
+    // Arrange
+    const root: HTMLElement = document.createElement('div');
+    renderSettingsScreen(root);
+    const music: HTMLInputElement = root.querySelector('input[name="musicEnabled"]') as HTMLInputElement;
+
+    // Assert
+    expect(music).not.toBeNull();
+    expect(music.type).toBe('checkbox');
+    expect(music.checked).toBe(true);
+    expect(music.labels?.[0]?.textContent).toContain('Music');
+    expect(music.labels?.[0]?.textContent).toContain('On');
+    expect(loadSettings().musicEnabled).toBe(true);
+
+    // Act
+    music.checked = false;
+    music.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(loadSettings().musicEnabled).toBe(false);
+    expect(music.labels?.[0]?.textContent).toContain('Off');
+
+    // Act
+    root.replaceChildren();
+    renderSettingsScreen(root);
+    const reloaded: HTMLInputElement = root.querySelector('input[name="musicEnabled"]') as HTMLInputElement;
+
+    // Assert
+    expect(reloaded.checked).toBe(false);
+    expect(reloaded.labels?.[0]?.textContent).toContain('Off');
+
+    // Act
+    reloaded.checked = true;
+    reloaded.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(loadSettings().musicEnabled).toBe(true);
+    expect(reloaded.labels?.[0]?.textContent).toContain('On');
+  });
+
+  it('pauses Spotify when music is switched off', async () => {
+    // Arrange
+    saveSpotifyAuth({ accessToken: 'token-a', refreshToken: 'refresh-a', expiresAt: Date.now() + 3600000 });
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+      if (url.endsWith('/me/player')) {
+        return new Response(JSON.stringify({ device: { name: 'Typhoon' }, is_playing: true }), { status: 200 });
+      }
+      return new Response(null, { status: 204 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const root: HTMLElement = document.createElement('div');
+    renderSettingsScreen(root);
+    const music: HTMLInputElement = root.querySelector('input[name="musicEnabled"]') as HTMLInputElement;
+
+    // Act
+    music.checked = false;
+    music.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => {
+      expect(fetchMock.mock.calls.some((call) => call[0] === 'https://api.spotify.com/v1/me/player/pause')).toBe(true);
+    });
+
+    // Assert
+    const pauseCall = fetchMock.mock.calls.find((call) => call[0] === 'https://api.spotify.com/v1/me/player/pause');
+    expect(pauseCall?.[1]?.method).toBe('PUT');
+    expect(loadSettings().musicEnabled).toBe(false);
+
+    // Act
+    fetchMock.mockClear();
+    music.checked = true;
+    music.dispatchEvent(new Event('change'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Assert
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(loadSettings().musicEnabled).toBe(true);
   });
 
   it('runs one tempo fill across two renders', async () => {

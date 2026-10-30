@@ -69,6 +69,7 @@ export interface Settings {
   spotifyClientId: string;
   spotifyPlaylistId: string;
   bikeName: string;
+  musicEnabled: boolean;
 }
 
 export type TempoCache = Record<string, number | null>;

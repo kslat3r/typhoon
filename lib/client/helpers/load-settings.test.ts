@@ -17,9 +17,29 @@ describe('loadSettings', () => {
     expect(settings.bikeName).toBe('');
   });
 
+  it('leaves music on unless it was saved off', () => {
+    // Arrange / Act
+    const fresh = loadSettings();
+
+    // Assert
+    expect(fresh.musicEnabled).toBe(true);
+
+    // Arrange
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200 }));
+
+    // Act / Assert
+    expect(loadSettings().musicEnabled).toBe(true);
+
+    // Arrange
+    saveSettings({ ...loadSettings(), musicEnabled: false });
+
+    // Act / Assert
+    expect(loadSettings().musicEnabled).toBe(false);
+  });
+
   it('returns saved values after saveSettings', () => {
     // Arrange
-    const saved = { ftp: 220, spotifyClientId: 'a', spotifyPlaylistId: 'b', bikeName: 'Wattbike' };
+    const saved = { ftp: 220, spotifyClientId: 'a', spotifyPlaylistId: 'b', bikeName: 'Wattbike', musicEnabled: true };
     saveSettings(saved);
 
     // Act

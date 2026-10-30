@@ -5,6 +5,7 @@ import getSpotifyPlaylists from '@/lib/client/helpers/get-spotify-playlists';
 import loadSettings from '@/lib/client/helpers/load-settings';
 import loadSpotifyAuth from '@/lib/client/helpers/load-spotify-auth';
 import loadTempoCache from '@/lib/client/helpers/load-tempo-cache';
+import pausePlayback from '@/lib/client/helpers/pause-playback';
 import saveSettings from '@/lib/client/helpers/save-settings';
 import saveSpotifyAuth from '@/lib/client/helpers/save-spotify-auth';
 import startSpotifyLogin from '@/lib/client/helpers/start-spotify-login';
@@ -25,6 +26,38 @@ function buildField(label: string, name: string, type: string, value: string): H
   input.value = value;
   wrapper.append(input);
 
+  return wrapper;
+}
+
+function buildMusicToggle(enabled: boolean, onChange: (enabled: boolean) => void): HTMLLabelElement {
+  const wrapper: HTMLLabelElement = document.createElement('label');
+  wrapper.className = 'field field-switch';
+  wrapper.append('Music');
+
+  const control: HTMLElement = document.createElement('span');
+  control.className = 'switch';
+
+  const input: HTMLInputElement = document.createElement('input');
+  input.name = 'musicEnabled';
+  input.type = 'checkbox';
+  input.role = 'switch';
+  input.checked = enabled;
+
+  const track: HTMLElement = document.createElement('span');
+  track.className = 'switch-track';
+  track.setAttribute('aria-hidden', 'true');
+
+  const state: HTMLElement = document.createElement('span');
+  state.className = 'switch-state';
+  state.textContent = enabled ? 'On' : 'Off';
+
+  input.addEventListener('change', (): void => {
+    state.textContent = input.checked ? 'On' : 'Off';
+    onChange(input.checked);
+  });
+
+  control.append(input, track);
+  wrapper.append(control, state);
   return wrapper;
 }
 
@@ -209,7 +242,14 @@ export default function renderSettingsScreen(root: HTMLElement): void {
   form.addEventListener('submit', (event: Event): void => {
     event.preventDefault();
   });
-  form.append(ftpField, clientIdField, bikeField, buildButton('Save', save));
+  const musicToggle: HTMLLabelElement = buildMusicToggle(settings.musicEnabled, (enabled: boolean): void => {
+    saveSettings({ ...loadSettings(), musicEnabled: enabled });
+    if (!enabled) {
+      void pausePlayback();
+    }
+  });
+
+  form.append(ftpField, clientIdField, bikeField, musicToggle, buildButton('Save', save));
 
   const spotify: HTMLElement = document.createElement('section');
   if (connected) {

@@ -142,6 +142,18 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
 
 function updateTrack(state: RideScreenState): void {
   const { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton } = state.elements;
+  if (!state.settings.musicEnabled) {
+    spinner.hidden = true;
+    placeholder.hidden = true;
+    artwork.hidden = true;
+    artwork.removeAttribute('src');
+    prevButton.hidden = true;
+    nextButton.hidden = true;
+    trackTitle.textContent = 'Music off';
+    trackArtist.textContent = '';
+    return;
+  }
+
   const failed: boolean = state.musicMessage !== null;
   const shown: Track | null = failed ? null : (state.pendingPlay ?? state.track);
   spinner.hidden = failed || shown !== null || !state.musicLoading;
@@ -260,6 +272,11 @@ async function playWithRetry(uri: string, deviceId: string): Promise<void> {
 }
 
 async function playPending(state: RideScreenState): Promise<void> {
+  if (!state.settings.musicEnabled) {
+    state.pendingPlay = null;
+    return;
+  }
+
   const track: Track | null = state.pendingPlay;
   const deviceId: string | null = state.playerDeviceId;
   if (track === null || deviceId === null || state.spotifyCallInFlight || state.phase !== 'riding') {
@@ -288,7 +305,7 @@ function trackFromPlayer(state: RideScreenState, current: SpotifyPlayerState): T
 // The app never cuts a song: it shows what is playing and, as a song ends, lines up
 // the next one to match the cadence of the block the ride is in right now.
 async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
-  if (state.musicMessage !== null || state.player === null || state.playerDeviceId === null) {
+  if (!state.settings.musicEnabled || state.musicMessage !== null || state.player === null || state.playerDeviceId === null) {
     return;
   }
 
@@ -319,7 +336,7 @@ async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
 
 function skipTrack(state: RideScreenState, ride: Ride, direction: 'prev' | 'next'): void {
   const current: Track | null = state.track;
-  if (state.phase !== 'riding' || state.tracks.length === 0) {
+  if (!state.settings.musicEnabled || state.phase !== 'riding' || state.tracks.length === 0) {
     return;
   }
 
@@ -485,8 +502,10 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.elements.status.textContent = '';
 
   // The tap that started the ride is the user gesture browsers want before audio
-  void state.player?.activateElement();
-  void playPending(state);
+  if (state.settings.musicEnabled) {
+    void state.player?.activateElement();
+    void playPending(state);
+  }
   void acquireWakeLock(state);
   state.tickHandle = setInterval((): void => {
     tick(state, ride, testIntervalIndex);
@@ -501,11 +520,15 @@ function togglePause(state: RideScreenState): void {
   if (state.paused) {
     state.pausedMs += clock(state) - state.pausedAt;
     state.paused = false;
-    void state.player?.resume();
+    if (state.settings.musicEnabled) {
+      void state.player?.resume();
+    }
   } else {
     state.pausedAt = clock(state);
     state.paused = true;
-    void state.player?.pause();
+    if (state.settings.musicEnabled) {
+      void state.player?.pause();
+    }
   }
   state.elements.pauseButton.textContent = state.paused ? 'Resume' : 'Pause';
 }
@@ -577,6 +600,9 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
 }
 
 async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
+  if (!state.settings.musicEnabled) {
+    return;
+  }
   if (loadSpotifyAuth() === null) {
     markMusicFailed(state, 'Connect Spotify in Settings');
     return;
