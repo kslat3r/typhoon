@@ -120,7 +120,11 @@ coaching text is being replaced.
   and two harder grades were added above the old very hard). Each ride is written
   by hand as its own interval plan. Hard rides have longer work
   intervals, more steps up and shorter recoveries; easy rides the
-  opposite. No ride is derived from another by scaling.
+  opposite. No ride is derived from another by scaling. Ed's
+  2026-10-30 retune: the top grades were too hard and the middle
+  slightly so. Brutal now sits around 57-65% of the ride at zone 4+
+  with about ten minutes of easy riding, Severe a step below, and
+  grades 2-3 trimmed a little; Moderate is unchanged.
 - A ride is a flat ordered list of intervals. Each interval is a target
   zone (1 to 7) and a duration in seconds. No names, no blocks, no
   cadence, no position.
