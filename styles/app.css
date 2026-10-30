@@ -329,12 +329,6 @@ form {
   outline-offset: 2px;
 }
 
-.switch-state {
-  color: var(--text);
-  font-size: 1rem;
-  min-width: 2.5ch;
-}
-
 form + section {
   display: flex;
   flex-wrap: wrap;
@@ -377,6 +371,10 @@ form + section select {
   flex: 0 0 360px;
   max-width: 60%;
   min-width: 0;
+}
+
+.ride-track[hidden] {
+  display: none;
 }
 
 .ride-artwork {
@@ -454,6 +452,10 @@ form + section select {
   gap: var(--space-1);
   flex: none;
   margin-left: auto;
+}
+
+.ride-track-nav[hidden] {
+  display: none;
 }
 
 .ride-actions button,

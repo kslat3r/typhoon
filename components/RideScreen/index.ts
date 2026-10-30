@@ -142,16 +142,30 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
 
 function updateTrack(state: RideScreenState): void {
   const { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton } = state.elements;
+  const trackRow: HTMLElement | null = trackTitle.closest('.ride-track');
+  const trackNav: HTMLElement | null = prevButton.closest('.ride-track-nav');
   if (!state.settings.musicEnabled) {
+    if (trackRow) {
+      trackRow.hidden = true;
+    }
+    if (trackNav) {
+      trackNav.hidden = true;
+    }
     spinner.hidden = true;
     placeholder.hidden = true;
     artwork.hidden = true;
     artwork.removeAttribute('src');
     prevButton.hidden = true;
     nextButton.hidden = true;
-    trackTitle.textContent = 'Music off';
+    trackTitle.textContent = '';
     trackArtist.textContent = '';
     return;
+  }
+  if (trackRow) {
+    trackRow.hidden = false;
+  }
+  if (trackNav) {
+    trackNav.hidden = false;
   }
 
   const failed: boolean = state.musicMessage !== null;

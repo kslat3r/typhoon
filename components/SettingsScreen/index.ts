@@ -47,17 +47,12 @@ function buildMusicToggle(enabled: boolean, onChange: (enabled: boolean) => void
   track.className = 'switch-track';
   track.setAttribute('aria-hidden', 'true');
 
-  const state: HTMLElement = document.createElement('span');
-  state.className = 'switch-state';
-  state.textContent = enabled ? 'On' : 'Off';
-
   input.addEventListener('change', (): void => {
-    state.textContent = input.checked ? 'On' : 'Off';
     onChange(input.checked);
   });
 
   control.append(input, track);
-  wrapper.append(control, state);
+  wrapper.append(control);
   return wrapper;
 }
 
