@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import renderRideScreen from '@/components/RideScreen';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
+import connectSpotifyPlayer from '@/lib/client/helpers/connect-spotify-player';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import playTrack from '@/lib/client/helpers/play-track';
@@ -104,6 +105,36 @@ describe('renderRideScreen', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it('plays nothing when music is switched off', async () => {
+    // Arrange
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({ ftp: 200, spotifyPlaylistId: 'playlist', musicEnabled: false }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+
+    // Act
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+    findButton(root, 'Connect bike').click();
+    await vi.advanceTimersByTimeAsync(0);
+    findButton(root, 'Start').click();
+    await vi.advanceTimersByTimeAsync(1500);
+
+    // Assert
+    expect(getPlaylistTracks).not.toHaveBeenCalled();
+    expect(connectSpotifyPlayer).not.toHaveBeenCalled();
+    expect(playTrack).not.toHaveBeenCalled();
+    expect(fakePlayer.pause).not.toHaveBeenCalled();
+    expect(fakePlayer.resume).not.toHaveBeenCalled();
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Music off');
+    expect((root.querySelector('.ride-track-artist') as HTMLElement).textContent).toBe('');
+    expect(findButton(root, 'Prev').hidden).toBe(true);
+    expect(findButton(root, 'Next').hidden).toBe(true);
+    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:08');
   });
 
   it('says what is missing when no playlist has been chosen', async () => {

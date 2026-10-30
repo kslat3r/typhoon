@@ -3,6 +3,8 @@ import type { SpotifyPlayer } from '@/lib/client/models/types';
 
 const SDK_URL = 'https://sdk.scdn.co/spotify-player.js';
 
+export const SPOTIFY_DEVICE_NAME = 'Typhoon';
+
 type SpotifyPlayerOptions = {
   name: string;
   getOAuthToken: (callback: (token: string) => void) => void;
@@ -37,7 +39,7 @@ export default async function connectSpotifyPlayer(
 ): Promise<{ player: SpotifyPlayer; deviceId: string }> {
   await loadSdk();
   const player: SpotifyPlayer = new (window.Spotify as NonNullable<Window['Spotify']>).Player({
-    name: 'Typhoon',
+    name: SPOTIFY_DEVICE_NAME,
     getOAuthToken: (callback: (token: string) => void): void => {
       getSpotifyAccessToken().then(callback, (tokenError: unknown): void => {
         onError(tokenError instanceof Error ? tokenError.message : String(tokenError));

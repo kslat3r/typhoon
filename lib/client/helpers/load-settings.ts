@@ -7,6 +7,7 @@ export default function loadSettings(): Settings {
     spotifyClientId: '',
     spotifyPlaylistId: '',
     bikeName: '',
+    musicEnabled: true,
   };
   const raw = localStorage.getItem(STORAGE_KEYS.settings);
   if (raw === null) {
