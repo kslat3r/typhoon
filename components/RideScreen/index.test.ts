@@ -130,10 +130,11 @@ describe('renderRideScreen', () => {
     expect(playTrack).not.toHaveBeenCalled();
     expect(fakePlayer.pause).not.toHaveBeenCalled();
     expect(fakePlayer.resume).not.toHaveBeenCalled();
-    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Music off');
+    expect((root.querySelector('.ride-track') as HTMLElement).hidden).toBe(true);
+    expect((root.querySelector('.ride-track-nav') as HTMLElement).hidden).toBe(true);
+    expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('');
     expect((root.querySelector('.ride-track-artist') as HTMLElement).textContent).toBe('');
-    expect(findButton(root, 'Prev').hidden).toBe(true);
-    expect(findButton(root, 'Next').hidden).toBe(true);
+    expect(root.textContent).not.toMatch(/music off/i);
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:08');
   });
 

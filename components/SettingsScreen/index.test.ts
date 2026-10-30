@@ -66,8 +66,8 @@ describe('renderSettingsScreen', () => {
     expect(music).not.toBeNull();
     expect(music.type).toBe('checkbox');
     expect(music.checked).toBe(true);
-    expect(music.labels?.[0]?.textContent).toContain('Music');
-    expect(music.labels?.[0]?.textContent).toContain('On');
+    expect(music.labels?.[0]?.textContent?.trim()).toBe('Music');
+    expect(root.textContent).not.toMatch(/\b(On|Off)\b/);
     expect(loadSettings().musicEnabled).toBe(true);
 
     // Act
@@ -76,7 +76,8 @@ describe('renderSettingsScreen', () => {
 
     // Assert
     expect(loadSettings().musicEnabled).toBe(false);
-    expect(music.labels?.[0]?.textContent).toContain('Off');
+    expect(music.labels?.[0]?.textContent?.trim()).toBe('Music');
+    expect(root.textContent).not.toMatch(/\b(On|Off)\b/);
 
     // Act
     root.replaceChildren();
@@ -85,7 +86,7 @@ describe('renderSettingsScreen', () => {
 
     // Assert
     expect(reloaded.checked).toBe(false);
-    expect(reloaded.labels?.[0]?.textContent).toContain('Off');
+    expect(reloaded.labels?.[0]?.textContent?.trim()).toBe('Music');
 
     // Act
     reloaded.checked = true;
@@ -93,7 +94,7 @@ describe('renderSettingsScreen', () => {
 
     // Assert
     expect(loadSettings().musicEnabled).toBe(true);
-    expect(reloaded.labels?.[0]?.textContent).toContain('On');
+    expect(reloaded.checked).toBe(true);
   });
 
   it('pauses Spotify when music is switched off', async () => {
