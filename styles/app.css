@@ -368,7 +368,7 @@ form + section select {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  flex: 0 0 360px;
+  flex: 0 1 360px;
   max-width: 60%;
   min-width: 0;
 }
@@ -445,6 +445,12 @@ form + section select {
   gap: var(--space-2);
   margin-left: var(--space-5);
   flex: none;
+}
+
+/* The skip controls normally take the free space, which keeps this row on the right.
+   When those controls are removed, the buttons take it themselves. */
+.ride-track-nav[hidden] + .ride-actions {
+  margin-left: auto;
 }
 
 .ride-track-nav {
