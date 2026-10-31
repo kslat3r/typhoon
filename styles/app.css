@@ -217,8 +217,9 @@ footer > a:not(.ride-link) + a {
   border-color: var(--line);
 }
 
-.library-filters + section h2 {
+.library-filters + .ride-card {
   margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
 .library-empty {
