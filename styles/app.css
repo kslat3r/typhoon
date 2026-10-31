@@ -514,21 +514,21 @@ form {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 144px;
-  gap: 2px;
+  width: 72px;
+  gap: 1px;
   pointer-events: none;
 }
 
 .zone-ring-dial {
   position: relative;
-  width: 136px;
-  height: 136px;
+  width: 68px;
+  height: 68px;
 }
 
 .zone-ring-svg {
   display: block;
-  width: 136px;
-  height: 136px;
+  width: 68px;
+  height: 68px;
 }
 
 .zone-ring-segment {
@@ -555,7 +555,7 @@ form {
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 1.55rem;
+  font-size: 0.775rem;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -566,7 +566,7 @@ form {
 }
 
 .zone-ring-target {
-  font-size: 0.95rem;
+  font-size: 0.475rem;
   font-weight: 600;
   line-height: 1.1;
   text-align: center;
@@ -580,7 +580,7 @@ form {
   flex: 0 1 360px;
   max-width: 60%;
   min-width: 0;
-  margin-left: 144px;
+  margin-left: 72px;
 }
 
 .ride-track[hidden] {

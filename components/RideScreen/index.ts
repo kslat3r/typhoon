@@ -205,7 +205,7 @@ function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPo
     state.elements.next.textContent = '--';
     return;
   }
-  state.elements.nextLabel.textContent = `Next Z${upcoming.zone}`;
+  state.elements.nextLabel.textContent = 'Next';
   state.elements.next.textContent = formatClock(upcoming.seconds);
 }
 

@@ -6,8 +6,7 @@ export const ZONE_RING_MAX_PERCENT = 200;
 export const ZONE_RING_RADIUS = 36;
 export const ZONE_RING_CENTER = 50;
 
-// A sliver of the circle stays open at 12 o'clock so 0% and the cap do not share a point.
-const SEAM = 0.02;
+// The same arc is left open after every segment, including the join where zone 7 meets zone 1.
 const SEGMENT_GAP = 1.5;
 
 export type ZoneRingSegment = {
@@ -40,14 +39,14 @@ export function zoneTargetLabel(zone: ZoneNumber): string {
   return `${band.maxPercent}%`;
 }
 
-// 0 is 12 o'clock. The seam keeps the first and last turns just off that point.
+// 0 is 6 o'clock. The turn runs clockwise to 1 at the 200% cap, back at that same point.
 export function zoneRingTurn(percent: number): number {
   const clamped: number = Math.min(ZONE_RING_MAX_PERCENT, Math.max(0, percent));
-  return SEAM / 2 + (clamped / ZONE_RING_MAX_PERCENT) * (1 - SEAM);
+  return clamped / ZONE_RING_MAX_PERCENT;
 }
 
 function ringAngle(percent: number): number {
-  return -Math.PI / 2 + zoneRingTurn(percent) * Math.PI * 2;
+  return Math.PI / 2 + zoneRingTurn(percent) * Math.PI * 2;
 }
 
 export function markerPoint(percent: number): { x: number; y: number } {
@@ -58,7 +57,7 @@ export function markerPoint(percent: number): { x: number; y: number } {
   };
 }
 
-// A needle from inside the dial out to the ring. 0% is just clockwise of 12 o'clock.
+// A needle from inside the dial out to the ring. 0% is 6 o'clock; power moves it clockwise.
 const NEEDLE_INNER = 15;
 const NEEDLE_OUTER = ZONE_RING_RADIUS - 1.5;
 
@@ -77,7 +76,7 @@ export function segmentStroke(startPercent: number, endPercent: number): { dasha
   const start: number = zoneRingTurn(startPercent);
   const end: number = zoneRingTurn(endPercent);
   const dash: number = Math.max((end - start) * circumference - SEGMENT_GAP, 0.5);
-  const offset: number = (0.25 - start) * circumference;
+  const offset: number = (0.75 - start) * circumference;
   return {
     dasharray: `${dash.toFixed(2)} ${(circumference - dash).toFixed(2)}`,
     dashoffset: offset.toFixed(2),
