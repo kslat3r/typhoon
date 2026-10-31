@@ -15,7 +15,7 @@ describe('zoneRingSegments', () => {
   it('sizes each segment by its percent-of-FTP span and caps zone 7 at 200', () => {
     const segments = zoneRingSegments();
 
-    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([55, 21, 15, 20, 15, 25, 49]);
+    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([56, 20, 15, 15, 15, 30, 49]);
     expect(segments.reduce((sum, segment) => sum + (segment.endPercent - segment.startPercent), 0)).toBe(ZONE_RING_MAX_PERCENT);
     expect(segments.map((segment) => segment.colour)).toEqual(ZONES.map((zone) => zone.colour));
     expect(segments[6].endPercent).toBe(200);
@@ -25,8 +25,8 @@ describe('zoneRingSegments', () => {
 describe('zoneTargetLabel', () => {
   it('prints the zone range, and an open end for zone 7', () => {
     expect(zoneTargetLabel(1)).toBe('0–55%');
-    expect(zoneTargetLabel(4)).toBe('91–111%');
-    expect(zoneTargetLabel(7)).toBe('151%+');
+    expect(zoneTargetLabel(4)).toBe('91–105%');
+    expect(zoneTargetLabel(7)).toBe('150%+');
   });
 });
 
