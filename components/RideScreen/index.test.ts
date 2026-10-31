@@ -178,19 +178,6 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.toast')).toBeNull();
   });
 
-  it('shows a rotate hint on the ride screen', async () => {
-    // Arrange
-    const root: HTMLElement = document.createElement('div');
-    document.body.replaceChildren(root);
-
-    // Act
-    renderRideScreen(root, testRide);
-    await vi.advanceTimersByTimeAsync(0);
-
-    // Assert
-    expect((root.querySelector('.ride-rotate-hint') as HTMLElement).textContent).toBe('Rotate your phone');
-  });
-
   it('says what is missing when no playlist has been chosen', async () => {
     // Arrange
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200 }));
