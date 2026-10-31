@@ -51,6 +51,31 @@ body {
   padding: 0;
 }
 
+.rotate-hint {
+  display: none;
+  margin: 0;
+}
+
+@media (orientation: portrait) and (max-width: 520px) {
+  .rotate-hint {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: var(--space-2) var(--space-4);
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+    font-size: 0.875rem;
+  }
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .rotate-hint {
+    display: none;
+  }
+}
+
 h1,
 h2 {
   font-family: var(--font-display);
@@ -723,3 +748,85 @@ form {
 }
 
 /* History reuses the library list rows above */
+
+/* A landscape phone is short. Use the width instead of a narrow column. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app {
+    max-width: none;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .library-header h1 {
+    margin-bottom: 0;
+  }
+
+  h2 {
+    margin-top: var(--space-3);
+  }
+
+  .library-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--space-5);
+    align-items: start;
+  }
+
+  .library-section > h2 {
+    grid-column: 1 / -1;
+  }
+
+  .settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    align-items: start;
+  }
+
+  .settings > button {
+    grid-column: 1 / -1;
+  }
+
+  .settings-group {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .settings-group-body {
+    gap: var(--space-2);
+  }
+
+  .settings .field input {
+    margin-top: 2px;
+  }
+
+  .status:empty {
+    display: none;
+  }
+
+  .settings-screen {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: var(--space-3);
+  }
+
+  .settings-screen > h1 {
+    margin-bottom: 0;
+  }
+
+  .settings-screen > form,
+  .settings-screen > .status {
+    grid-column: 1 / -1;
+  }
+
+  .settings-back {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+  }
+}

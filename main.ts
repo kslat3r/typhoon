@@ -1,4 +1,5 @@
 import '@/styles/app.css';
+import lockLandscape from '@/lib/client/helpers/lock-landscape';
 import renderHistoryScreen from '@/components/HistoryScreen';
 import renderLibraryScreen from '@/components/LibraryScreen';
 import renderRideScreen from '@/components/RideScreen';
@@ -63,3 +64,18 @@ function registerServiceWorker(): void {
 }
 
 registerServiceWorker();
+
+function installedDisplay(): boolean {
+  return window.matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+}
+
+function keepLandscape(): void {
+  lockLandscape(screen.orientation, installedDisplay());
+}
+
+keepLandscape();
+document.addEventListener('visibilitychange', (): void => {
+  if (document.visibilityState === 'visible') {
+    keepLandscape();
+  }
+});
