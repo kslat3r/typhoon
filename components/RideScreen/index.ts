@@ -23,7 +23,7 @@ import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
 import { dismissToasts, mountToasts, showToast } from '@/lib/client/helpers/toasts';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
-import { needleLine, segmentStroke, zoneRingFill, zoneRingSegments, zoneTargetLabel, ZONE_RING_FILL_ALPHA, ZONE_RING_FILL_RADIUS, ZONE_RING_RADIUS } from '@/lib/client/helpers/zone-ring';
+import { zoneBarBands, zoneBarFraction, zoneRingFill, zoneTargetLabel, ZONE_RING_FILL_ALPHA } from '@/lib/client/helpers/zone-ring';
 import { targetRpmForZone } from '@/lib/client/models/target-cadence';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, ZoneNumber } from '@/lib/client/models/types';
 
@@ -81,69 +81,45 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function placeDialPointer(needle: SVGLineElement, percent: number | null): void {
+function placeZoneMarker(marker: HTMLElement, percent: number | null): void {
   if (percent === null) {
-    needle.setAttribute('visibility', 'hidden');
+    marker.hidden = true;
     return;
   }
 
-  const line = needleLine(percent);
-  needle.setAttribute('x1', line.x1.toFixed(2));
-  needle.setAttribute('y1', line.y1.toFixed(2));
-  needle.setAttribute('x2', line.x2.toFixed(2));
-  needle.setAttribute('y2', line.y2.toFixed(2));
-  needle.setAttribute('visibility', 'visible');
+  marker.hidden = false;
+  marker.style.bottom = `${(zoneBarFraction(percent) * 100).toFixed(2)}%`;
 }
 
-function paintZoneDisc(fill: SVGCircleElement, percent: number | null): void {
+function paintZoneChip(current: HTMLElement, percent: number | null): void {
   if (percent === null) {
-    fill.setAttribute('fill', 'none');
-    fill.setAttribute('fill-opacity', '0');
+    current.style.removeProperty('background-color');
     return;
   }
-  fill.setAttribute('fill', zoneRingFill(percent));
-  fill.setAttribute('fill-opacity', String(ZONE_RING_FILL_ALPHA));
+  const percentAlpha: number = Math.round(ZONE_RING_FILL_ALPHA * 100);
+  current.style.backgroundColor = `color-mix(in srgb, ${zoneRingFill(percent)} ${percentAlpha}%, transparent)`;
 }
 
-function buildZoneRing(): { root: HTMLElement; current: HTMLElement; fill: SVGCircleElement; needle: SVGLineElement } {
-  const root: HTMLElement = buildElement('div', 'zone-ring', '');
-  root.setAttribute('role', 'img');
-  const dial: HTMLElement = buildElement('div', 'zone-ring-dial', '');
-  const svg: SVGSVGElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'zone-ring-svg');
-  svg.setAttribute('viewBox', '0 0 100 100');
-  svg.setAttribute('aria-hidden', 'true');
+function buildZoneBar(): { column: HTMLElement; bar: HTMLElement; current: HTMLElement; marker: HTMLElement } {
+  const column: HTMLElement = buildElement('div', 'ride-zone-column', '');
+  const bar: HTMLElement = buildElement('div', 'ride-zone-bar', '');
+  bar.setAttribute('role', 'img');
 
-  const fill: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  fill.setAttribute('class', 'zone-ring-fill');
-  fill.setAttribute('cx', '50');
-  fill.setAttribute('cy', '50');
-  fill.setAttribute('r', String(ZONE_RING_FILL_RADIUS));
-  paintZoneDisc(fill, null);
-  svg.append(fill);
-
-  for (const segment of zoneRingSegments()) {
-    const circle: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    const stroke = segmentStroke(segment.startPercent, segment.endPercent);
-    circle.setAttribute('class', 'zone-ring-segment');
-    circle.setAttribute('cx', '50');
-    circle.setAttribute('cy', '50');
-    circle.setAttribute('r', String(ZONE_RING_RADIUS));
-    circle.setAttribute('stroke', segment.colour);
-    circle.setAttribute('stroke-dasharray', stroke.dasharray);
-    circle.setAttribute('stroke-dashoffset', stroke.dashoffset);
-    svg.append(circle);
+  for (const band of zoneBarBands()) {
+    const segment: HTMLElement = buildElement('div', 'ride-zone-segment', '');
+    segment.style.backgroundColor = band.colour;
+    segment.style.bottom = `${(band.bottom * 100).toFixed(2)}%`;
+    segment.style.height = `${(band.height * 100).toFixed(2)}%`;
+    bar.append(segment);
   }
 
-  const needle: SVGLineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  needle.setAttribute('class', 'zone-ring-needle');
-  needle.setAttribute('visibility', 'hidden');
-  svg.append(needle);
+  const marker: HTMLElement = buildElement('div', 'ride-zone-marker', '');
+  marker.hidden = true;
+  bar.append(marker);
+  column.append(bar);
 
-  const current: HTMLElement = buildElement('div', 'zone-ring-current', '--');
-  dial.append(svg, current);
-  root.append(dial);
-  return { root, current, fill, needle };
+  const current: HTMLElement = buildElement('div', 'ride-zone-current', '--');
+  return { column, bar, current, marker };
 }
 
 function buildTopBand(): { band: HTMLElement; actions: HTMLElement } {
@@ -222,17 +198,17 @@ function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPo
   state.elements.next.textContent = formatClock(upcoming.seconds);
 }
 
-function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
-  const { zoneCurrent, zoneFill, zoneNeedle, zoneRing } = state.elements;
+function updateZoneBar(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
+  const { zoneCurrent, zoneMarker, zoneBar } = state.elements;
   const ftp: number = state.settings.ftp;
 
   if (!state.settings.bluetoothEnabled) {
     const rpm: number = targetRpmForZone(zone);
     zoneCurrent.hidden = true;
     zoneCurrent.textContent = '';
-    paintZoneDisc(zoneFill, null);
-    placeDialPointer(zoneNeedle, null);
-    zoneRing.setAttribute('aria-label', `Target ${rpm} rpm`);
+    paintZoneChip(zoneCurrent, null);
+    placeZoneMarker(zoneMarker, null);
+    zoneBar.setAttribute('aria-label', `Target ${rpm} rpm`);
     return;
   }
 
@@ -244,18 +220,18 @@ function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone:
   if (!live || sample === null) {
     zoneCurrent.hidden = false;
     zoneCurrent.textContent = '--';
-    paintZoneDisc(zoneFill, null);
-    placeDialPointer(zoneNeedle, null);
-    zoneRing.setAttribute('aria-label', `Target ${zoneTargetLabel(zone)}`);
+    paintZoneChip(zoneCurrent, null);
+    placeZoneMarker(zoneMarker, null);
+    zoneBar.setAttribute('aria-label', `Target ${zoneTargetLabel(zone)}`);
     return;
   }
 
   const percent: number = Math.round((sample.watts / ftp) * 100);
   zoneCurrent.hidden = false;
   zoneCurrent.textContent = `${percent}%`;
-  paintZoneDisc(zoneFill, percent);
-  placeDialPointer(zoneNeedle, percent);
-  zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
+  paintZoneChip(zoneCurrent, percent);
+  placeZoneMarker(zoneMarker, percent);
+  zoneBar.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
 }
 
 function paintDistance(state: RideScreenState): void {
@@ -267,7 +243,7 @@ function paintDistance(state: RideScreenState): void {
 
 function paintAveragedLive(state: RideScreenState, average: LiveAverage, zone: ZoneNumber): void {
   state.displayedLive = average;
-  const { watts, rpm, mph, zoneCurrent, zoneFill, zoneNeedle, zoneRing } = state.elements;
+  const { watts, rpm, mph, zoneCurrent, zoneMarker, zoneBar } = state.elements;
   if (state.bikeState !== 'reconnecting') {
     watts.textContent = String(Math.round(average.watts));
   }
@@ -285,9 +261,9 @@ function paintAveragedLive(state: RideScreenState, average: LiveAverage, zone: Z
   const percent: number = ftp > 0 ? Math.round((average.watts / ftp) * 100) : 0;
   zoneCurrent.hidden = false;
   zoneCurrent.textContent = `${percent}%`;
-  paintZoneDisc(zoneFill, ftp > 0 ? percent : null);
-  placeDialPointer(zoneNeedle, percent);
-  zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
+  paintZoneChip(zoneCurrent, ftp > 0 ? percent : null);
+  placeZoneMarker(zoneMarker, percent);
+  zoneBar.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
 }
 
 function clearLiveDisplay(state: RideScreenState): void {
@@ -300,8 +276,8 @@ function clearLiveDisplay(state: RideScreenState): void {
   state.elements.miles.textContent = '--';
   state.elements.zoneCurrent.hidden = false;
   state.elements.zoneCurrent.textContent = '--';
-  paintZoneDisc(state.elements.zoneFill, null);
-  placeDialPointer(state.elements.zoneNeedle, null);
+  paintZoneChip(state.elements.zoneCurrent, null);
+  placeZoneMarker(state.elements.zoneMarker, null);
 }
 
 function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number, zone: ZoneNumber): void {
@@ -339,7 +315,7 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
 function updateScreen(state: RideScreenState, ride: Ride, position: IntervalPosition, sample: BikeSample | null): void {
   updateInterval(state, ride, position);
   updateStats(state, sample, position.secondsLeftInRide, position.interval.zone);
-  updateZoneRing(state, sample, position.interval.zone);
+  updateZoneBar(state, sample, position.interval.zone);
   renderRideProfile(state.elements.profileRoot, {
     ride,
     position: state.phase === 'riding' ? position : null,
@@ -620,10 +596,15 @@ function startTestRide(state: RideScreenState, ride: Ride): void {
 
 export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const top = buildTopBand();
-  const ring = buildZoneRing();
-  top.band.prepend(ring.root);
+  const zone = buildZoneBar();
   const stats = buildStatsStrip();
-  const profileRoot: HTMLElement = buildElement('section', 'ride-profile-band', '');
+  const profileBand: HTMLElement = buildElement('section', 'ride-profile-band', '');
+  const profileRoot: HTMLElement = buildElement('div', 'ride-profile-slot', '');
+  profileBand.append(zone.column, profileRoot);
+  const bottom: HTMLElement = buildElement('div', 'ride-bottom', '');
+  const readout: HTMLElement = buildElement('div', 'ride-zone-readout', '');
+  readout.append(zone.current);
+  bottom.append(readout, stats.strip);
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
     void connectBike(state, ride, onSample, onDisconnect);
   });
@@ -676,10 +657,9 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     listeners: new AbortController(),
     elements: {
       ...stats.elements,
-      zoneCurrent: ring.current,
-      zoneFill: ring.fill,
-      zoneNeedle: ring.needle,
-      zoneRing: ring.root,
+      zoneCurrent: zone.current,
+      zoneMarker: zone.marker,
+      zoneBar: zone.bar,
       profileRoot,
       connectButton,
       startButton,
@@ -734,7 +714,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   );
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
-  screen.append(top.band, profileRoot, stats.strip);
+  screen.append(top.band, profileBand, bottom);
   mountToasts(screen);
   applyBluetoothMode(state);
   root.replaceChildren(screen);

@@ -6,15 +6,12 @@ import { ZONES } from '@/lib/client/models/zones';
 export const ZONE_RING_MIN_PERCENT = 20;
 // Zone 7 is open-ended. The ring stops at 170% of FTP so the purple sprint arc is the band above 150%.
 export const ZONE_RING_MAX_PERCENT = 170;
-export const ZONE_RING_RADIUS = 36;
-export const ZONE_RING_CENTER = 50;
-// Sits inside the 10-unit stroke so the coloured ring itself stays uncovered.
-export const ZONE_RING_FILL_RADIUS = ZONE_RING_RADIUS - 5;
 // Strong enough that the zone colour reads at a glance, with white type still readable.
 export const ZONE_RING_FILL_ALPHA = 0.7;
 
-// The same arc is left open after every segment, including the join where zone 7 meets zone 1.
-const SEGMENT_GAP = 1.5;
+// The old ring left 1.5 units open on a 36-radius circle. The bar keeps that fraction of its height between zones.
+const ZONE_BAR_CIRCUMFERENCE = 2 * Math.PI * 36;
+export const ZONE_BAR_GAP = 1.5 / ZONE_BAR_CIRCUMFERENCE;
 
 export type ZoneRingSegment = {
   zone: ZoneNumber;
@@ -51,12 +48,12 @@ export function zoneTargetLabel(zone: ZoneNumber): string {
   return `${band.maxPercent}%`;
 }
 
-// Threshold (zone 4, 91–105) is centred on 12 o'clock. 98 is the middle of that zone.
+// Threshold (zone 4, 91–105) sits at the middle of the bar. 98 is the middle of that zone.
 export const ZONE_RING_TOP_PERCENT = (ZONES[3].minPercent + ZONES[3].maxPercent) / 2;
 
-// 20% is 6 o'clock. 98% is 12 o'clock. 170% returns to 6 o'clock.
-// Each semicircle is linear, so the zones on that half keep their percent proportions.
-// Readings below 20% sit on the start; readings above 170% sit on the cap.
+// 20% is the bottom. 98% is halfway up. 170% is the top.
+// Each half is linear, so the zones on that half keep their percent proportions.
+// Readings below 20% sit on the bottom; readings above 170% sit on the top.
 export function zoneRingTurn(percent: number): number {
   const clamped: number = Math.min(ZONE_RING_MAX_PERCENT, Math.max(ZONE_RING_MIN_PERCENT, percent));
   if (clamped <= ZONE_RING_TOP_PERCENT) {
@@ -67,42 +64,30 @@ export function zoneRingTurn(percent: number): number {
   return 0.5 + ((clamped - ZONE_RING_TOP_PERCENT) / upperSpan) * 0.5;
 }
 
-function ringAngle(percent: number): number {
-  return Math.PI / 2 + zoneRingTurn(percent) * Math.PI * 2;
+export type ZoneBarBand = {
+  zone: ZoneNumber;
+  colour: string;
+  bottom: number;
+  height: number;
+};
+
+// 0 is the bottom of the bar (20%). 1 is the top (170%). 98% of FTP is the middle.
+export function zoneBarFraction(percent: number): number {
+  return zoneRingTurn(percent);
 }
 
-export function markerPoint(percent: number): { x: number; y: number } {
-  const angle: number = ringAngle(percent);
-  return {
-    x: ZONE_RING_CENTER + ZONE_RING_RADIUS * Math.cos(angle),
-    y: ZONE_RING_CENTER + ZONE_RING_RADIUS * Math.sin(angle),
-  };
-}
-
-// A radial tick across the coloured band. The 10-unit stroke is centred on the radius,
-// so the band runs from r=31 to r=41. The dial is 64px for a 100-unit viewBox, and
-// 1.5 units is about 1px of overhang past each edge of that band.
-const TICK_INNER = ZONE_RING_RADIUS - 5 - 1.5;
-const TICK_OUTER = ZONE_RING_RADIUS + 5 + 1.5;
-
-export function needleLine(percent: number): { x1: number; y1: number; x2: number; y2: number } {
-  const angle: number = ringAngle(percent);
-  return {
-    x1: ZONE_RING_CENTER + TICK_INNER * Math.cos(angle),
-    y1: ZONE_RING_CENTER + TICK_INNER * Math.sin(angle),
-    x2: ZONE_RING_CENTER + TICK_OUTER * Math.cos(angle),
-    y2: ZONE_RING_CENTER + TICK_OUTER * Math.sin(angle),
-  };
-}
-
-export function segmentStroke(startPercent: number, endPercent: number): { dasharray: string; dashoffset: string } {
-  const circumference: number = 2 * Math.PI * ZONE_RING_RADIUS;
-  const start: number = zoneRingTurn(startPercent);
-  const end: number = zoneRingTurn(endPercent);
-  const dash: number = Math.max((end - start) * circumference - SEGMENT_GAP, 0.5);
-  const offset: number = (0.75 - start) * circumference;
-  return {
-    dasharray: `${dash.toFixed(2)} ${(circumference - dash).toFixed(2)}`,
-    dashoffset: offset.toFixed(2),
-  };
+// Bands stack from the bottom. Each gap matches the ring, and the last band reaches the top.
+export function zoneBarBands(): ZoneBarBand[] {
+  const segments: ZoneRingSegment[] = zoneRingSegments();
+  return segments.map((segment, index) => {
+    const bottom: number = zoneRingTurn(segment.startPercent);
+    const end: number = zoneRingTurn(segment.endPercent);
+    const gap: number = index === segments.length - 1 ? 0 : ZONE_BAR_GAP;
+    return {
+      zone: segment.zone,
+      colour: segment.colour,
+      bottom,
+      height: end - bottom - gap,
+    };
+  });
 }

@@ -1,18 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ZONES } from '@/lib/client/models/zones';
 import {
-  ZONE_RING_CENTER,
+  ZONE_BAR_GAP,
   ZONE_RING_FILL_ALPHA,
   ZONE_RING_MAX_PERCENT,
   ZONE_RING_MIN_PERCENT,
-  ZONE_RING_RADIUS,
   ZONE_RING_TOP_PERCENT,
-  markerPoint,
+  zoneBarBands,
+  zoneBarFraction,
   zoneRingFill,
-  needleLine,
-  segmentStroke,
   zoneRingSegments,
-  zoneRingTurn,
   zoneTargetLabel,
 } from '@/lib/client/helpers/zone-ring';
 
@@ -70,117 +67,61 @@ describe('zoneTargetLabel', () => {
   });
 });
 
-describe('markerPoint', () => {
-  it('starts at 6 o clock, puts the orange midpoint at 12 o clock, and clamps above 170', () => {
-    const start = markerPoint(0);
-    const clockwise = markerPoint(40);
-    const top = markerPoint(ZONE_RING_TOP_PERCENT);
-    const beforeTop = markerPoint(90);
-    const pastTop = markerPoint(100);
-    const cap = markerPoint(170);
-    const over = markerPoint(180);
-
+describe('zoneBarFraction', () => {
+  it('puts 20% at the bottom, the orange midpoint in the middle, and clamps at 170', () => {
     expect(ZONE_RING_TOP_PERCENT).toBe(98);
-    expect(start.x).toBeCloseTo(ZONE_RING_CENTER, 5);
-    expect(start.y).toBeCloseTo(ZONE_RING_CENTER + ZONE_RING_RADIUS, 5);
-    expect(clockwise.x).toBeLessThan(start.x);
-    expect(top.x).toBeCloseTo(ZONE_RING_CENTER, 5);
-    expect(top.y).toBeCloseTo(ZONE_RING_CENTER - ZONE_RING_RADIUS, 5);
-    expect(beforeTop.x).toBeLessThan(ZONE_RING_CENTER);
-    expect(pastTop.x).toBeGreaterThan(ZONE_RING_CENTER);
-    expect(pastTop.y).toBeLessThan(ZONE_RING_CENTER);
-    expect(cap.x).toBeCloseTo(start.x, 5);
-    expect(cap.y).toBeCloseTo(start.y, 5);
-    expect(over).toEqual(cap);
-    expect(markerPoint(10)).toEqual(start);
-    expect(markerPoint(20)).toEqual(start);
-    expect(zoneRingTurn(0)).toBe(0);
-    expect(zoneRingTurn(10)).toBe(0);
-    expect(zoneRingTurn(20)).toBe(0);
-    expect(zoneRingTurn(98)).toBe(0.5);
-    expect(zoneRingTurn(170)).toBe(1);
-    expect(zoneRingTurn(180)).toBe(1);
-    expect(zoneRingTurn(200)).toBe(1);
+    expect(zoneBarFraction(0)).toBe(0);
+    expect(zoneBarFraction(10)).toBe(0);
+    expect(zoneBarFraction(20)).toBe(0);
+    expect(zoneBarFraction(40)).toBeGreaterThan(0);
+    expect(zoneBarFraction(40)).toBeLessThan(zoneBarFraction(ZONE_RING_TOP_PERCENT));
+    expect(zoneBarFraction(90)).toBeLessThan(0.5);
+    expect(zoneBarFraction(98)).toBe(0.5);
+    expect(zoneBarFraction(100)).toBeGreaterThan(0.5);
+    expect(zoneBarFraction(170)).toBe(1);
+    expect(zoneBarFraction(180)).toBe(1);
+    expect(zoneBarFraction(200)).toBe(1);
+    expect(zoneBarFraction(260)).toBe(zoneBarFraction(170));
   });
 });
 
-describe('needleLine', () => {
-  it('sits in the ring band at 6 o clock from 20%, at 12 for the orange midpoint, and clamps at 170', () => {
-    const start = needleLine(20);
-    const below = needleLine(0);
-    const clockwise = needleLine(40);
-    const middle = needleLine(ZONE_RING_TOP_PERCENT);
-    const cap = needleLine(170);
-    const over = needleLine(180);
-    const inner = Math.hypot(start.x1 - ZONE_RING_CENTER, start.y1 - ZONE_RING_CENTER);
-    const outer = Math.hypot(start.x2 - ZONE_RING_CENTER, start.y2 - ZONE_RING_CENTER);
+describe('zoneBarBands', () => {
+  it('stacks blue at the bottom through purple at the top, with equal gaps', () => {
+    const bands = zoneBarBands();
+    const gaps = bands.slice(0, -1).map((band, index) => bands[index + 1].bottom - (band.bottom + band.height));
 
-    expect(start.x2).toBeCloseTo(ZONE_RING_CENTER, 5);
-    expect(start.y2).toBeGreaterThan(ZONE_RING_CENTER);
-    expect(clockwise.x2).toBeLessThan(start.x2);
-    expect(middle.x2).toBeCloseTo(ZONE_RING_CENTER, 5);
-    expect(middle.y2).toBeLessThan(ZONE_RING_CENTER);
-    expect(cap.x2).toBeCloseTo(start.x2, 5);
-    expect(cap.y2).toBeCloseTo(start.y2, 5);
-    expect(over).toEqual(cap);
-    expect(below).toEqual(start);
-    expect(start.y1).toBeGreaterThan(ZONE_RING_CENTER);
-    // The coloured stroke is 10 units wide. The tick crosses it and overhangs ~1px each side.
-    expect(inner).toBeCloseTo(ZONE_RING_RADIUS - 5 - 1.5, 5);
-    expect(outer).toBeCloseTo(ZONE_RING_RADIUS + 5 + 1.5, 5);
-    expect(Math.hypot(start.x2 - start.x1, start.y2 - start.y1)).toBeCloseTo(13, 5);
-  });
-});
-
-describe('segmentStroke', () => {
-  it('gives a wider zone a longer dash', () => {
-    const zone1 = Number(segmentStroke(0, 55).dasharray.split(' ')[0]);
-    const zone3 = Number(segmentStroke(76, 91).dasharray.split(' ')[0]);
-
-    expect(zone1).toBeGreaterThan(zone3);
-  });
-
-  it('leaves the same gap between every pair of segments, including where the last meets the first', () => {
-    const segments = zoneRingSegments();
-    const circumference = 2 * Math.PI * ZONE_RING_RADIUS;
-    const arcs = segments.map((segment) => {
-      const start = zoneRingTurn(segment.startPercent);
-      const dash = Number(segmentStroke(segment.startPercent, segment.endPercent).dasharray.split(' ')[0]);
-      return { start, end: start + dash / circumference };
-    });
-    const gaps = arcs.map((arc, index) => {
-      const next = arcs[(index + 1) % arcs.length];
-      const nextStart = index === arcs.length - 1 ? next.start + 1 : next.start;
-      return (nextStart - arc.end) * circumference;
-    });
-
-    expect(segments[0].colour).toBe('#3b8bff');
+    expect(bands.map((band) => band.colour)).toEqual(ZONES.map((zone) => zone.colour));
+    expect(bands[0].bottom).toBe(0);
+    expect(bands[0].colour).toBe('#3b8bff');
+    expect(bands[6].colour).toBe('#b45cff');
+    expect(bands[6].bottom + bands[6].height).toBeCloseTo(1, 5);
+    expect(bands[0].height).toBeGreaterThan(bands[2].height);
     for (const gap of gaps) {
-      expect(gap).toBeCloseTo(gaps[0], 1);
+      expect(gap).toBeCloseTo(ZONE_BAR_GAP, 5);
     }
-    expect(gaps[0]).toBeGreaterThan(1);
-    expect(gaps[0]).toBeLessThan(2);
+    expect(ZONE_BAR_GAP).toBeGreaterThan(0);
+    expect(ZONE_BAR_GAP).toBeLessThan(0.02);
   });
 
-  it('centres the orange segment on 12 o clock and keeps each half proportional', () => {
+  it('keeps the orange midpoint at the middle and each half proportional', () => {
+    const bands = zoneBarBands();
+    const orange = bands[3];
     const segments = zoneRingSegments();
-    const orange = segments[3];
-    const orangeMidTurn = (zoneRingTurn(orange.startPercent) + zoneRingTurn(orange.endPercent)) / 2;
 
     expect(orange.colour).toBe('#ff8a1f');
-    expect(orange.startPercent).toBe(91);
-    expect(orange.endPercent).toBe(106);
-    expect(zoneRingTurn(orange.startPercent)).toBeLessThan(0.5);
-    expect(zoneRingTurn(orange.endPercent)).toBeGreaterThan(0.5);
-    expect(orangeMidTurn).toBeCloseTo(0.5, 1);
+    expect(segments[3].startPercent).toBe(91);
+    expect(segments[3].endPercent).toBe(106);
+    expect(orange.bottom).toBeLessThan(0.5);
+    expect(orange.bottom + orange.height).toBeGreaterThan(0.5);
+    expect(zoneBarFraction(98)).toBe(0.5);
 
-    const lower = zoneRingTurn(56) - zoneRingTurn(20);
-    const lowerNext = zoneRingTurn(76) - zoneRingTurn(56);
+    const lower = zoneBarFraction(56) - zoneBarFraction(20);
+    const lowerNext = zoneBarFraction(76) - zoneBarFraction(56);
     expect(lower / lowerNext).toBeCloseTo(36 / 20, 5);
 
-    const upper = zoneRingTurn(121) - zoneRingTurn(106);
-    const upperNext = zoneRingTurn(151) - zoneRingTurn(121);
-    const sprint = zoneRingTurn(170) - zoneRingTurn(151);
+    const upper = zoneBarFraction(121) - zoneBarFraction(106);
+    const upperNext = zoneBarFraction(151) - zoneBarFraction(121);
+    const sprint = zoneBarFraction(170) - zoneBarFraction(151);
     expect(upper / upperNext).toBeCloseTo(15 / 30, 5);
     expect(sprint / upperNext).toBeCloseTo(19 / 30, 5);
   });
