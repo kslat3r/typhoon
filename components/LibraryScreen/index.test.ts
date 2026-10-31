@@ -40,7 +40,7 @@ describe('renderLibraryScreen', () => {
     expect(cards).toHaveLength(RIDES.length);
     expect(cards[0].querySelectorAll('.ride-shape .ride-profile-bar').length).toBeGreaterThanOrEqual(10);
     expect(cards[0].textContent).toContain('First Light');
-    expect(cards[0].textContent).toContain('30 min · Gentle');
+    expect(cards[0].textContent).toContain('Gentle · 30 min');
     expect(root.querySelector('h2')).toBeNull();
     expect(root.querySelector('h1')?.textContent).toBe('Tracks');
     expect(root.querySelector('a[href="#/history"]')?.getAttribute('aria-label')).toBe('History');
@@ -77,7 +77,7 @@ describe('renderLibraryScreen', () => {
     const cards: NodeListOf<Element> = root.querySelectorAll('.ride-card');
     expect(cards).toHaveLength(5);
     for (const card of cards) {
-      expect(card.textContent).toContain('Gentle');
+      expect(card.textContent).toContain('Gentle · 30 min');
       expect(card.getAttribute('href')).toContain('-30');
     }
     expect(root.querySelector('h2')).toBeNull();
