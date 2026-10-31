@@ -1,8 +1,8 @@
 import type { ZoneNumber } from '@/lib/client/models/types';
 import { ZONES } from '@/lib/client/models/zones';
 
-// Zone 7 is open-ended. The ring stops at 160% of FTP so the purple sprint arc is the short cap above 150%.
-export const ZONE_RING_MAX_PERCENT = 160;
+// Zone 7 is open-ended. The ring stops at 180% of FTP so the purple sprint arc is the band above 150%.
+export const ZONE_RING_MAX_PERCENT = 180;
 export const ZONE_RING_RADIUS = 36;
 export const ZONE_RING_CENTER = 50;
 
@@ -30,7 +30,7 @@ export function zoneRingSegments(): ZoneRingSegment[] {
 }
 
 // The caption under the ring is the top of the target zone, not the middle of the range.
-// Zone 7 has no finite top. 150%+ is the published open end; 160% is only the drawing cap.
+// Zone 7 has no finite top. 150%+ is the published open end; 180% is only the drawing cap.
 export function zoneTargetLabel(zone: ZoneNumber): string {
   const band = ZONES[zone - 1];
   if (!Number.isFinite(band.maxPercent)) {
@@ -39,10 +39,18 @@ export function zoneTargetLabel(zone: ZoneNumber): string {
   return `${band.maxPercent}%`;
 }
 
-// 0 is 6 o'clock. The turn runs clockwise to 1 at the 160% cap, back at that same point.
+// Threshold (zone 4, 91–105) is centred on 12 o'clock. 98 is the middle of that zone.
+export const ZONE_RING_TOP_PERCENT = (ZONES[3].minPercent + ZONES[3].maxPercent) / 2;
+
+// 0% is 6 o'clock. 98% is 12 o'clock. 180% returns to 6 o'clock.
+// Each semicircle is linear, so the zones on that half keep their percent proportions.
 export function zoneRingTurn(percent: number): number {
   const clamped: number = Math.min(ZONE_RING_MAX_PERCENT, Math.max(0, percent));
-  return clamped / ZONE_RING_MAX_PERCENT;
+  if (clamped <= ZONE_RING_TOP_PERCENT) {
+    return (clamped / ZONE_RING_TOP_PERCENT) * 0.5;
+  }
+  const upperSpan: number = ZONE_RING_MAX_PERCENT - ZONE_RING_TOP_PERCENT;
+  return 0.5 + ((clamped - ZONE_RING_TOP_PERCENT) / upperSpan) * 0.5;
 }
 
 function ringAngle(percent: number): number {
