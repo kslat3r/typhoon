@@ -4,6 +4,7 @@ import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import reconnectWattbike from '@/lib/client/helpers/reconnect-wattbike';
 import loadSettings from '@/lib/client/helpers/load-settings';
+import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import { STORAGE_KEYS } from '@/lib/client/models/storage-keys';
 import type { BikeListener, Ride, RideSummary } from '@/lib/client/models/types';
 
@@ -405,12 +406,19 @@ describe('renderRideScreen', () => {
     findButton(root, 'Test').click();
     await vi.advanceTimersByTimeAsync(1000);
 
+    // Assert — clocks move every second; the averaged watts wait for the 5s window
+    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:06');
+    expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('--');
+    expect(findButton(root, 'Test').hidden).toBe(true);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(250);
+
     // Assert
     const watts: number = Number((root.querySelector('.ride-stat-watts') as HTMLElement).textContent);
     expect(watts).toBeGreaterThanOrEqual(110);
     expect(watts).toBeLessThanOrEqual(152);
-    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:06');
-    expect(findButton(root, 'Test').hidden).toBe(true);
+    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:05');
 
     // Act
     await vi.advanceTimersByTimeAsync(8000);
@@ -443,6 +451,15 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.ride-track')).toBeNull();
     expect((root.querySelector('.ride-top') as HTMLElement).textContent).not.toMatch(/music|spotify|playlist/i);
     expect(countdown.textContent).toBe('0:08');
+    expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('--');
+    expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('--');
+    expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('hidden');
+
+    // Act
+    await vi.advanceTimersByTimeAsync(3500);
+
+    // Assert
+    expect(countdown.textContent).toBe('0:05');
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
     expect(root.querySelector('.ride-stat-percent')).toBeNull();
     expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('75%');
@@ -466,6 +483,116 @@ describe('renderRideScreen', () => {
     // Assert
     expect(appendRideSummary).toHaveBeenCalledTimes(1);
     expect(location.hash.startsWith('#/summary/')).toBe(true);
+  });
+
+  it('shows the five-second average of live stats and keeps full-resolution history', async () => {
+    // Arrange
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    const root: HTMLElement = await renderAndStart(ride);
+    const { onSample } = capturedBikeCallbacks();
+    const text = (className: string): string => (root.querySelector(className) as HTMLElement).textContent ?? '';
+
+    // Act
+    onSample({ watts: 100, rpm: 80, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(1000);
+    onSample({ watts: 200, rpm: 100, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(1000);
+    onSample({ watts: 300, rpm: null, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    // Assert
+    expect(text('.ride-stat-interval')).toBe('9:57');
+    expect(text('.ride-stat-watts')).toBe('--');
+    expect(text('.ride-stat-miles')).toBe('--');
+    expect(text('.zone-ring-current')).toBe('--');
+
+    // Act
+    await vi.advanceTimersByTimeAsync(2000);
+
+    // Assert
+    const expectedMph: string = ((speedFromWatts(100) + speedFromWatts(200) + speedFromWatts(300)) / 3).toFixed(1);
+    expect(text('.ride-stat-watts')).toBe('200');
+    expect(text('.ride-stat-rpm')).toBe('90');
+    expect(text('.ride-stat-mph')).toBe(expectedMph);
+    expect(text('.ride-stat-miles')).not.toBe('--');
+    expect(text('.zone-ring-current')).toBe('100%');
+    expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('visible');
+    const milesAtWindow: string = text('.ride-stat-miles');
+
+    // Act — clocks and the next sample move, the painted stats wait
+    onSample({ watts: 160, rpm: 70, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(2000);
+
+    // Assert
+    expect(text('.ride-stat-interval')).toBe('9:53');
+    expect(text('.ride-stat-watts')).toBe('200');
+    expect(text('.ride-stat-miles')).toBe(milesAtWindow);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Assert
+    expect(text('.ride-stat-watts')).toBe('160');
+    expect(text('.ride-stat-rpm')).toBe('70');
+    expect(text('.ride-stat-miles')).not.toBe(milesAtWindow);
+
+    // Act — a window with no samples keeps the last value
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // Assert
+    expect(text('.ride-stat-watts')).toBe('160');
+    expect(text('.ride-stat-rpm')).toBe('70');
+    expect(text('.ride-stat-interval')).toBe('9:45');
+
+    // Act — an explicit zero is a real reading
+    onSample({ watts: 0, rpm: 0, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // Assert
+    expect(text('.ride-stat-watts')).toBe('0');
+    expect(text('.ride-stat-rpm')).toBe('0');
+    expect(text('.ride-stat-mph')).toBe('0.0');
+
+    // Act
+    findButton(root, 'End ride').click();
+
+    // Assert
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.maxWatts).toBe(300);
+    expect(summary.averageWatts).not.toBe(200);
+    expect(summary.durationSeconds).toBeGreaterThan(10);
+  });
+
+  it('keeps the last average through a pause instead of adopting a zero that arrived while paused', async () => {
+    // Arrange
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    const root: HTMLElement = await renderAndStart(ride);
+    const { onSample } = capturedBikeCallbacks();
+    const text = (className: string): string => (root.querySelector(className) as HTMLElement).textContent ?? '';
+    onSample({ watts: 180, rpm: 85, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(text('.ride-stat-watts')).toBe('180');
+    const intervalAtPause: string = text('.ride-stat-interval');
+
+    // Act
+    findButton(root, 'Pause').click();
+    onSample({ watts: 0, rpm: 0, receivedAt: performance.now() });
+    await vi.advanceTimersByTimeAsync(1500);
+
+    // Assert
+    expect(text('.ride-stat-watts')).toBe('180');
+    expect(text('.ride-stat-rpm')).toBe('85');
+    expect(text('.ride-stat-interval')).toBe(intervalAtPause);
+
+    // Act
+    findButton(root, 'Resume').click();
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // Assert
+    expect(text('.ride-stat-watts')).toBe('180');
+    expect(text('.ride-stat-rpm')).toBe('85');
+    expect(text('.ride-stat-mph')).not.toBe('0.0');
+    expect(text('.ride-stat-interval')).not.toBe(intervalAtPause);
   });
 
   it('shows Reconnecting after a disconnect and records missing seconds', async () => {

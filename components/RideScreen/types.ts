@@ -1,3 +1,4 @@
+import type { DisplayWindowState, LiveAverage } from '@/lib/client/helpers/display-window';
 import type { BikeSample, IntervalPosition, RideStats, Settings } from '@/lib/client/models/types';
 
 export type FinishReason = 'completed' | 'ended' | 'navigated';
@@ -42,6 +43,8 @@ export type RideScreenState = {
   pausedMs: number;
   lastTickAt: number;
   stats: RideStats;
+  displayWindow: DisplayWindowState;
+  displayedLive: LiveAverage | null;
   latestSample: BikeSample | null;
   position: IntervalPosition | null;
   device: BluetoothDevice | null;
