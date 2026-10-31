@@ -548,12 +548,37 @@ describe('renderRideScreen', () => {
     expect(summary.plannedSecondsInZone?.[1]).toBeGreaterThanOrEqual(60);
   });
 
+  it('saves the ridden time when a ride is paused and ended early', async () => {
+    // Arrange
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    const root: HTMLElement = await renderAndStart(ride);
+    await vi.advanceTimersByTimeAsync(30_000);
+    findButton(root, 'Pause').click();
+    await vi.advanceTimersByTimeAsync(20_000);
+    findButton(root, 'Resume').click();
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    // Act
+    findButton(root, 'End ride').click();
+
+    // Assert
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.endedEarly).toBe(true);
+    expect(summary.plannedSeconds).toBe(600);
+    expect(summary.durationSeconds).toBeGreaterThanOrEqual(60);
+    expect(summary.durationSeconds).toBeLessThan(75);
+  });
+
   it('records a completed ride once even if End ride is pressed afterwards', async () => {
     // Arrange
     const root: HTMLElement = await renderAndStart(testRide);
     await vi.advanceTimersByTimeAsync(30_000);
     expect(appendRideSummary).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(appendRideSummary).mock.calls[0][0].endedEarly).not.toBe(true);
+    const completed: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(completed.endedEarly).not.toBe(true);
+    expect(completed.plannedSeconds).toBe(testRide.lengthSeconds);
+    expect(completed.durationSeconds).toBeGreaterThanOrEqual(29);
+    expect(completed.durationSeconds).toBeLessThanOrEqual(31);
 
     // Act
     findButton(root, 'End ride').click();

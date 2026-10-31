@@ -1,24 +1,12 @@
 import deleteRideSummary from '@/lib/client/helpers/delete-ride-summary';
+import elapsedRideSeconds from '@/lib/client/helpers/elapsed-ride-seconds';
 import formatClock from '@/lib/client/helpers/format-clock';
 import loadHistory from '@/lib/client/helpers/load-history';
-import targetCadenceLabel from '@/lib/client/helpers/target-cadence-label';
 import type { RideSummary } from '@/lib/client/models/types';
-
-function buildDetail(text: string): HTMLSpanElement {
-  const detail: HTMLSpanElement = document.createElement('span');
-  detail.className = 'ride-difficulty';
-  detail.textContent = text;
-  return detail;
-}
 
 function historyDetail(summary: RideSummary): string {
   const date: string = new Date(summary.startedAt).toLocaleDateString();
-  const duration: string = formatClock(summary.durationSeconds);
-  if (summary.averageWatts > 0 || summary.maxWatts > 0) {
-    const cadence: string = summary.averageRpm !== undefined && summary.averageRpm > 0 ? ` · ${summary.averageRpm} rpm` : '';
-    return `${date} · ${duration} · ${summary.averageWatts} W${cadence}`;
-  }
-  return `${date} · ${duration}`;
+  return `${date} · ${formatClock(elapsedRideSeconds(summary))}`;
 }
 
 function buildBackLink(): HTMLAnchorElement {
@@ -42,16 +30,6 @@ function buildRideLink(summary: RideSummary): HTMLAnchorElement {
   detail.textContent = historyDetail(summary);
 
   link.append(name, detail);
-  const target: string | null = summary.averageWatts > 0 || summary.maxWatts > 0 ? null : targetCadenceLabel(summary.plannedSecondsInZone ?? []);
-  if (target !== null) {
-    link.append(buildDetail(`Target ${target}`));
-  }
-  if (summary.endedEarly === true) {
-    const ended: HTMLSpanElement = document.createElement('span');
-    ended.className = 'ride-difficulty';
-    ended.textContent = 'Ended early';
-    link.append(ended);
-  }
   return link;
 }
 

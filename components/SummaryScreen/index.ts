@@ -32,14 +32,6 @@ function hasPower(summary: RideSummary): boolean {
   return summary.averageWatts > 0 || summary.maxWatts > 0;
 }
 
-function durationText(summary: RideSummary): string {
-  const ridden: string = formatClock(summary.durationSeconds);
-  if (summary.plannedSeconds === undefined) {
-    return ridden;
-  }
-  return `${ridden} / ${formatClock(summary.plannedSeconds)}`;
-}
-
 function energyKj(summary: RideSummary): number | undefined {
   if (summary.kilojoules !== undefined && summary.kilojoules > 0) {
     return summary.kilojoules;
@@ -80,9 +72,10 @@ function buildStats(summary: RideSummary): HTMLElement {
   const power: boolean = hasPower(summary);
   const kilojoules: number | undefined = energyKj(summary);
   const intensity: number | undefined = intensityPercent(summary);
-  const duration: HTMLElement = buildStatCell('Duration', durationText(summary));
-  duration.classList.add('summary-stat-wide');
-  grid.append(duration);
+  appendStat(grid, 'Elapsed', formatClock(summary.durationSeconds));
+  if (summary.plannedSeconds !== undefined) {
+    appendStat(grid, 'Planned', formatClock(summary.plannedSeconds));
+  }
   if (power) {
     appendStat(grid, 'Avg watts', String(summary.averageWatts));
     appendStat(grid, 'Max watts', String(summary.maxWatts));
