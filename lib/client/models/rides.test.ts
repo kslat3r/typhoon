@@ -12,7 +12,7 @@ const EFFORT_CAPS: Record<Difficulty, Record<number, number>> = {
   4: { 4: 600, 5: 45, 6: 20, 7: 10 },
   5: { 4: 600, 5: 60, 6: 30, 7: 15 },
 };
-const ZONE_MIDPOINT: number[] = [0, 27.5, 65.5, 83.5, 101, 118.5, 138.5, 160];
+const ZONE_MIDPOINT: number[] = [0, 27.5, 65.5, 83, 98, 113, 135.5, 175];
 
 function secondsAtOrAbove(ride: Ride, zone: number): number {
   return ride.intervals.filter((i) => i.zone >= zone).reduce((sum, i) => sum + i.seconds, 0);

@@ -724,7 +724,7 @@ describe('renderRideScreen', () => {
     expect(countdown.textContent).toBe('0:10');
     expect(root.querySelectorAll('.zone-ring-segment')).toHaveLength(7);
     expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('--');
-    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('55–76%');
+    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('56–75%');
 
     // Act
     findButton(root, 'Connect bike').click();
@@ -741,9 +741,9 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('75%');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.textContent).toContain('Next Z4');
-    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('55–76%');
+    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('56–75%');
     expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('visible');
-    expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('75% of FTP, target 55–76%');
+    expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('75% of FTP, target 56–75%');
     expect((root.querySelector('.ride-stat-rpm') as HTMLElement).textContent).toBe('90');
     expect((root.querySelector('.ride-stat-rpm') as HTMLElement).parentElement?.textContent).toContain('Cadence');
     expect(visibleStatLabels(root)).toEqual(['Interval', 'Next Z4', 'Watts', 'Cadence', 'MPH', 'Avg MPH', 'Miles', 'Remaining']);

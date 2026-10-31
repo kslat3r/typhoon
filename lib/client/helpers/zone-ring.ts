@@ -18,18 +18,22 @@ export type ZoneRingSegment = {
 };
 
 export function zoneRingSegments(): ZoneRingSegment[] {
-  return ZONES.map((band) => ({
-    zone: band.zone,
-    colour: band.colour,
-    startPercent: band.minPercent,
-    endPercent: band.maxPercent === Infinity ? ZONE_RING_MAX_PERCENT : band.maxPercent,
-  }));
+  return ZONES.map((band, index) => {
+    const next = ZONES[index + 1];
+    return {
+      zone: band.zone,
+      colour: band.colour,
+      startPercent: band.minPercent,
+      // Run each segment up to the next zone so the 1% Coggan gaps do not open holes.
+      endPercent: next === undefined ? ZONE_RING_MAX_PERCENT : next.minPercent,
+    };
+  });
 }
 
 export function zoneTargetLabel(zone: ZoneNumber): string {
   const band = ZONES[zone - 1];
   if (band.maxPercent === Infinity) {
-    return `${band.minPercent}%+`;
+    return '150%+';
   }
   return `${band.minPercent}–${band.maxPercent}%`;
 }
