@@ -32,6 +32,41 @@ describe('summariseRide', () => {
     expect(summary.startedAt).toBe('2026-10-28T07:00:00.000Z');
     expect(summary.durationSeconds).toBe(104);
     expect(summary.ftpTestAverageWatts).toBeUndefined();
+    expect(summary.plannedSeconds).toBe(1800);
+    expect(summary.kilojoules).toBe(20);
+    expect(summary.intensityPercent).toBe(133);
+    expect(summary.normalizedPower).toBeUndefined();
+    expect(summary.averageRpm).toBeUndefined();
+  });
+
+  it('stores cadence, normalized power, and planned zones when they were recorded', () => {
+    // Arrange
+    const stats = {
+      ...emptyRideStats(),
+      sampledSeconds: 60,
+      wattSeconds: 12000,
+      maxWatts: 300,
+      miles: 0.4,
+      rpmSeconds: 5280,
+      rpmSampledSeconds: 60,
+      maxRpm: 100,
+      npFourthSum: 30 * 200 ** 4,
+      npWindows: 30,
+      plannedSecondsInZone: [0, 40, 0, 20, 0, 0, 0] as [number, number, number, number, number, number, number],
+    };
+
+    // Act
+    const summary = summariseRide(ride, stats, 200, new Date('2026-10-28T07:00:00Z'));
+
+    // Assert
+    expect(summary.averageWatts).toBe(200);
+    expect(summary.averageRpm).toBe(88);
+    expect(summary.maxRpm).toBe(100);
+    expect(summary.normalizedPower).toBe(200);
+    expect(summary.intensityFactor).toBe(1);
+    expect(summary.intensityPercent).toBe(100);
+    expect(summary.kilojoules).toBe(12);
+    expect(summary.plannedSecondsInZone).toEqual([0, 40, 0, 20, 0, 0, 0]);
   });
 
   it('reports zero averages when nothing was sampled', () => {

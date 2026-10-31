@@ -27,6 +27,7 @@ import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
+const MIN_ENDED_RIDE_SECONDS = 60;
 const POLL_MS = 500;
 const RECONNECT_MS = 3000;
 const SAMPLE_MAX_AGE_MS = 3000;
@@ -468,7 +469,19 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   state.elements.pauseButton.hidden = true;
   state.elements.endButton.hidden = true;
   state.elements.doneButton.hidden = reason !== 'ended';
-  if (state.testMode || state.stats.sampledSeconds === 0) {
+  if (state.testMode) {
+    if (reason === 'completed') {
+      navigate('#/');
+    }
+    return;
+  }
+
+  const riddenSeconds: number = state.stats.sampledSeconds + state.stats.missingSeconds;
+  if (reason === 'ended' && riddenSeconds < MIN_ENDED_RIDE_SECONDS) {
+    return;
+  }
+
+  if (state.stats.sampledSeconds === 0 && reason !== 'ended') {
     if (reason === 'completed') {
       navigate('#/');
     }
@@ -478,6 +491,9 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   const ftpTestAverageWatts: number | undefined =
     ride.ftpTest === undefined ? undefined : state.ftpTestSeconds > 0 ? state.ftpTestWattSeconds / state.ftpTestSeconds : 0;
   const summary: RideSummary = summariseRide(ride, state.stats, state.settings.ftp, state.startedAtDate, ftpTestAverageWatts);
+  if (reason === 'ended') {
+    summary.endedEarly = true;
+  }
 
   appendRideSummary(summary);
   state.summaryId = summary.id;
@@ -507,7 +523,7 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
   const deltaSeconds: number = Math.max(0, Math.min(now, rideEnd) - state.lastTickAt) / 1000;
   const elapsed: number = (now - state.startedAt) / 1000;
   const sample: BikeSample | null = freshSample(state, now);
-  state.stats = accumulateRideStats(state.stats, sample, deltaSeconds, state.settings.ftp);
+  state.stats = accumulateRideStats(state.stats, sample, deltaSeconds, state.settings.ftp, state.position?.interval.zone);
   state.lastTickAt = now;
 
   const position: IntervalPosition | null = intervalAtElapsed(ride, elapsed);
@@ -749,11 +765,9 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   });
   pauseButton.hidden = true;
   const endButton: HTMLButtonElement = buildButton('End ride', (): void => {
-    if (!window.confirm('End ride?')) {
-      return;
-    }
     finishRide(state, ride, 'ended');
   });
+  endButton.classList.add('ride-end');
   endButton.hidden = true;
   const doneButton: HTMLButtonElement = buildButton('Done', (): void => {
     navigate(state.summaryId === null ? '#/' : '#/summary/' + state.summaryId);
