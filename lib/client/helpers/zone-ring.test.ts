@@ -3,6 +3,7 @@ import { ZONES } from '@/lib/client/models/zones';
 import {
   ZONE_RING_CENTER,
   ZONE_RING_MAX_PERCENT,
+  ZONE_RING_MIN_PERCENT,
   ZONE_RING_RADIUS,
   ZONE_RING_TOP_PERCENT,
   markerPoint,
@@ -18,9 +19,17 @@ describe('zoneRingSegments', () => {
     const segments = zoneRingSegments();
     const sprint = segments[6];
 
-    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([56, 20, 15, 15, 15, 30, 29]);
-    expect(segments.reduce((sum, segment) => sum + (segment.endPercent - segment.startPercent), 0)).toBe(ZONE_RING_MAX_PERCENT);
+    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([36, 20, 15, 15, 15, 30, 29]);
+    expect(segments.reduce((sum, segment) => sum + (segment.endPercent - segment.startPercent), 0)).toBe(
+      ZONE_RING_MAX_PERCENT - ZONE_RING_MIN_PERCENT,
+    );
     expect(segments.map((segment) => segment.colour)).toEqual(ZONES.map((zone) => zone.colour));
+    expect(ZONES[0].minPercent).toBe(0);
+    expect(ZONES[0].maxPercent).toBe(55);
+    expect(ZONE_RING_MIN_PERCENT).toBe(20);
+    expect(segments[0].startPercent).toBe(20);
+    expect(segments[0].endPercent).toBe(56);
+    expect(segments[0].colour).toBe('#3b8bff');
     expect(ZONE_RING_MAX_PERCENT).toBe(180);
     expect(sprint.startPercent).toBe(151);
     expect(sprint.endPercent).toBe(180);
@@ -61,7 +70,11 @@ describe('markerPoint', () => {
     expect(cap.x).toBeCloseTo(start.x, 5);
     expect(cap.y).toBeCloseTo(start.y, 5);
     expect(over).toEqual(cap);
+    expect(markerPoint(10)).toEqual(start);
+    expect(markerPoint(20)).toEqual(start);
     expect(zoneRingTurn(0)).toBe(0);
+    expect(zoneRingTurn(10)).toBe(0);
+    expect(zoneRingTurn(20)).toBe(0);
     expect(zoneRingTurn(98)).toBe(0.5);
     expect(zoneRingTurn(180)).toBe(1);
     expect(zoneRingTurn(200)).toBe(1);
@@ -69,8 +82,9 @@ describe('markerPoint', () => {
 });
 
 describe('needleLine', () => {
-  it('points at 6 o clock at 0%, up at the orange midpoint, and clamps at 180', () => {
-    const start = needleLine(0);
+  it('points at 6 o clock from 20% down, up at the orange midpoint, and clamps at 180', () => {
+    const start = needleLine(20);
+    const below = needleLine(0);
     const clockwise = needleLine(40);
     const middle = needleLine(ZONE_RING_TOP_PERCENT);
     const cap = needleLine(180);
@@ -84,6 +98,7 @@ describe('needleLine', () => {
     expect(cap.x2).toBeCloseTo(start.x2, 5);
     expect(cap.y2).toBeCloseTo(start.y2, 5);
     expect(over).toEqual(cap);
+    expect(below).toEqual(start);
     expect(start.y1).toBeGreaterThan(ZONE_RING_CENTER);
     expect(Math.hypot(start.x2 - start.x1, start.y2 - start.y1)).toBeGreaterThan(10);
   });
@@ -131,9 +146,9 @@ describe('segmentStroke', () => {
     expect(zoneRingTurn(orange.endPercent)).toBeGreaterThan(0.5);
     expect(orangeMidTurn).toBeCloseTo(0.5, 1);
 
-    const lower = zoneRingTurn(56) - zoneRingTurn(0);
+    const lower = zoneRingTurn(56) - zoneRingTurn(20);
     const lowerNext = zoneRingTurn(76) - zoneRingTurn(56);
-    expect(lower / lowerNext).toBeCloseTo(56 / 20, 5);
+    expect(lower / lowerNext).toBeCloseTo(36 / 20, 5);
 
     const upper = zoneRingTurn(121) - zoneRingTurn(106);
     const upperNext = zoneRingTurn(151) - zoneRingTurn(121);
