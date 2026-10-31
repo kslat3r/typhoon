@@ -15,7 +15,8 @@ export type RideScreenElements = {
   prevButton: HTMLButtonElement;
   nextButton: HTMLButtonElement;
   interval: HTMLElement;
-  percent: HTMLElement;
+  next: HTMLElement;
+  nextLabel: HTMLElement;
   watts: HTMLElement;
   rpm: HTMLElement;
   mph: HTMLElement;
