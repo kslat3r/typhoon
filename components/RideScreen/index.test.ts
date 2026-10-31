@@ -137,7 +137,7 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.zone-ring-target')).toBeNull();
     expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('Target 70 rpm');
     expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill')).toBe('none');
-    expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('hidden');
+    expect(root.querySelector('.zone-ring-marker')).toBeNull();
     expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('hidden');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
     expect(visibleStatLabels(root)).toEqual(['Target', 'Interval', 'Next', 'Remaining']);
@@ -468,12 +468,14 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.ride-stat-percent')).toBeNull();
     expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('75%');
     expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill')).toBe('#2fd18b');
-    expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill-opacity')).toBe('0.5');
+    expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill-opacity')).toBe('0.7');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.querySelector('.ride-stat-label')?.textContent).toBe('Next');
     expect(root.querySelector('.zone-ring-target')).toBeNull();
-    expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('visible');
+    expect(root.querySelector('.zone-ring-marker')).toBeNull();
     expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('visible');
+    expect(Number(root.querySelector('.zone-ring-needle')?.getAttribute('x1'))).toBeLessThan(50);
+    expect(Number(root.querySelector('.zone-ring-needle')?.getAttribute('y1'))).toBeLessThan(50);
     expect(Number(root.querySelector('.zone-ring-needle')?.getAttribute('x2'))).toBeLessThan(50);
     expect(Number(root.querySelector('.zone-ring-needle')?.getAttribute('y2'))).toBeLessThan(50);
     expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('75% of FTP, target 75%');
@@ -523,7 +525,7 @@ describe('renderRideScreen', () => {
     expect(text('.ride-stat-miles')).not.toBe('--');
     expect(text('.zone-ring-current')).toBe('100%');
     expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill')).toBe('#ff8a1f');
-    expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill-opacity')).toBe('0.5');
+    expect(root.querySelector('.zone-ring-fill')?.getAttribute('fill-opacity')).toBe('0.7');
     expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('visible');
     const milesAtWindow: string = text('.ride-stat-miles');
 
