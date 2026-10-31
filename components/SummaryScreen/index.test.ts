@@ -33,6 +33,9 @@ describe('renderSummaryScreen', () => {
     renderSummaryScreen(root, SUMMARY.id);
 
     // Assert
+    expect(root.textContent).toContain('Elapsed');
+    expect(root.textContent).toContain('30:00');
+    expect(root.textContent).not.toContain('Planned');
     expect(root.textContent).toContain('187');
     expect(root.textContent).toContain('94%');
     expect(root.textContent).toContain('337 kJ');
@@ -59,7 +62,9 @@ describe('renderSummaryScreen', () => {
     renderSummaryScreen(root, SUMMARY.id);
 
     // Assert
-    expect(root.textContent).toContain('30:00 / 30:00');
+    expect(root.textContent).toContain('Elapsed');
+    expect(root.textContent).toContain('Planned');
+    expect(root.textContent).toContain('30:00');
     expect(root.textContent).toContain('190');
     expect(root.textContent).toContain('88');
     expect(root.textContent).toContain('102');
@@ -90,7 +95,10 @@ describe('renderSummaryScreen', () => {
     renderSummaryScreen(root, SUMMARY.id);
 
     // Assert
-    expect(root.textContent).toContain('15:00 / 30:00');
+    expect(root.textContent).toContain('Elapsed');
+    expect(root.textContent).toContain('15:00');
+    expect(root.textContent).toContain('Planned');
+    expect(root.textContent).toContain('30:00');
     expect(root.textContent).toContain('70–85 rpm');
     expect(root.textContent).toContain('Planned zones');
     expect(root.textContent).toContain('Ended early');

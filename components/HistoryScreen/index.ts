@@ -1,11 +1,12 @@
 import deleteRideSummary from '@/lib/client/helpers/delete-ride-summary';
+import elapsedRideSeconds from '@/lib/client/helpers/elapsed-ride-seconds';
 import formatClock from '@/lib/client/helpers/format-clock';
 import loadHistory from '@/lib/client/helpers/load-history';
 import type { RideSummary } from '@/lib/client/models/types';
 
 function historyDetail(summary: RideSummary): string {
   const date: string = new Date(summary.startedAt).toLocaleDateString();
-  return `${date} · ${formatClock(summary.durationSeconds)}`;
+  return `${date} · ${formatClock(elapsedRideSeconds(summary))}`;
 }
 
 function buildBackLink(): HTMLAnchorElement {

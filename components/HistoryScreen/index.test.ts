@@ -83,17 +83,19 @@ describe('renderHistoryScreen', () => {
   it('shows only the date, title, and duration on each row', () => {
     // Arrange
     const startedAt = '2026-10-28T08:00:00.000Z';
-    appendRideSummary({ ...buildSummary('bike', 'Edge Work'), averageRpm: 88, durationSeconds: 1800, averageWatts: 187, endedEarly: true, startedAt });
+    appendRideSummary({ ...buildSummary('bike', 'Edge Work'), averageRpm: 88, durationSeconds: 1800, plannedSeconds: 1800, averageWatts: 187, startedAt });
     appendRideSummary({
       ...buildSummary('manual', 'Rolling Tempo'),
       averageWatts: 0,
       maxWatts: 0,
       miles: 0,
-      durationSeconds: 900,
-      plannedSecondsInZone: [0, 900, 0, 0, 0, 0, 0],
+      durationSeconds: 754,
+      plannedSeconds: 1800,
+      plannedSecondsInZone: [0, 754, 0, 0, 0, 0, 0],
       endedEarly: true,
       startedAt,
     });
+    appendRideSummary({ ...buildSummary('old', 'Long Shadows'), durationSeconds: 754, plannedSeconds: undefined, startedAt });
     const root: HTMLElement = document.createElement('div');
 
     // Act
@@ -111,10 +113,14 @@ describe('renderHistoryScreen', () => {
     expect(bike).not.toContain('Ended early');
     expect(manual).toContain('Rolling Tempo');
     expect(manual).toContain(date);
-    expect(manual).toContain('15:00');
+    expect(manual).toContain('12:34');
+    expect(manual).not.toContain('30:00');
     expect(manual).not.toContain('Target');
     expect(manual).not.toContain('0 W');
     expect(manual).not.toContain('Ended early');
+    const older: string = textOf(root, 'Long Shadows');
+    expect(older).toContain('12:34');
+    expect(older).not.toContain('30:00');
     expect(root.querySelector('a[href="#/summary/bike"]')).not.toBeNull();
     expect(deleteButton(root, 'Edge Work').classList.contains('history-delete')).toBe(true);
   });
