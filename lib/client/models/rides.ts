@@ -1,3 +1,4 @@
+import { EASIER_RIDES } from '@/lib/client/models/easier-rides';
 import type { Ride } from '@/lib/client/models/types';
 
 // Each track ends on a 2:00 zone-1 cool-down, and never a longer tail than
@@ -6,7 +7,7 @@ import type { Ride } from '@/lib/client/models/types';
 // start, middle and end. A block grows by at most half its length or 60s,
 // and sprints stay short. The warm-up and any FTP test keep their length.
 
-export const RIDES: Ride[] = [
+const CLASSIC_RIDES: Ride[] = [
   {
     id: 'edge-work-30',
     name: 'Edge Work',
@@ -2530,3 +2531,5 @@ export const RIDES: Ride[] = [
     ],
   },
 ];
+
+export const RIDES: Ride[] = [...EASIER_RIDES, ...CLASSIC_RIDES];

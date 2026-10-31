@@ -1,7 +1,8 @@
 import renderRideProfile from '@/components/RideProfile';
-import { DIFFICULTY_LABELS } from '@/lib/client/models/difficulty-labels';
+import filterRides, { loadLibraryFilters, saveLibraryFilters, type LibraryFilters } from '@/lib/client/helpers/library-filters';
+import { DIFFICULTY_LABELS, DIFFICULTY_ORDER, difficultyRank } from '@/lib/client/models/difficulty-labels';
 import { RIDES } from '@/lib/client/models/rides';
-import type { Ride } from '@/lib/client/models/types';
+import type { Difficulty, Ride } from '@/lib/client/models/types';
 
 const HISTORY_ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
@@ -46,24 +47,18 @@ function buildRideCard(ride: Ride): HTMLAnchorElement {
   return link;
 }
 
-function buildSection(title: string): HTMLElement {
+function compareRides(a: Ride, b: Ride): number {
+  return difficultyRank(a.difficulty) - difficultyRank(b.difficulty) || a.name.localeCompare(b.name);
+}
+
+function buildSection(title: string, rides: Ride[]): HTMLElement {
   const section: HTMLElement = document.createElement('section');
   const heading: HTMLHeadingElement = document.createElement('h2');
   heading.textContent = title;
   section.append(heading);
-  return section;
-}
-
-function buildRideSection(title: string, lengthSeconds: number): HTMLElement {
-  const section: HTMLElement = buildSection(title);
-  const rides: Ride[] = RIDES.filter((ride: Ride): boolean => ride.lengthSeconds === lengthSeconds).sort(
-    (a: Ride, b: Ride): number => a.difficulty - b.difficulty || a.name.localeCompare(b.name),
-  );
-
   for (const ride of rides) {
     section.append(buildRideCard(ride));
   }
-
   return section;
 }
 
@@ -88,6 +83,80 @@ function buildHeader(): HTMLElement {
   return header;
 }
 
-export default function renderLibraryScreen(root: HTMLElement): void {
-  root.replaceChildren(buildHeader(), buildRideSection('30 minutes', 1800), buildRideSection('45 minutes', 2700));
+function buildChip<K extends keyof LibraryFilters>(
+  root: HTMLElement,
+  rides: Ride[],
+  filters: LibraryFilters,
+  key: K,
+  value: LibraryFilters[K],
+  label: string,
+): HTMLButtonElement {
+  const button: HTMLButtonElement = document.createElement('button');
+  button.type = 'button';
+  button.className = 'filter-chip';
+  button.textContent = label;
+  button.setAttribute('aria-pressed', String(filters[key] === value));
+  button.addEventListener('click', (): void => {
+    const next: LibraryFilters = { ...filters, [key]: value };
+    saveLibraryFilters(next);
+    renderLibraryScreen(root, rides);
+  });
+  return button;
+}
+
+function buildFilterRow<K extends keyof LibraryFilters>(
+  root: HTMLElement,
+  rides: Ride[],
+  filters: LibraryFilters,
+  key: K,
+  groupLabel: string,
+  options: { value: LibraryFilters[K]; label: string }[],
+): HTMLElement {
+  const row: HTMLDivElement = document.createElement('div');
+  row.className = 'filter-row';
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', groupLabel);
+  for (const option of options) {
+    row.append(buildChip(root, rides, filters, key, option.value, option.label));
+  }
+  return row;
+}
+
+function buildFilters(root: HTMLElement, rides: Ride[], filters: LibraryFilters): HTMLElement {
+  const bar: HTMLDivElement = document.createElement('div');
+  bar.className = 'library-filters';
+  const grades: { value: Difficulty; label: string }[] = DIFFICULTY_ORDER.map((difficulty: Difficulty) => ({
+    value: difficulty,
+    label: DIFFICULTY_LABELS[difficulty],
+  }));
+  bar.append(
+    buildFilterRow(root, rides, filters, 'duration', 'Duration', [
+      { value: 'all', label: 'All' },
+      { value: 1800, label: '30 min' },
+      { value: 2700, label: '45 min' },
+    ]),
+    buildFilterRow(root, rides, filters, 'difficulty', 'Difficulty', [{ value: 'all', label: 'All' }, ...grades]),
+  );
+  return bar;
+}
+
+export default function renderLibraryScreen(root: HTMLElement, rides: Ride[] = RIDES): void {
+  const filters: LibraryFilters = loadLibraryFilters();
+  const matched: Ride[] = filterRides(rides, filters).sort(compareRides);
+  const thirty: Ride[] = matched.filter((ride: Ride): boolean => ride.lengthSeconds === 1800);
+  const fortyFive: Ride[] = matched.filter((ride: Ride): boolean => ride.lengthSeconds === 2700);
+  const children: HTMLElement[] = [buildHeader(), buildFilters(root, rides, filters)];
+  if (thirty.length > 0) {
+    children.push(buildSection('30 minutes', thirty));
+  }
+  if (fortyFive.length > 0) {
+    children.push(buildSection('45 minutes', fortyFive));
+  }
+  if (thirty.length === 0 && fortyFive.length === 0) {
+    const empty: HTMLParagraphElement = document.createElement('p');
+    empty.className = 'library-empty';
+    empty.textContent = 'No tracks match these filters.';
+    children.push(empty);
+  }
+  root.replaceChildren(...children);
 }

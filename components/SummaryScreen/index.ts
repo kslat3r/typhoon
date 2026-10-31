@@ -1,7 +1,7 @@
 import formatClock from '@/lib/client/helpers/format-clock';
 import loadHistory from '@/lib/client/helpers/load-history';
 import targetCadenceLabel from '@/lib/client/helpers/target-cadence-label';
-import { DIFFICULTY_LABELS } from '@/lib/client/models/difficulty-labels';
+import { difficultyLabel } from '@/lib/client/models/difficulty-labels';
 import { ZONES } from '@/lib/client/models/zones';
 import type { RideSummary } from '@/lib/client/models/types';
 
@@ -161,7 +161,7 @@ function buildSummary(summary: RideSummary): HTMLElement[] {
 
   const date: string = new Date(summary.startedAt).toLocaleString();
   const ended: string = summary.endedEarly === true ? ' · Ended early' : '';
-  const detail: string = `${date} - ${DIFFICULTY_LABELS[summary.difficulty as keyof typeof DIFFICULTY_LABELS]}${ended}`;
+  const detail: string = `${date} - ${difficultyLabel(summary.difficulty)}${ended}`;
 
   const elements: HTMLElement[] = [heading, buildElement('p', 'summary-detail', detail), buildStats(summary)];
   const zones: HTMLElement | null = zoneChart(summary);
