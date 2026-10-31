@@ -81,7 +81,7 @@ function buildHeader(): HTMLElement {
   const header: HTMLElement = document.createElement('header');
   header.className = 'library-header';
   const heading: HTMLHeadingElement = document.createElement('h1');
-  heading.textContent = 'Typhoon';
+  heading.textContent = 'Tracks';
   const nav: HTMLElement = document.createElement('nav');
   nav.append(buildIconLink('#/history', 'History', HISTORY_ICON), buildIconLink('#/settings', 'Settings', SETTINGS_ICON));
   header.append(heading, nav);
