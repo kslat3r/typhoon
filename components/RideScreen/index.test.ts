@@ -441,21 +441,30 @@ describe('renderRideScreen', () => {
     expect(findButton(root, 'Pause').hidden).toBe(false);
   });
 
-  it('stays on the ride screen after End ride, with Done leading to the summary', async () => {
+  it('records the partial ride when End ride is pressed, once, with no confirmation', async () => {
     // Arrange
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
-    await vi.advanceTimersByTimeAsync(3000);
+    const confirm = vi.spyOn(window, 'confirm');
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    const root: HTMLElement = await renderAndStart(ride);
+    await vi.advanceTimersByTimeAsync(61_000);
 
     // Act
+    findButton(root, 'End ride').click();
     findButton(root, 'End ride').click();
     await vi.advanceTimersByTimeAsync(0);
 
     // Assert
+    expect(confirm).not.toHaveBeenCalled();
     expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.rideName).toBe('Test ride');
+    expect(summary.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(summary.durationSeconds).toBeGreaterThanOrEqual(60);
+    expect(summary.endedEarly).toBe(true);
     expect(location.hash).toBe('#/ride/test-ride');
     expect(findButton(root, 'End ride').hidden).toBe(true);
     expect(findButton(root, 'Done').hidden).toBe(false);
+    expect(findButton(root, 'End ride').classList.contains('ride-end')).toBe(true);
     expect(root.querySelector('.ride-profile-line')).not.toBeNull();
 
     // Act
@@ -463,6 +472,64 @@ describe('renderRideScreen', () => {
 
     // Assert
     expect(location.hash.startsWith('#/summary/')).toBe(true);
+  });
+
+  it('does not record an end in the first minute', async () => {
+    // Arrange
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    const root: HTMLElement = await renderAndStart(ride);
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Act
+    findButton(root, 'End ride').click();
+
+    // Assert
+    expect(appendRideSummary).not.toHaveBeenCalled();
+    expect(findButton(root, 'Done').hidden).toBe(false);
+    expect(findButton(root, 'End ride').hidden).toBe(true);
+  });
+
+  it('records an ended ride without bike stats when Bluetooth is off', async () => {
+    // Arrange
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({ ftp: 200, musicEnabled: false, bluetoothEnabled: false }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    renderRideScreen(root, ride);
+    await vi.advanceTimersByTimeAsync(0);
+    findButton(root, 'Start').click();
+    await vi.advanceTimersByTimeAsync(61_000);
+
+    // Act
+    findButton(root, 'End ride').click();
+
+    // Assert
+    expect(connectWattbike).not.toHaveBeenCalled();
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.rideName).toBe('Test ride');
+    expect(summary.durationSeconds).toBeGreaterThanOrEqual(60);
+    expect(summary.averageWatts).toBe(0);
+    expect(summary.maxWatts).toBe(0);
+    expect(summary.miles).toBe(0);
+    expect(summary.endedEarly).toBe(true);
+  });
+
+  it('records a completed ride once even if End ride is pressed afterwards', async () => {
+    // Arrange
+    const root: HTMLElement = await renderAndStart(testRide);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(appendRideSummary).mock.calls[0][0].endedEarly).not.toBe(true);
+
+    // Act
+    findButton(root, 'End ride').click();
+
+    // Assert
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
   });
 
   it('ignores a lagging player report right after a play call', async () => {

@@ -1,3 +1,5 @@
+import deleteRideSummary from '@/lib/client/helpers/delete-ride-summary';
+import formatClock from '@/lib/client/helpers/format-clock';
 import loadHistory from '@/lib/client/helpers/load-history';
 import type { RideSummary } from '@/lib/client/models/types';
 
@@ -19,10 +21,37 @@ function buildRideLink(summary: RideSummary): HTMLAnchorElement {
 
   const detail: HTMLSpanElement = document.createElement('span');
   detail.className = 'ride-difficulty';
-  detail.textContent = `${new Date(summary.startedAt).toLocaleDateString()} ${summary.averageWatts} W`;
+  detail.textContent = `${new Date(summary.startedAt).toLocaleDateString()} · ${formatClock(summary.durationSeconds)} · ${summary.averageWatts} W`;
 
   link.append(name, detail);
+  if (summary.endedEarly === true) {
+    const ended: HTMLSpanElement = document.createElement('span');
+    ended.className = 'ride-difficulty';
+    ended.textContent = 'Ended early';
+    link.append(ended);
+  }
   return link;
+}
+
+function buildRow(summary: RideSummary, redraw: () => void): HTMLElement {
+  const row: HTMLElement = document.createElement('div');
+  row.className = 'history-row';
+
+  const button: HTMLButtonElement = document.createElement('button');
+  button.type = 'button';
+  button.className = 'history-delete';
+  button.setAttribute('aria-label', `Delete ${summary.rideName}`);
+  button.textContent = 'Delete';
+  button.addEventListener('click', (): void => {
+    if (!window.confirm('Delete this ride?')) {
+      return;
+    }
+    deleteRideSummary(summary.id);
+    redraw();
+  });
+
+  row.append(buildRideLink(summary), button);
+  return row;
 }
 
 export default function renderHistoryScreen(root: HTMLElement): void {
@@ -37,5 +66,5 @@ export default function renderHistoryScreen(root: HTMLElement): void {
     return;
   }
 
-  root.replaceChildren(heading, ...history.map(buildRideLink), buildBackLink());
+  root.replaceChildren(heading, ...history.map((summary: RideSummary): HTMLElement => buildRow(summary, (): void => renderHistoryScreen(root))), buildBackLink());
 }

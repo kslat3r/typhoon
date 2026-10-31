@@ -199,8 +199,40 @@ footer > a:not(.ride-link) + a {
 }
 
 h1 + .ride-link,
-h2 + .ride-link {
+h2 + .ride-link,
+h1 + .history-row {
   border-top: 1px solid var(--line);
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.history-row .ride-link {
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border-bottom: none;
+}
+
+.history-row .ride-difficulty {
+  white-space: normal;
+}
+
+.history-delete {
+  box-sizing: border-box;
+  flex: none;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--line);
 }
 
 .ride-link:active {
@@ -567,6 +599,10 @@ form {
 .ride-actions button[hidden],
 .ride-track-nav button[hidden] {
   display: none;
+}
+
+.ride-actions .ride-end {
+  margin-left: var(--space-5);
 }
 
 .ride-status {

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
+import deleteRideSummary from '@/lib/client/helpers/delete-ride-summary';
 import loadHistory from '@/lib/client/helpers/load-history';
 import loadTempoCache from '@/lib/client/helpers/load-tempo-cache';
 import saveTempoCache from '@/lib/client/helpers/save-tempo-cache';
@@ -58,6 +59,18 @@ describe('loadHistory', () => {
 
     // Assert
     expect(history).toEqual([valid]);
+  });
+
+  it('removes one saved ride and leaves the rest', () => {
+    // Arrange
+    appendRideSummary(buildSummary('first'));
+    appendRideSummary(buildSummary('second'));
+
+    // Act
+    deleteRideSummary('second');
+
+    // Assert
+    expect(loadHistory().map((summary) => summary.id)).toEqual(['first']);
   });
 
   it('gives a six zone entry an empty zone 1', () => {

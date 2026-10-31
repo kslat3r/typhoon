@@ -75,7 +75,8 @@ function buildSummary(summary: RideSummary): HTMLElement[] {
   heading.textContent = summary.rideName;
 
   const date: string = new Date(summary.startedAt).toLocaleString();
-  const detail: string = `${date} - ${DIFFICULTY_LABELS[summary.difficulty as keyof typeof DIFFICULTY_LABELS]}`;
+  const ended: string = summary.endedEarly === true ? ' · Ended early' : '';
+  const detail: string = `${date} - ${DIFFICULTY_LABELS[summary.difficulty as keyof typeof DIFFICULTY_LABELS]}${ended}`;
 
   const elements: HTMLElement[] = [heading, buildElement('p', 'summary-detail', detail), buildStats(summary), buildZoneChart(summary)];
 

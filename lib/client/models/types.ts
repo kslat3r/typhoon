@@ -62,6 +62,7 @@ export interface RideSummary {
   ftpUsed: number;
   ftpTestSeconds?: 60 | 180 | 300;
   ftpTestAverageWatts?: number;
+  endedEarly?: boolean;
 }
 
 export interface Settings {
