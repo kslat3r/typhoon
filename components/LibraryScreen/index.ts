@@ -83,59 +83,65 @@ function buildHeader(): HTMLElement {
   return header;
 }
 
-function buildChip<K extends keyof LibraryFilters>(
-  root: HTMLElement,
-  rides: Ride[],
-  filters: LibraryFilters,
-  key: K,
-  value: LibraryFilters[K],
-  label: string,
-): HTMLButtonElement {
-  const button: HTMLButtonElement = document.createElement('button');
-  button.type = 'button';
-  button.className = 'filter-chip';
-  button.textContent = label;
-  button.setAttribute('aria-pressed', String(filters[key] === value));
-  button.addEventListener('click', (): void => {
-    const next: LibraryFilters = { ...filters, [key]: value };
-    saveLibraryFilters(next);
-    renderLibraryScreen(root, rides);
-  });
-  return button;
+function filterValue(filters: LibraryFilters, key: keyof LibraryFilters): string {
+  const value: LibraryFilters[keyof LibraryFilters] = filters[key];
+  return value === 'all' ? 'all' : String(value);
 }
 
-function buildFilterRow<K extends keyof LibraryFilters>(
+function applyFilter(filters: LibraryFilters, key: keyof LibraryFilters, raw: string): LibraryFilters {
+  if (key === 'duration') {
+    const duration: LibraryFilters['duration'] = raw === '1800' ? 1800 : raw === '2700' ? 2700 : 'all';
+    return { ...filters, duration };
+  }
+  const parsed: number = Number(raw);
+  const difficulty: LibraryFilters['difficulty'] = raw !== 'all' && DIFFICULTY_ORDER.includes(parsed as Difficulty) ? (parsed as Difficulty) : 'all';
+  return { ...filters, difficulty };
+}
+
+function buildFilterSelect(
   root: HTMLElement,
   rides: Ride[],
   filters: LibraryFilters,
-  key: K,
+  key: keyof LibraryFilters,
   groupLabel: string,
-  options: { value: LibraryFilters[K]; label: string }[],
-): HTMLElement {
-  const row: HTMLDivElement = document.createElement('div');
-  row.className = 'filter-row';
-  row.setAttribute('role', 'group');
-  row.setAttribute('aria-label', groupLabel);
+  options: { value: string; label: string }[],
+): HTMLLabelElement {
+  const field: HTMLLabelElement = document.createElement('label');
+  field.className = 'filter-field';
+  const caption: HTMLSpanElement = document.createElement('span');
+  caption.className = 'filter-label';
+  caption.textContent = groupLabel;
+  const select: HTMLSelectElement = document.createElement('select');
+  select.className = 'filter-select';
   for (const option of options) {
-    row.append(buildChip(root, rides, filters, key, option.value, option.label));
+    const item: HTMLOptionElement = document.createElement('option');
+    item.value = option.value;
+    item.textContent = option.label;
+    select.append(item);
   }
-  return row;
+  select.value = filterValue(filters, key);
+  select.addEventListener('change', (): void => {
+    saveLibraryFilters(applyFilter(filters, key, select.value));
+    renderLibraryScreen(root, rides);
+  });
+  field.append(caption, select);
+  return field;
 }
 
 function buildFilters(root: HTMLElement, rides: Ride[], filters: LibraryFilters): HTMLElement {
   const bar: HTMLDivElement = document.createElement('div');
   bar.className = 'library-filters';
-  const grades: { value: Difficulty; label: string }[] = DIFFICULTY_ORDER.map((difficulty: Difficulty) => ({
-    value: difficulty,
+  const grades: { value: string; label: string }[] = DIFFICULTY_ORDER.map((difficulty: Difficulty) => ({
+    value: String(difficulty),
     label: DIFFICULTY_LABELS[difficulty],
   }));
   bar.append(
-    buildFilterRow(root, rides, filters, 'duration', 'Duration', [
+    buildFilterSelect(root, rides, filters, 'duration', 'Duration', [
       { value: 'all', label: 'All' },
-      { value: 1800, label: '30 min' },
-      { value: 2700, label: '45 min' },
+      { value: '1800', label: '30 min' },
+      { value: '2700', label: '45 min' },
     ]),
-    buildFilterRow(root, rides, filters, 'difficulty', 'Difficulty', [{ value: 'all', label: 'All' }, ...grades]),
+    buildFilterSelect(root, rides, filters, 'difficulty', 'Difficulty', [{ value: 'all', label: 'All' }, ...grades]),
   );
   return bar;
 }
