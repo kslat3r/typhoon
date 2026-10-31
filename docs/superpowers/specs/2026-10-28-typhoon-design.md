@@ -115,17 +115,19 @@ coaching text is being replaced.
 ### Rides
 
 - Lengths: 30 and 45 minutes only.
-- Difficulty: five grades, Easy, Moderate, Hard, Very hard, Extreme
-  (stored as 1 to 5; Extreme was Brutal until Ed's 2026-10-31
-  normalisation, when every grade came down: Easy was not easy enough,
-  Moderate too hard and Brutal impossible). Easy tops out at zone 5 in bursts of 30 s or
-  less; Moderate at zone 6 in efforts of 30 s or less; the top three
-  use the whole range. Mean intensity, zone 4+ and zone 5+ time rise
-  with every grade, and every Extreme ride has more zone 4+ time than
-  any Easy ride. Share of the ride at zone 4+ by grade, roughly: Easy
-  13%, Moderate 26%, Hard 36%, Very hard 44%, Extreme 50%, with no
-  red effort over a minute outside the FTP tests. Ed's 2026-10-31 reset: the nine-grade library of
-  ninety rides was dropped for fifty rides, five per grade per length.
+- Difficulty: five grades, Gentle, Easy, Moderate, Hard, Very hard
+  (stored as 1 to 5). Ed's second normalisation on 2026-10-31 ("Easy
+  is not easy enough, Moderate is too hard, Hard is too hard, Very
+  hard is too hard, Brutal is next to impossible") brought every grade
+  down again and capped effort lengths: Gentle never leaves zone 4 and
+  its orange kicks are 20 s or less; Easy adds red bursts of 20 s or
+  less; Moderate allows red to 30 s and dark red to 15 s, no purple;
+  Hard allows red to 45 s, dark red to 20 s, purple to 10 s; Very hard
+  allows red to 60 s, dark red to 30 s, purple to 15 s. The FTP test
+  effort is the one exemption. Share of the ride at zone 4+ by grade,
+  roughly: Gentle 10%, Easy 18%, Moderate 27%, Hard 36%, Very hard 40%.
+  Mean intensity, zone 4+ and zone 5+ time rise with every grade, and
+  every Very hard ride has more zone 4+ time than any Gentle ride.
 - Every ride is written by hand, the way an instructor builds a
   class: one concept per ride (a climb with hairpins that close in,
   pops of red that never come in the same size twice, three summits
@@ -133,8 +135,8 @@ coaching text is being replaced.
   and lengths, sets that grow or shrink rather than repeat, and
   recoveries that vary from 30 s to two minutes, some of them green
   or yellow. Durations are musical: 10, 15, 20, 30, 45, 60, 90 s.
-  Extreme keeps around twelve minutes of blue or green riding in a
-  45 minute class.
+  Even the top grade keeps a third of a 45 minute class at zone 3 or
+  below.
 - No ride is derived from another by scaling.
 - A ride is a flat ordered list of intervals. Each interval is a target
   zone (1 to 7) and a duration in seconds. No names, no blocks, no

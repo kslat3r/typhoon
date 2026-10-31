@@ -40,44 +40,44 @@ describe('renderLibraryScreen', () => {
     expect(cards).toHaveLength(RIDES.length);
     expect(cards[0].querySelectorAll('.ride-shape .ride-profile-bar').length).toBeGreaterThanOrEqual(10);
     expect(cards[0].textContent).toContain('First Light');
-    expect(cards[0].textContent).toContain('30 min · Easy');
+    expect(cards[0].textContent).toContain('30 min · Gentle');
     expect(root.querySelector('h2')).toBeNull();
     expect(root.querySelector('h1')?.textContent).toBe('Tracks');
     expect(root.querySelector('a[href="#/history"]')?.getAttribute('aria-label')).toBe('History');
     expect(root.querySelector('a[href="#/settings"]')?.getAttribute('aria-label')).toBe('Settings');
     expect(root.textContent).toContain('1 min FTP test');
     expect(root.textContent).toContain('Moderate');
-    expect(root.textContent).toContain('Extreme');
+    expect(root.textContent).toContain('Very hard');
     const selects: HTMLSelectElement[] = [...root.querySelectorAll('select')];
     expect(selects).toHaveLength(2);
     expect([...selects[0].options].map((option) => option.text)).toEqual(['All', '30 min', '45 min']);
     expect([...selects[1].options].map((option) => option.text)).toEqual([
       'All',
+      'Gentle',
       'Easy',
       'Moderate',
       'Hard',
       'Very hard',
-      'Extreme',
     ]);
     expect(selects[0].value).toBe('all');
     expect(selects[1].value).toBe('all');
     expect(root.querySelector('.filter-chip')).toBeNull();
   });
 
-  it('filters to Easy 30 minute tracks and remembers the choice', () => {
+  it('filters to Gentle 30 minute tracks and remembers the choice', () => {
     // Arrange
     const root: HTMLElement = document.createElement('div');
     renderLibraryScreen(root);
 
     // Act
     choose(root, 'Duration', '30 min');
-    choose(root, 'Difficulty', 'Easy');
+    choose(root, 'Difficulty', 'Gentle');
 
     // Assert
     const cards: NodeListOf<Element> = root.querySelectorAll('.ride-card');
     expect(cards).toHaveLength(5);
     for (const card of cards) {
-      expect(card.textContent).toContain('Easy');
+      expect(card.textContent).toContain('Gentle');
       expect(card.getAttribute('href')).toContain('-30');
     }
     expect(root.querySelector('h2')).toBeNull();
@@ -85,7 +85,7 @@ describe('renderLibraryScreen', () => {
     const again: HTMLElement = document.createElement('div');
     renderLibraryScreen(again);
     const selected: string[] = [...again.querySelectorAll('select')].map((select) => select.selectedOptions[0]?.text ?? '');
-    expect(selected).toEqual(['30 min', 'Easy']);
+    expect(selected).toEqual(['30 min', 'Gentle']);
   });
 
   it('shows an empty state when nothing matches', () => {

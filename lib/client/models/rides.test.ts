@@ -4,6 +4,14 @@ import { RIDES } from '@/lib/client/models/rides';
 import type { Difficulty, Ride, RideInterval } from '@/lib/client/models/types';
 
 const LENGTHS: number[] = [1800, 2700];
+// Longest allowed effort per zone for each grade, in seconds. A zone missing here is not allowed at all.
+const EFFORT_CAPS: Record<Difficulty, Record<number, number>> = {
+  1: { 4: 20 },
+  2: { 4: 600, 5: 20 },
+  3: { 4: 600, 5: 30, 6: 15 },
+  4: { 4: 600, 5: 45, 6: 20, 7: 10 },
+  5: { 4: 600, 5: 60, 6: 30, 7: 15 },
+};
 const ZONE_MIDPOINT: number[] = [0, 27.5, 65.5, 83.5, 101, 118.5, 138.5, 160];
 
 function secondsAtOrAbove(ride: Ride, zone: number): number {
@@ -94,25 +102,16 @@ describe('ride library', () => {
     expect(repeats).toEqual([]);
   });
 
-  it.each(RIDES.filter((r) => r.difficulty === 1))('$name keeps Easy at zone 5 or below, in bursts of 30 s or less', (ride: Ride) => {
-    // Arrange / Act
-    const zoneFive: RideInterval[] = ride.intervals.filter((i) => i.zone === 5);
+  it.each(RIDES)('$name keeps every effort inside its grade\'s ceiling, the FTP test effort aside', (ride: Ride) => {
+    // Arrange
+    const caps: Record<number, number> = EFFORT_CAPS[ride.difficulty];
+    const efforts: RideInterval[] = ride.intervals.filter((interval, index) => index !== ride.ftpTest?.intervalIndex && interval.zone >= 4);
 
-    // Assert
-    expect(Math.max(...ride.intervals.map((i) => i.zone))).toBeLessThanOrEqual(5);
-    for (const interval of zoneFive) {
-      expect(interval.seconds).toBeLessThanOrEqual(30);
-    }
-  });
-
-  it.each(RIDES.filter((r) => r.difficulty === 2))('$name keeps Moderate at zone 6 or below, in efforts of 30 s or less', (ride: Ride) => {
-    // Arrange / Act
-    const zoneSix: RideInterval[] = ride.intervals.filter((i) => i.zone === 6);
-
-    // Assert
-    expect(Math.max(...ride.intervals.map((i) => i.zone))).toBeLessThanOrEqual(6);
-    for (const interval of zoneSix) {
-      expect(interval.seconds).toBeLessThanOrEqual(30);
+    // Act / Assert
+    for (const effort of efforts) {
+      const cap: number | undefined = caps[effort.zone];
+      expect(cap, `${ride.name} has zone ${effort.zone}`).toBeDefined();
+      expect(effort.seconds, `${ride.name} zone ${effort.zone}`).toBeLessThanOrEqual(cap as number);
     }
   });
 
@@ -126,7 +125,7 @@ describe('ride library', () => {
     }
   });
 
-  it.each(LENGTHS)('%i s grades rise from Easy to Extreme in intensity and in time at zone 4+ and zone 5+', (length: number) => {
+  it.each(LENGTHS)('%i s grades rise from Gentle to Very hard in intensity and in time at zone 4+ and zone 5+', (length: number) => {
     // Arrange
     const byGrade: Ride[][] = DIFFICULTY_ORDER.map((difficulty) => ridesAt(length, difficulty));
 
