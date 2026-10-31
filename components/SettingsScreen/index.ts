@@ -234,34 +234,71 @@ export default function renderSettingsScreen(root: HTMLElement): void {
   });
 
   const form: HTMLFormElement = document.createElement('form');
+  form.className = 'settings';
   form.addEventListener('submit', (event: Event): void => {
     event.preventDefault();
   });
+
+  const bluetoothBody: HTMLElement = document.createElement('div');
+  bluetoothBody.className = 'settings-group-body';
+  bluetoothBody.append(ftpField, bikeField);
+
+  const musicActions: HTMLElement = document.createElement('div');
+  musicActions.className = 'settings-actions';
+  const musicBody: HTMLElement = document.createElement('div');
+  musicBody.className = 'settings-group-body';
+  musicBody.append(clientIdField, musicActions, select, progress);
+
+  const saveButton: HTMLButtonElement = buildButton('Save', save);
+
+  const syncPanels = (): void => {
+    const current: Settings = loadSettings();
+    bluetoothBody.hidden = !current.bluetoothEnabled;
+    musicBody.hidden = !current.musicEnabled;
+    saveButton.hidden = bluetoothBody.hidden && musicBody.hidden;
+  };
+
+  const resumeMusic = (): void => {
+    const current: Settings = loadSettings();
+    if (connected && current.spotifyPlaylistId !== '') {
+      void fillFromPlaylist(current.spotifyPlaylistId, current, progress, status);
+    }
+  };
+
   const musicToggle: HTMLLabelElement = buildSwitch('Music', 'musicEnabled', settings.musicEnabled, (enabled: boolean): void => {
     saveSettings({ ...loadSettings(), musicEnabled: enabled });
+    syncPanels();
     if (!enabled) {
       void pausePlayback();
+      return;
     }
+    resumeMusic();
   });
   const bluetoothToggle: HTMLLabelElement = buildSwitch('Bluetooth', 'bluetoothEnabled', settings.bluetoothEnabled, (enabled: boolean): void => {
     saveSettings({ ...loadSettings(), bluetoothEnabled: enabled });
+    syncPanels();
   });
 
-  form.append(ftpField, clientIdField, bikeField, bluetoothToggle, musicToggle, buildButton('Save', save));
+  const bluetoothGroup: HTMLElement = document.createElement('section');
+  bluetoothGroup.className = 'settings-group';
+  bluetoothGroup.dataset.settingsGroup = 'bluetooth';
+  bluetoothGroup.append(bluetoothToggle, bluetoothBody);
 
-  const spotify: HTMLElement = document.createElement('section');
+  const musicGroup: HTMLElement = document.createElement('section');
+  musicGroup.className = 'settings-group';
+  musicGroup.dataset.settingsGroup = 'music';
+  musicGroup.append(musicToggle, musicBody);
+
   if (connected) {
-    spotify.append(
+    musicActions.append(
       buildButton('Disconnect Spotify', (): void => {
         saveSpotifyAuth(null);
         renderSettingsScreen(root);
       }),
       buildButton('Choose playlist', (): Promise<void> => loadPlaylistChoices(select, loadSettings(), status)),
-      select,
-      progress,
     );
   } else {
-    spotify.append(
+    musicActions.append(
       buildButton('Connect Spotify', (): Promise<void> => {
         const current: Settings = loadSettings();
         const clientId: string = readInput('spotifyClientId');
@@ -277,9 +314,16 @@ export default function renderSettingsScreen(root: HTMLElement): void {
     );
   }
 
-  root.replaceChildren(heading, form, spotify, status, back);
+  form.append(bluetoothGroup, musicGroup, saveButton);
+  syncPanels();
 
-  if (connected && settings.spotifyPlaylistId !== '') {
+  const screen: HTMLElement = document.createElement('div');
+  screen.className = 'settings-screen';
+  back.className = 'settings-back';
+  screen.append(heading, form, status, back);
+  root.replaceChildren(screen);
+
+  if (connected && settings.musicEnabled && settings.spotifyPlaylistId !== '') {
     void fillFromPlaylist(settings.spotifyPlaylistId, settings, progress, status);
   }
 }
