@@ -22,6 +22,7 @@ export type RideScreenElements = {
   averageMph: HTMLElement;
   miles: HTMLElement;
   remaining: HTMLElement;
+  target: HTMLElement;
   profileRoot: HTMLElement;
   status: HTMLElement;
   connectButton: HTMLButtonElement;

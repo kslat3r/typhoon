@@ -8,6 +8,7 @@ export default function loadSettings(): Settings {
     spotifyPlaylistId: '',
     bikeName: '',
     musicEnabled: true,
+    bluetoothEnabled: true,
   };
   const raw = localStorage.getItem(STORAGE_KEYS.settings);
   if (raw === null) {

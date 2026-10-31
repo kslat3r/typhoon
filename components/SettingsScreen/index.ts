@@ -29,16 +29,16 @@ function buildField(label: string, name: string, type: string, value: string): H
   return wrapper;
 }
 
-function buildMusicToggle(enabled: boolean, onChange: (enabled: boolean) => void): HTMLLabelElement {
+function buildSwitch(label: string, name: string, enabled: boolean, onChange: (enabled: boolean) => void): HTMLLabelElement {
   const wrapper: HTMLLabelElement = document.createElement('label');
   wrapper.className = 'field field-switch';
-  wrapper.append('Music');
+  wrapper.append(label);
 
   const control: HTMLElement = document.createElement('span');
   control.className = 'switch';
 
   const input: HTMLInputElement = document.createElement('input');
-  input.name = 'musicEnabled';
+  input.name = name;
   input.type = 'checkbox';
   input.role = 'switch';
   input.checked = enabled;
@@ -237,14 +237,17 @@ export default function renderSettingsScreen(root: HTMLElement): void {
   form.addEventListener('submit', (event: Event): void => {
     event.preventDefault();
   });
-  const musicToggle: HTMLLabelElement = buildMusicToggle(settings.musicEnabled, (enabled: boolean): void => {
+  const musicToggle: HTMLLabelElement = buildSwitch('Music', 'musicEnabled', settings.musicEnabled, (enabled: boolean): void => {
     saveSettings({ ...loadSettings(), musicEnabled: enabled });
     if (!enabled) {
       void pausePlayback();
     }
   });
+  const bluetoothToggle: HTMLLabelElement = buildSwitch('Bluetooth', 'bluetoothEnabled', settings.bluetoothEnabled, (enabled: boolean): void => {
+    saveSettings({ ...loadSettings(), bluetoothEnabled: enabled });
+  });
 
-  form.append(ftpField, clientIdField, bikeField, musicToggle, buildButton('Save', save));
+  form.append(ftpField, clientIdField, bikeField, bluetoothToggle, musicToggle, buildButton('Save', save));
 
   const spotify: HTMLElement = document.createElement('section');
   if (connected) {

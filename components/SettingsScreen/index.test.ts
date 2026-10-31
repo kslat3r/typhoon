@@ -97,6 +97,37 @@ describe('renderSettingsScreen', () => {
     expect(reloaded.checked).toBe(true);
   });
 
+  it('saves the Bluetooth toggle next to Music and keeps it across a reload', () => {
+    // Arrange
+    const root: HTMLElement = document.createElement('div');
+    renderSettingsScreen(root);
+    const bluetooth: HTMLInputElement = root.querySelector('input[name="bluetoothEnabled"]') as HTMLInputElement;
+    const music: HTMLInputElement = root.querySelector('input[name="musicEnabled"]') as HTMLInputElement;
+
+    // Assert
+    expect(bluetooth.type).toBe('checkbox');
+    expect(bluetooth.checked).toBe(true);
+    expect(bluetooth.labels?.[0]?.className).toBe(music.labels?.[0]?.className);
+    expect(bluetooth.labels?.[0]?.textContent?.trim()).toBe('Bluetooth');
+    expect(bluetooth.labels?.[0]?.nextElementSibling).toBe(music.labels?.[0]);
+    expect(loadSettings().bluetoothEnabled).toBe(true);
+
+    // Act
+    bluetooth.checked = false;
+    bluetooth.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(loadSettings().bluetoothEnabled).toBe(false);
+    expect(loadSettings().musicEnabled).toBe(true);
+
+    // Act
+    root.replaceChildren();
+    renderSettingsScreen(root);
+
+    // Assert
+    expect((root.querySelector('input[name="bluetoothEnabled"]') as HTMLInputElement).checked).toBe(false);
+  });
+
   it('pauses Spotify when music is switched off', async () => {
     // Arrange
     saveSpotifyAuth({ accessToken: 'token-a', refreshToken: 'refresh-a', expiresAt: Date.now() + 3600000 });

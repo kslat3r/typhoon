@@ -23,23 +23,39 @@ describe('loadSettings', () => {
 
     // Assert
     expect(fresh.musicEnabled).toBe(true);
+    expect(fresh.bluetoothEnabled).toBe(true);
 
     // Arrange
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200 }));
 
     // Act / Assert
     expect(loadSettings().musicEnabled).toBe(true);
+    expect(loadSettings().bluetoothEnabled).toBe(true);
 
     // Arrange
     saveSettings({ ...loadSettings(), musicEnabled: false });
 
     // Act / Assert
     expect(loadSettings().musicEnabled).toBe(false);
+
+    // Arrange
+    saveSettings({ ...loadSettings(), bluetoothEnabled: false });
+
+    // Act / Assert
+    expect(loadSettings().bluetoothEnabled).toBe(false);
+    expect(loadSettings().musicEnabled).toBe(false);
   });
 
   it('returns saved values after saveSettings', () => {
     // Arrange
-    const saved = { ftp: 220, spotifyClientId: 'a', spotifyPlaylistId: 'b', bikeName: 'Wattbike', musicEnabled: true };
+    const saved = {
+      ftp: 220,
+      spotifyClientId: 'a',
+      spotifyPlaylistId: 'b',
+      bikeName: 'Wattbike',
+      musicEnabled: true,
+      bluetoothEnabled: true,
+    };
     saveSettings(saved);
 
     // Act
