@@ -14,7 +14,7 @@ export const DEFAULT_LIBRARY_FILTERS: LibraryFilters = {
   difficulty: 'all',
 };
 
-const DIFFICULTY_VALUES: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const DIFFICULTY_VALUES: readonly number[] = [1, 2, 3, 4, 5];
 
 function isDuration(value: unknown): value is DurationFilter {
   return value === 'all' || value === 1800 || value === 2700;

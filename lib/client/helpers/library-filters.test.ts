@@ -3,11 +3,11 @@ import filterRides, { loadLibraryFilters, saveLibraryFilters } from '@/lib/clien
 import { STORAGE_KEYS } from '@/lib/client/models/storage-keys';
 import type { Ride } from '@/lib/client/models/types';
 
-const LIGHT: Ride = {
-  id: 'light-30',
-  name: 'Dew',
+const EASY: Ride = {
+  id: 'easy-30',
+  name: 'First Light',
   lengthSeconds: 1800,
-  difficulty: 6,
+  difficulty: 1,
   archetype: 'endurance',
   intervals: [{ zone: 1, seconds: 1800 }],
 };
@@ -28,23 +28,23 @@ describe('library filters', () => {
 
   it('keeps every ride when both filters are all', () => {
     // Arrange / Act
-    const matches: Ride[] = filterRides([LIGHT, HARD], { duration: 'all', difficulty: 'all' });
+    const matches: Ride[] = filterRides([EASY, HARD], { duration: 'all', difficulty: 'all' });
 
     // Assert
-    expect(matches).toEqual([LIGHT, HARD]);
+    expect(matches).toEqual([EASY, HARD]);
   });
 
   it('filters by duration and grade together', () => {
     // Arrange / Act
-    const matches: Ride[] = filterRides([LIGHT, HARD], { duration: 1800, difficulty: 6 });
+    const matches: Ride[] = filterRides([EASY, HARD], { duration: 1800, difficulty: 1 });
 
     // Assert
-    expect(matches).toEqual([LIGHT]);
+    expect(matches).toEqual([EASY]);
   });
 
   it('returns nothing when the combination matches no ride', () => {
     // Arrange / Act
-    const matches: Ride[] = filterRides([HARD], { duration: 1800, difficulty: 6 });
+    const matches: Ride[] = filterRides([HARD], { duration: 1800, difficulty: 1 });
 
     // Assert
     expect(matches).toEqual([]);
@@ -52,14 +52,14 @@ describe('library filters', () => {
 
   it('round-trips the chosen filters', () => {
     // Arrange
-    saveLibraryFilters({ duration: 1800, difficulty: 6 });
+    saveLibraryFilters({ duration: 1800, difficulty: 1 });
 
     // Act
     const loaded = loadLibraryFilters();
 
     // Assert
-    expect(loaded).toEqual({ duration: 1800, difficulty: 6 });
-    expect(localStorage.getItem(STORAGE_KEYS.filters)).toBe('{"duration":1800,"difficulty":6}');
+    expect(loaded).toEqual({ duration: 1800, difficulty: 1 });
+    expect(localStorage.getItem(STORAGE_KEYS.filters)).toBe('{"duration":1800,"difficulty":1}');
   });
 
   it('falls back to all when storage is missing or corrupt', () => {

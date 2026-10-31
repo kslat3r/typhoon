@@ -138,14 +138,12 @@ function buildFilters(root: HTMLElement, rides: Ride[], filters: LibraryFilters)
 export default function renderLibraryScreen(root: HTMLElement, rides: Ride[] = RIDES): void {
   const filters: LibraryFilters = loadLibraryFilters();
   const matched: Ride[] = filterRides(rides, filters).sort(compareRides);
-  const children: HTMLElement[] = [buildHeader(), buildFilters(root, rides, filters)];
+  const children: HTMLElement[] = [buildHeader(), buildFilters(root, rides, filters), ...matched.map(buildRideCard)];
   if (matched.length === 0) {
     const empty: HTMLParagraphElement = document.createElement('p');
     empty.className = 'library-empty';
     empty.textContent = 'No tracks match these filters.';
     children.push(empty);
-  } else {
-    children.push(...matched.map(buildRideCard));
   }
   root.replaceChildren(...children);
 }

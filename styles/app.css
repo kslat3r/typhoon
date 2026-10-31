@@ -514,6 +514,7 @@ form {
   align-items: center;
   gap: var(--space-4);
   flex: none;
+  margin-bottom: var(--space-2);
 }
 
 .ride-track {
@@ -596,7 +597,7 @@ form {
   display: flex;
   flex-wrap: nowrap;
   gap: var(--space-2);
-  margin-left: var(--space-3);
+  margin-left: var(--space-2);
   flex: none;
 }
 
@@ -639,10 +640,6 @@ form {
 .ride-actions button[hidden],
 .ride-track-nav button[hidden] {
   display: none;
-}
-
-.ride-actions .ride-end {
-  margin-left: var(--space-5);
 }
 
 .toast-host {

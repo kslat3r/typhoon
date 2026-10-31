@@ -1,7 +1,6 @@
 export type ZoneNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-// 6–9 are the easier grades and sort before 1–5. Saved history keeps 1–5.
-export type Difficulty = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type Difficulty = 1 | 2 | 3 | 4 | 5;
 
 export interface RideInterval {
   zone: ZoneNumber;

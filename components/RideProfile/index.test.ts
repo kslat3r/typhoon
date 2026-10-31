@@ -41,12 +41,13 @@ describe('renderRideProfile', () => {
     expect(root.querySelector('circle')).toBeNull();
   });
 
-  it('scales bar height by zone out of seven', (): void => {
+  it('scales bar height by zone out of the ride\'s hardest zone, so the top bar fills the band', (): void => {
     renderRideProfile(root, { ride, position: null });
 
     const bars: NodeListOf<Element> = root.querySelectorAll('.ride-profile-bar');
-    expect(Number(bars[0].getAttribute('height'))).toBeCloseTo((2 / 7) * 300, 5);
-    expect(Number(bars[2].getAttribute('height'))).toBeCloseTo((6 / 7) * 300, 5);
+    expect(Number(bars[0].getAttribute('height'))).toBeCloseTo((2 / 6) * 300, 5);
+    expect(Number(bars[2].getAttribute('height'))).toBe(300);
+    expect(bars[2].getAttribute('y')).toBe('0');
   });
 
   it('masks the ridden part and draws the position line half way through the current interval', (): void => {
