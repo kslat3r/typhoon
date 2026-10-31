@@ -13,10 +13,14 @@ const ONLY_HARD: Ride = {
   intervals: [{ zone: 1, seconds: 2700 }],
 };
 
-function press(root: HTMLElement, group: string, label: string): void {
-  const row: Element | undefined = [...root.querySelectorAll('.filter-row')].find((element) => element.getAttribute('aria-label') === group);
-  const chip: HTMLButtonElement | undefined = [...(row?.querySelectorAll('button') ?? [])].find((button) => button.textContent === label);
-  chip?.click();
+function choose(root: HTMLElement, group: string, label: string): void {
+  const field: Element | undefined = [...root.querySelectorAll('.filter-field')].find(
+    (element) => element.querySelector('.filter-label')?.textContent === group,
+  );
+  const select: HTMLSelectElement = field?.querySelector('select') as HTMLSelectElement;
+  const option: HTMLOptionElement | undefined = [...select.options].find((item) => item.text === label);
+  select.value = option?.value ?? '';
+  select.dispatchEvent(new Event('change'));
 }
 
 describe('renderLibraryScreen', () => {
@@ -43,10 +47,10 @@ describe('renderLibraryScreen', () => {
     expect(root.textContent).toContain('1 min FTP test');
     expect(root.textContent).toContain('Challenging');
     expect(root.textContent).toContain('Brutal');
-    expect([...root.querySelectorAll('.filter-chip')].map((chip) => chip.textContent)).toEqual([
-      'All',
-      '30 min',
-      '45 min',
+    const selects: HTMLSelectElement[] = [...root.querySelectorAll('select')];
+    expect(selects).toHaveLength(2);
+    expect([...selects[0].options].map((option) => option.text)).toEqual(['All', '30 min', '45 min']);
+    expect([...selects[1].options].map((option) => option.text)).toEqual([
       'All',
       'Light',
       'Easy',
@@ -58,6 +62,9 @@ describe('renderLibraryScreen', () => {
       'Severe',
       'Brutal',
     ]);
+    expect(selects[0].value).toBe('all');
+    expect(selects[1].value).toBe('all');
+    expect(root.querySelector('.filter-chip')).toBeNull();
   });
 
   it('filters to Light 30 minute tracks and remembers the choice', () => {
@@ -66,8 +73,8 @@ describe('renderLibraryScreen', () => {
     renderLibraryScreen(root);
 
     // Act
-    press(root, 'Duration', '30 min');
-    press(root, 'Difficulty', 'Light');
+    choose(root, 'Duration', '30 min');
+    choose(root, 'Difficulty', 'Light');
 
     // Assert
     const cards: NodeListOf<Element> = root.querySelectorAll('.ride-card');
@@ -80,8 +87,8 @@ describe('renderLibraryScreen', () => {
     expect(localStorage.getItem(STORAGE_KEYS.filters)).toBe('{"duration":1800,"difficulty":6}');
     const again: HTMLElement = document.createElement('div');
     renderLibraryScreen(again);
-    const pressed: string[] = [...again.querySelectorAll('.filter-chip[aria-pressed="true"]')].map((chip) => chip.textContent ?? '');
-    expect(pressed).toEqual(['30 min', 'Light']);
+    const selected: string[] = [...again.querySelectorAll('select')].map((select) => select.selectedOptions[0]?.text ?? '');
+    expect(selected).toEqual(['30 min', 'Light']);
   });
 
   it('shows an empty state when nothing matches', () => {
