@@ -516,6 +516,36 @@ describe('renderRideScreen', () => {
     expect(summary.maxWatts).toBe(0);
     expect(summary.miles).toBe(0);
     expect(summary.endedEarly).toBe(true);
+    expect(summary.plannedSeconds).toBe(600);
+    expect(summary.averageRpm).toBeUndefined();
+    expect(summary.normalizedPower).toBeUndefined();
+    expect(summary.kilojoules).toBeUndefined();
+    expect(summary.plannedSecondsInZone?.[1]).toBeGreaterThanOrEqual(60);
+  });
+
+  it('saves cadence, normalized power, and energy when the bike is connected', async () => {
+    // Arrange
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    const root: HTMLElement = await renderAndStart(ride);
+    const { onSample } = capturedBikeCallbacks();
+
+    // Act
+    for (let second = 0; second < 61; second += 1) {
+      onSample({ watts: 180, rpm: 88, receivedAt: performance.now() });
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+    findButton(root, 'End ride').click();
+
+    // Assert
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.plannedSeconds).toBe(600);
+    expect(summary.averageRpm).toBe(88);
+    expect(summary.maxRpm).toBe(88);
+    expect(summary.normalizedPower).toBe(180);
+    expect(summary.intensityPercent).toBe(90);
+    expect(summary.kilojoules).toBeGreaterThan(0);
+    expect(summary.plannedSecondsInZone?.[1]).toBeGreaterThanOrEqual(60);
   });
 
   it('records a completed ride once even if End ride is pressed afterwards', async () => {

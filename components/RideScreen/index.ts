@@ -523,7 +523,7 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
   const deltaSeconds: number = Math.max(0, Math.min(now, rideEnd) - state.lastTickAt) / 1000;
   const elapsed: number = (now - state.startedAt) / 1000;
   const sample: BikeSample | null = freshSample(state, now);
-  state.stats = accumulateRideStats(state.stats, sample, deltaSeconds, state.settings.ftp);
+  state.stats = accumulateRideStats(state.stats, sample, deltaSeconds, state.settings.ftp, state.position?.interval.zone);
   state.lastTickAt = now;
 
   const position: IntervalPosition | null = intervalAtElapsed(ride, elapsed);

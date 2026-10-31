@@ -20,13 +20,32 @@ describe('accumulateRideStats', () => {
     expect(start.secondsInZone[3]).toBe(0);
   });
 
-  it('excludes missing samples from averages', () => {
+  it('excludes missing samples from averages and still counts the planned zone', () => {
     // Arrange / Act
-    const stats = accumulateRideStats(emptyRideStats(), null, 7, 150);
+    const stats = accumulateRideStats(emptyRideStats(), null, 7, 150, 2);
 
     // Assert
     expect(stats.missingSeconds).toBe(7);
     expect(stats.sampledSeconds).toBe(0);
     expect(stats.miles).toBe(0);
+    expect(stats.plannedSecondsInZone[1]).toBe(7);
+    expect(stats.rpmSampledSeconds).toBe(0);
+  });
+
+  it('averages cadence and builds normalized power from one-second samples', () => {
+    // Arrange
+    let stats = emptyRideStats();
+
+    // Act
+    stats = accumulateRideStats(stats, { watts: 100, rpm: 80, receivedAt: 0 }, 30, 200);
+    stats = accumulateRideStats(stats, { watts: 300, rpm: 100, receivedAt: 0 }, 30, 200);
+
+    // Assert
+    expect(stats.rpmSampledSeconds).toBe(60);
+    expect(stats.maxRpm).toBe(100);
+    expect(stats.npWindows).toBeGreaterThan(1);
+    const normalized = (stats.npFourthSum / stats.npWindows) ** 0.25;
+    expect(normalized).toBeGreaterThan(200);
+    expect(normalized).toBeLessThan(300);
   });
 });

@@ -44,6 +44,15 @@ export interface RideStats {
   maxWatts: number;
   miles: number;
   secondsInZone: [number, number, number, number, number, number, number];
+  plannedSecondsInZone: [number, number, number, number, number, number, number];
+  rpmSeconds: number;
+  rpmSampledSeconds: number;
+  maxRpm: number;
+  recentWatts: number[];
+  powerPartialSeconds: number;
+  powerPartialWattSeconds: number;
+  npFourthSum: number;
+  npWindows: number;
 }
 
 export interface RideSummary {
@@ -63,6 +72,14 @@ export interface RideSummary {
   ftpTestSeconds?: 60 | 180 | 300;
   ftpTestAverageWatts?: number;
   endedEarly?: boolean;
+  plannedSeconds?: number;
+  plannedSecondsInZone?: RideStats['plannedSecondsInZone'];
+  averageRpm?: number;
+  maxRpm?: number;
+  normalizedPower?: number;
+  kilojoules?: number;
+  intensityPercent?: number;
+  intensityFactor?: number;
 }
 
 export interface Settings {

@@ -22,6 +22,13 @@ function buildSummary(id: string, rideName: string): RideSummary {
   };
 }
 
+function textOf(root: HTMLElement, rideName: string): string {
+  const row: HTMLElement | undefined = Array.from(root.querySelectorAll<HTMLElement>('.history-row')).find((candidate: HTMLElement): boolean =>
+    candidate.textContent?.includes(rideName) === true,
+  );
+  return row?.textContent ?? '';
+}
+
 function deleteButton(root: HTMLElement, rideName: string): HTMLButtonElement {
   const row: HTMLElement | undefined = Array.from(root.querySelectorAll<HTMLElement>('.history-row')).find((candidate: HTMLElement): boolean =>
     candidate.textContent?.includes(rideName) === true,
@@ -71,6 +78,34 @@ describe('renderHistoryScreen', () => {
     // Assert
     expect(loadHistory()).toHaveLength(1);
     expect(root.textContent).toContain('Keep ride');
+  });
+
+  it('shows duration, power, and cadence on a bike ride, and a target when there is no power', () => {
+    // Arrange
+    appendRideSummary({ ...buildSummary('bike', 'Edge Work'), averageRpm: 88, durationSeconds: 1800, averageWatts: 187 });
+    appendRideSummary({
+      ...buildSummary('manual', 'Rolling Tempo'),
+      averageWatts: 0,
+      maxWatts: 0,
+      miles: 0,
+      durationSeconds: 900,
+      plannedSecondsInZone: [0, 900, 0, 0, 0, 0, 0],
+    });
+    const root: HTMLElement = document.createElement('div');
+
+    // Act
+    renderHistoryScreen(root);
+
+    // Assert
+    const bike: string = textOf(root, 'Edge Work');
+    const manual: string = textOf(root, 'Rolling Tempo');
+    expect(bike).toContain('30:00');
+    expect(bike).toContain('187 W');
+    expect(bike).toContain('88 rpm');
+    expect(manual).toContain('15:00');
+    expect(manual).toContain('Target 70 rpm');
+    expect(manual).not.toContain('0 W');
+    expect(deleteButton(root, 'Edge Work').classList.contains('history-delete')).toBe(true);
   });
 
   it('shows an empty history after the last ride is deleted', () => {

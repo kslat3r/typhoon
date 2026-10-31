@@ -8,5 +8,14 @@ export default function emptyRideStats(): RideStats {
     maxWatts: 0,
     miles: 0,
     secondsInZone: [0, 0, 0, 0, 0, 0, 0],
+    plannedSecondsInZone: [0, 0, 0, 0, 0, 0, 0],
+    rpmSeconds: 0,
+    rpmSampledSeconds: 0,
+    maxRpm: 0,
+    recentWatts: [],
+    powerPartialSeconds: 0,
+    powerPartialWattSeconds: 0,
+    npFourthSum: 0,
+    npWindows: 0,
   };
 }
