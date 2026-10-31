@@ -115,26 +115,22 @@ coaching text is being replaced.
 ### Rides
 
 - Lengths: 30 and 45 minutes only.
-- Difficulty: nine grades. Light, Easy, Average and Moderate (stored
-  as 6 to 9) sit below the original five, which are Challenging, Hard,
-  Very hard, Severe and Brutal (1 to 5). Light stays in zones 1 to 3;
-  Easy adds zone 4 kicks of 30 s or less; Average adds zone 5 bursts
-  of 25 s or less; Moderate adds zone 5 efforts and a single zone 6
-  kick; Challenging goes to zone 6 in efforts of 30 s or less; the top
-  four use the whole range. Mean intensity and time at zone 4+ rise
-  with every grade, and every Moderate ride sits below every
-  Challenging one.
-- Every ride is written by hand as a run of song-length tracks, the
-  way a Cyclone class is built: a seated climb that steps up and
-  attacks over the top, a sprint set, a pyramid, over-unders, a
-  breakaway, surges on a flat, a time trial, a race finish. Each
-  track has its own build (efforts that grow, recoveries that
-  shrink, a double chorus) and tracks are separated by short blue
-  recoveries. Durations are musical: 10, 15, 20, 30, 45, 60, 90 s.
-  Ed's 2026-10-31 rewrite replaced a machine-spread library (odd
-  lengths like 4:67, repeated blocks) with this one; the 2026-10-30
-  retune of the top grades still holds: Brutal is about 57 to 65% of
-  the ride at zone 4+ with about ten minutes of easy riding.
+- Difficulty: five grades, Easy, Moderate, Hard, Very hard, Brutal
+  (stored as 1 to 5). Easy tops out at zone 5 in bursts of 30 s or
+  less; Moderate at zone 6 in efforts of 30 s or less; the top three
+  use the whole range. Mean intensity, zone 4+ and zone 5+ time rise
+  with every grade, and every Brutal ride has more zone 4+ time than
+  any Easy ride. Ed's 2026-10-31 reset: the nine-grade library of
+  ninety rides was dropped for fifty rides, five per grade per length.
+- Every ride is written by hand, the way an instructor builds a
+  class: one concept per ride (a climb with hairpins that close in,
+  pops of red that never come in the same size twice, three summits
+  of which two are false), song-length tracks of different shapes
+  and lengths, sets that grow or shrink rather than repeat, and
+  recoveries that vary from 30 s to two minutes, some of them green
+  or yellow. Durations are musical: 10, 15, 20, 30, 45, 60, 90 s.
+  Brutal is about 57 to 65% of the ride at zone 4+ with around ten
+  minutes of easy riding (the 2026-10-30 retune still holds).
 - No ride is derived from another by scaling.
 - A ride is a flat ordered list of intervals. Each interval is a target
   zone (1 to 7) and a duration in seconds. No names, no blocks, no
@@ -322,7 +318,7 @@ my call, not Ed's; Ed can overrule any of them.
 ## Left to the builder
 
 - The exact interval plans for the library. Five rides per grade per
-  length (ninety rides) covering the archetypes, with mean intensity,
+  length (fifty rides) covering the archetypes, with mean intensity,
   zone 4+ and zone 5+ time rising with each grade.
   Ed will ride them and ask for changes.
 - Nothing about the cadence bands: Ed set them.
