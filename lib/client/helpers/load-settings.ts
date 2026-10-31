@@ -4,10 +4,7 @@ import type { Settings } from '@/lib/client/models/types';
 export default function loadSettings(): Settings {
   const defaults: Settings = {
     ftp: 150,
-    spotifyClientId: '',
-    spotifyPlaylistId: '',
     bikeName: '',
-    musicEnabled: true,
     bluetoothEnabled: true,
   };
   const raw = localStorage.getItem(STORAGE_KEYS.settings);
@@ -19,7 +16,11 @@ export default function loadSettings(): Settings {
     if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
       return defaults;
     }
-    return { ...defaults, ...stored };
+    const record = stored as Record<string, unknown>;
+    const ftp: number = typeof record.ftp === 'number' && Number.isFinite(record.ftp) && record.ftp > 0 ? record.ftp : defaults.ftp;
+    const bikeName: string = typeof record.bikeName === 'string' ? record.bikeName : defaults.bikeName;
+    const bluetoothEnabled: boolean = typeof record.bluetoothEnabled === 'boolean' ? record.bluetoothEnabled : defaults.bluetoothEnabled;
+    return { ftp, bikeName, bluetoothEnabled };
   } catch {
     return defaults;
   }

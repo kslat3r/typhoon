@@ -666,30 +666,11 @@ form {
   display: flex;
   flex-wrap: nowrap;
   gap: var(--space-2);
-  margin-left: var(--space-2);
+  margin-left: auto;
   flex: none;
 }
 
-/* The skip controls normally take the free space, which keeps this row on the right.
-   When those controls are removed, the buttons take it themselves. */
-.ride-track-nav[hidden] + .ride-actions {
-  margin-left: auto;
-}
-
-.ride-track-nav {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--space-2);
-  flex: none;
-  margin-left: auto;
-}
-
-.ride-track-nav[hidden] {
-  display: none;
-}
-
-.ride-actions button,
-.ride-track-nav button {
+.ride-actions button {
   box-sizing: border-box;
   min-width: 48px;
   min-height: 48px;
@@ -706,8 +687,7 @@ form {
   min-height: 48px;
 }
 
-.ride-actions button[hidden],
-.ride-track-nav button[hidden] {
+.ride-actions button[hidden] {
   display: none;
 }
 

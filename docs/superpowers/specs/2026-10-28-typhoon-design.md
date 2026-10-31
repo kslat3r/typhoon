@@ -8,7 +8,8 @@ Status: draft for Ed's approval
 Ed rides a Wattbike Pro/Trainer on the David Lloyd gym floor instead of
 attending the club's Cyclone studio class. Typhoon puts a Cyclone-style
 class on his phone: a power-zone ride plan driven by the bike's live
-watts, with his own Spotify music chosen to suit each part of the ride.
+watts. Music plays from whatever Ed already has in his ears. Typhoon
+does not connect to Spotify or play tracks itself.
 
 Cyclone is David Lloyd's power-based indoor cycling class, built on
 Stages Studio software. The parts that matter to this app: each rider has
@@ -26,9 +27,6 @@ coaching text is being replaced.
   reading live power and cadence from the Wattbike over Bluetooth.
 - A library of distinct rides spanning moderate to brutal, with real
   variety of interval shapes inside each ride.
-- Music from Ed's Spotify that follows the ride: track tempo chosen to
-  suit the zone, with a dynamic mix of track changes and holds across
-  zone boundaries.
 - A ride screen that looks designed, not defaulted. Ed named this as the
   thing that would make him wince if wrong.
 - FTP stored on the phone with an in-app test to set it.
@@ -39,8 +37,11 @@ coaching text is being replaced.
 - No accounts, no backend, no sync between devices.
 - No video, no heart rate, no instructor voice, no coaching text, no
   riding-position cues (Ed always rides seated).
-- No cadence targets shown on screen. Cadence is Ed's choice and he
-  matches it to the music by ear.
+- No in-app music, playlist, or Spotify connection. Ed brings his own
+  music.
+- No cadence targets shown on screen while Bluetooth is on. Cadence is
+  Ed's choice. With Bluetooth off, the ride screen shows a target rpm
+  for the current zone.
 - No iPhone support. Web Bluetooth is not available in Safari and Ed's
   phone is Android.
 - No per-user scaling of rides by a difficulty "dial". Difficulty is a
@@ -54,10 +55,6 @@ coaching text is being replaced.
 - A ride library where every ride is a few long steady blocks. Short
   sprints, stepped ramps, pyramids, over/unders and surges inside a
   longer effort must all appear.
-- A soundtrack that changes track at every zone boundary like a metronome,
-  or one that never changes. The mix must feel dynamic.
-- Anything that needs the Spotify tempo endpoints. They are deprecated for
-  new apps and return 403.
 
 ## Constraints
 
@@ -77,38 +74,15 @@ coaching text is being replaced.
   using the same kind of power-to-speed curve, so figures will be close
   to the monitor's but not guaranteed identical. Units are mph and miles.
 - Hosting: GitHub Pages for this repo. HTTPS is required for Web
-  Bluetooth and the Spotify redirect. A GitHub Action builds and deploys
-  on every push to main.
+  Bluetooth. A GitHub Action builds and deploys on every push to main.
 - Stack: Vite, plain TypeScript, no UI framework. Ed asked for something
   lighter than his usual Next starter. Ed's guardrails still apply (one
   function per file, `@/` imports, explicit return types, verbose and
   explicit style, no barrel files).
-- Spotify: Ed has Premium. The app is a Development Mode Spotify app
-  registered to Ed (limit of five users is irrelevant for a one-user
-  app). Login is the browser PKCE flow, so no client secret exists. The
-  browser tab plays the audio itself through the Web Playback SDK: the
-  tab registers as a Spotify Connect device named Typhoon and the app
-  starts and queues tracks on that device id through the Web API player
-  endpoints. Switched 2026-10-29 from driving the phone's Spotify app
-  over Connect, which needed the app awake and gave no signal when it
-  was not (Ed saw silence with nothing showing in Spotify). The tap that
-  starts a ride doubles as the user gesture browsers want before audio.
-  Login scopes include streaming, user-read-email and user-read-private
-  for the SDK.
-- Tempo: Spotify's Audio Features and Audio Analysis endpoints are
-  deprecated for apps registered after 27 November 2024 and extended
-  quota needs a business with 250k monthly users. Track tempo therefore
-  comes from ReccoBeats (`GET https://api.reccobeats.com/v1/audio-features?ids=`
-  up to 40 Spotify track ids per call, no key, CORS allowed, free for
-  personal use, no attribution required). Tracks it does not know are
-  simply absent from the response. GetSongBPM was dropped on 2026-10-29
-  because its key signup rejected the GitHub Pages URL as a backlink.
-- Spotify's February 2026 Development Mode changes apply: playlist
-  contents come from `GET /playlists/{id}/items` (entries carry `item`,
-  not `track`) and only for playlists the user owns or collaborates on,
-  so the chosen playlist must be one of Ed's own.
-- Storage: everything (FTP, settings, BPM cache, ride history) lives in
-  the browser's local storage on the phone.
+- Storage: FTP, settings, and ride history live in the browser's local
+  storage on the phone. Older blobs may still contain Spotify client id,
+  playlist id, a music toggle, `typhoon.spotifyAuth.v2`, or
+  `typhoon.tempoCache`. The app ignores those keys and does not throw.
 
 ## What Ed decided
 
@@ -187,10 +161,10 @@ is zone 4, and zone 7 sprints are 30 s or less.
 
 Landscape. Three bands:
 
-1. **Top band**: the current track (small artwork, title and artist,
-   no bpm) on the left and the quiet ghost buttons on the right, in the
-   order Test, Connect bike, Start before the ride and Pause, End ride
-   during it. The ride name is not shown on the ride screen.
+1. **Top band**: the quiet ghost buttons on the right, in the order
+   Test, Connect bike, Start before the ride and Pause, End ride during
+   it. The ride name is not shown on the ride screen. There is no track
+   row.
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
    to zone out of the ride's own hardest zone, so the tallest bar always
@@ -207,71 +181,24 @@ Landscape. Three bands:
    miles, time left in the current interval (uncoloured), time
    remaining in the ride.
 
-No gauge, no cadence target, no text cues.
+No gauge and no text cues. With Bluetooth on there is no cadence target.
+With Bluetooth off the bottom band shows the target rpm for the zone.
 
 Test mode: the Test button runs the ride without a bike at 4x speed with
-simulated watts and rpm inside each zone's band, music transitions
-included. Test rides are never saved. Styling is a first-class
-requirement: dark, legible from the saddle, designed rather than
-defaulted. Use the frontend-design skill for the visual pass.
+simulated watts and rpm inside each zone's band. Test rides are never
+saved. Styling is a first-class requirement: dark, legible from the
+saddle, designed rather than defaulted. Use the frontend-design skill
+for the visual pass.
 
-### Music
+Confirming End ride keeps the ride screen as it was at that moment, line
+and mask frozen, with a Done button in place of End ride that leads to
+the summary (Ed, 2026-10-29). Only a ride that runs to its end moves on
+by itself.
 
-- Source: one Spotify playlist of Ed's, chosen in settings.
-- Tempo: each track's bpm is looked up once from ReccoBeats and cached
-  on the phone. Tracks with no result are still playable and are treated
-  as unknown tempo.
-- Zone to tempo band in song bpm (Ed, 2026-10-29, his second word on
-  it): green 140 to 160, yellow 161 to 174, orange and every zone
-  above 175 to 180. Blue shares green's band. A track's tempo is its
-  bpm, half or double, whichever sits nearest the band; the pick is
-  random among the tracks within 8 bpm of the nearest fit, never fewer
-  than the ten nearest, so the same one or two exact fits do not open
-  every ride (Ed, 2026-10-29, twice). Tracks of unknown tempo come
-  last.
-- The app never cuts a song (Ed, 2026-10-29: "do not choose songs
-  yourself"). The first track is picked to fit the cadence of the first
-  block. A song then plays to its end whatever the ride does; as it
-  ends, the next one is queued to fit the cadence band of the block the
-  ride is in at that moment. Zone changes mid-song change nothing.
-- No track repeats during a ride until every track in the playlist has
-  played (Ed, 2026-10-29); Prev is the one exception. The app starts
-  the next song itself in the last moment of the current one, or once
-  it has ended and sits paused at its start. Spotify's own queue is
-  never used: it persists on the account across rides, and leftovers
-  from earlier rides replayed the same songs in the same order (Ed,
-  2026-10-29, "the same tracks keep coming up in the same order").
-- Confirming End ride keeps the ride screen as it was at that moment,
-  line and mask frozen, with a Done button in place of End ride that
-  leads to the summary (Ed, 2026-10-29). Only a ride that runs to its
-  end moves on by itself.
-- Pause (Ed, 2026-10-30) freezes the ride clock, the line and the stats
-  and pauses the music; the button reads Resume until tapped again, when
-  the ride carries on from the same point and the music resumes. Paused
-  time is not ridden time: it is cut from the clock, not counted.
-- A play that Spotify answers with 404 is retried on the same track a
-  few times a second apart, because the tab's player can be registering
-  or just back online; the device id follows the player's ready and
-  not_ready events. Other failures skip as above.
-- Prev and Next buttons sit on the right of the top band, a gap from
-  End ride, during a ride. Next
-  plays a fresh pick for the current block; Prev returns to the song
-  played before it (or restarts the current one when there is none).
-- A failed play or a player error skips to another track fitting the
-  current block (Ed, 2026-10-29). After three failures in a row with
-  nothing having played, the song display becomes a placeholder
-  square with "Music unavailable" and the reason as its copy; Prev is
-  disabled and Next plays another pick. No music error ever goes in
-  the status line (Ed, 2026-10-29). The same placeholder shows when
-  Spotify is not connected, no playlist is chosen or the player fails.
-- The screen shows whatever the tab's player reports every two seconds,
-  playlist track or not, and never replaces it. Reads in the four
-  seconds after a play call are ignored because the reported state lags
-  the command.
-- Spotify's own crossfade setting handles blending; the app only skips.
-- Ed likes riding to a fixed beat across several zones and working the
-  resistance lever to move between zones. The hold behaviour above is
-  what makes that happen; nothing else is needed for it.
+Pause (Ed, 2026-10-30) freezes the ride clock, the line and the stats.
+The button reads Resume until tapped again, when the ride carries on
+from the same point. Paused time is not ridden time: it is cut from the
+clock, not counted.
 
 ### After the ride
 
@@ -282,46 +209,30 @@ defaulted. Use the frontend-design skill for the visual pass.
 
 ### Settings
 
-- FTP (editable by hand as well as by test).
-- Spotify: connect and disconnect, playlist picker.
-- Bike: pair and forget.
+- FTP (editable by hand as well as by test), nested under Bluetooth.
+- Bluetooth on or off. Off hides FTP, the bike name, and Save, and the
+  ride runs without a bike.
+- Bike name, read only, filled when a bike is paired.
 
 ## Calls made after the builder check
 
 These came from a reviewer reading the document as the builder. Each is
 my call, not Ed's; Ed can overrule any of them.
 
-- **The app owns the order.** Playback is started per track by URI with
-  no playlist context and Spotify's queue is never used. The app reads
-  the tab's player state twice a second and starts the next pick for
-  the current zone in the last moment of the current track. Nothing
-  else ever skips a song; only the rider does, with Prev and Next.
 - **Pairing takes one tap per ride.** Web Bluetooth needs a user gesture
   to open the device picker. "Pair and forget" means the app remembers
   the bike's name so the picker is quick and the pairing is obvious.
   Where Chrome exposes previously permitted devices, the app reconnects
   silently; otherwise one tap. Reconnect after a mid-ride drop retries
   automatically with no tap where the browser allows it.
-- **Music is optional.** A ride runs with the bike alone. If Spotify is
-  not connected, no playlist is chosen, the token cannot be refreshed or
-  the browser player fails, the song display says why and nothing else
-  changes. Spotify is never a reason a ride
-  refuses to start. Token refresh runs before the ride starts and again
-  in the background when due.
 - **The FTP test is a ride with a flag.** It uses the same engine and
   screen, appears in history, and the summary's "FTP used" is always the
   FTP at ride start. The new FTP applies to the next ride.
 - **Dropped seconds are excluded.** Seconds with no bike data are left
   out of average watts, time in zone and distance, and the summary
   records how many seconds were missing. They are never counted as zero.
-- **A ride has a ready state.** Pair the bike, see the first track
-  picked for the opening block, then tap Start. Music and clock start
-  together.
-- **Tempo lookups run up front.** Choosing a playlist in settings looks
-  up every track with a progress indicator and the results are cached
-  for good. Lookups go in batches of 40 track ids; if a lookup is
-  interrupted it resumes next time settings opens,
-  and unlooked-up tracks count as unknown tempo in the meantime.
+- **A ride has a ready state.** Pair the bike, then tap Start. The clock
+  starts with the ride.
 
 ## Left to the builder
 
@@ -343,11 +254,9 @@ my call, not Ed's; Ed can overrule any of them.
 - Library and summary screen layouts, within the same visual language as
   the ride screen.
 - GitHub Pages deployment details, including the base path for the Vite
-  build and the Spotify redirect URI.
+  build.
 
 ## Open items Ed owns
 
 - Confirm the gym's Wattbike monitors are Model B with Bluetooth, and
   that the Bluetooth setting is reachable on the gym-floor bikes.
-- Register the Spotify developer app.
-- Choose the playlist.

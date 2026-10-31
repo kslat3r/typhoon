@@ -65,15 +65,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
-  // Spotify, the playback SDK, and anything else off-origin stay on the network.
-  // Web Bluetooth is not a fetch. The OAuth return is a same-origin navigation and is handled below.
+  // Requests off this origin stay on the network. Web Bluetooth is not a fetch.
   if (!isAppPath(url)) {
-    return;
-  }
-
-  // The Spotify redirect comes back as /typhoon/?code=... Do not cache that URL.
-  if (url.searchParams.has('code') || url.searchParams.has('error')) {
-    event.respondWith(fetch(request));
     return;
   }
 
