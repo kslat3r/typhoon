@@ -51,3 +51,15 @@ function renderRoute(): void {
 
 window.addEventListener('hashchange', renderRoute);
 renderRoute();
+
+function registerServiceWorker(): void {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) {
+    return;
+  }
+  window.addEventListener('load', (): void => {
+    const base: string = import.meta.env.BASE_URL;
+    void navigator.serviceWorker.register(`${base}sw.js`, { scope: base, updateViaCache: 'none' });
+  });
+}
+
+registerServiceWorker();
