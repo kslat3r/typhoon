@@ -80,9 +80,10 @@ describe('renderHistoryScreen', () => {
     expect(root.textContent).toContain('Keep ride');
   });
 
-  it('shows duration, power, and cadence on a bike ride, and a target when there is no power', () => {
+  it('shows only the date, title, and duration on each row', () => {
     // Arrange
-    appendRideSummary({ ...buildSummary('bike', 'Edge Work'), averageRpm: 88, durationSeconds: 1800, averageWatts: 187 });
+    const startedAt = '2026-10-28T08:00:00.000Z';
+    appendRideSummary({ ...buildSummary('bike', 'Edge Work'), averageRpm: 88, durationSeconds: 1800, averageWatts: 187, endedEarly: true, startedAt });
     appendRideSummary({
       ...buildSummary('manual', 'Rolling Tempo'),
       averageWatts: 0,
@@ -90,6 +91,8 @@ describe('renderHistoryScreen', () => {
       miles: 0,
       durationSeconds: 900,
       plannedSecondsInZone: [0, 900, 0, 0, 0, 0, 0],
+      endedEarly: true,
+      startedAt,
     });
     const root: HTMLElement = document.createElement('div');
 
@@ -97,14 +100,22 @@ describe('renderHistoryScreen', () => {
     renderHistoryScreen(root);
 
     // Assert
+    const date: string = new Date(startedAt).toLocaleDateString();
     const bike: string = textOf(root, 'Edge Work');
     const manual: string = textOf(root, 'Rolling Tempo');
+    expect(bike).toContain('Edge Work');
+    expect(bike).toContain(date);
     expect(bike).toContain('30:00');
-    expect(bike).toContain('187 W');
-    expect(bike).toContain('88 rpm');
+    expect(bike).not.toContain('187 W');
+    expect(bike).not.toContain('rpm');
+    expect(bike).not.toContain('Ended early');
+    expect(manual).toContain('Rolling Tempo');
+    expect(manual).toContain(date);
     expect(manual).toContain('15:00');
-    expect(manual).toContain('Target 70 rpm');
+    expect(manual).not.toContain('Target');
     expect(manual).not.toContain('0 W');
+    expect(manual).not.toContain('Ended early');
+    expect(root.querySelector('a[href="#/summary/bike"]')).not.toBeNull();
     expect(deleteButton(root, 'Edge Work').classList.contains('history-delete')).toBe(true);
   });
 
