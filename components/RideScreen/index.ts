@@ -27,7 +27,6 @@ import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
-const MIN_ENDED_RIDE_SECONDS = 60;
 const POLL_MS = 500;
 const RECONNECT_MS = 3000;
 const SAMPLE_MAX_AGE_MS = 3000;
@@ -470,18 +469,6 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   state.elements.endButton.hidden = true;
   state.elements.doneButton.hidden = reason !== 'ended';
   if (state.testMode) {
-    if (reason === 'completed') {
-      navigate('#/');
-    }
-    return;
-  }
-
-  const riddenSeconds: number = state.stats.sampledSeconds + state.stats.missingSeconds;
-  if (reason === 'ended' && riddenSeconds < MIN_ENDED_RIDE_SECONDS) {
-    return;
-  }
-
-  if (state.stats.sampledSeconds === 0 && reason !== 'ended') {
     if (reason === 'completed') {
       navigate('#/');
     }

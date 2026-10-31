@@ -1,4 +1,4 @@
-const CACHE = 'typhoon-shell-v1';
+const CACHE = 'typhoon-shell-__BUILD_ID__';
 
 const SHELL = [
   'index.html',
@@ -42,7 +42,9 @@ function isNavigation(request, url) {
 async function networkFirst(request, cacheKey) {
   const cache = await caches.open(CACHE);
   try {
-    const response = await fetch(request);
+    const response = request.mode === 'navigate'
+      ? await fetch(request.url, { cache: 'no-store', credentials: 'same-origin' })
+      : await fetch(request, { cache: 'no-store' });
     if (response.ok) {
       await cache.put(cacheKey ?? request, response.clone());
     }

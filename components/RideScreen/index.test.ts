@@ -474,19 +474,80 @@ describe('renderRideScreen', () => {
     expect(location.hash.startsWith('#/summary/')).toBe(true);
   });
 
-  it('does not record an end in the first minute', async () => {
+  it('records an early end, including one made while paused', async () => {
     // Arrange
     const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
     const root: HTMLElement = await renderAndStart(ride);
     await vi.advanceTimersByTimeAsync(3000);
+    findButton(root, 'Pause').click();
+    await vi.advanceTimersByTimeAsync(30_000);
 
     // Act
     findButton(root, 'End ride').click();
 
     // Assert
-    expect(appendRideSummary).not.toHaveBeenCalled();
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.endedEarly).toBe(true);
+    expect(summary.plannedSeconds).toBe(600);
+    expect(summary.durationSeconds).toBeGreaterThanOrEqual(2);
+    expect(summary.durationSeconds).toBeLessThan(10);
     expect(findButton(root, 'Done').hidden).toBe(false);
     expect(findButton(root, 'End ride').hidden).toBe(true);
+  });
+
+  it('records an early end with Bluetooth off before a minute has passed', async () => {
+    // Arrange
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({ ftp: 200, musicEnabled: false, bluetoothEnabled: false }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    const ride: Ride = { ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] };
+    renderRideScreen(root, ride);
+    await vi.advanceTimersByTimeAsync(0);
+    findButton(root, 'Start').click();
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // Act
+    findButton(root, 'End ride').click();
+
+    // Assert
+    expect(connectWattbike).not.toHaveBeenCalled();
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.endedEarly).toBe(true);
+    expect(summary.averageWatts).toBe(0);
+    expect(summary.durationSeconds).toBeGreaterThanOrEqual(4);
+    expect(summary.durationSeconds).toBeLessThan(10);
+    expect(summary.plannedSeconds).toBe(600);
+  });
+
+  it('records a finished ride that never saw the bike', async () => {
+    // Arrange
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({ ftp: 200, musicEnabled: false, bluetoothEnabled: false }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+    findButton(root, 'Start').click();
+
+    // Act
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    // Assert
+    expect(connectWattbike).not.toHaveBeenCalled();
+    expect(appendRideSummary).toHaveBeenCalledTimes(1);
+    const summary: RideSummary = vi.mocked(appendRideSummary).mock.calls[0][0];
+    expect(summary.endedEarly).not.toBe(true);
+    expect(summary.averageWatts).toBe(0);
+    expect(summary.durationSeconds).toBeGreaterThanOrEqual(29);
+    expect(summary.durationSeconds).toBeLessThanOrEqual(31);
+    expect(location.hash.startsWith('#/summary/')).toBe(true);
   });
 
   it('records an ended ride without bike stats when Bluetooth is off', async () => {

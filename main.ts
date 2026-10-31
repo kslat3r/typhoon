@@ -83,7 +83,24 @@ function registerServiceWorker(): void {
   }
   window.addEventListener('load', (): void => {
     const base: string = import.meta.env.BASE_URL;
-    void navigator.serviceWorker.register(`${base}sw.js`, { scope: base, updateViaCache: 'none' });
+    const hadController: boolean = navigator.serviceWorker.controller !== null;
+    if (hadController) {
+      let reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', (): void => {
+        if (reloading) {
+          return;
+        }
+        reloading = true;
+        window.location.reload();
+      });
+    }
+    void navigator.serviceWorker.register(`${base}sw.js`, { scope: base, updateViaCache: 'none' }).then((registration): void => {
+      document.addEventListener('visibilitychange', (): void => {
+        if (document.visibilityState === 'visible') {
+          void registration.update();
+        }
+      });
+    });
   });
 }
 
