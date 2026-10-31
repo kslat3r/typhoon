@@ -177,7 +177,7 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('hidden');
     expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('hidden');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
-    expect(visibleStatLabels(root)).toEqual(['Interval', 'Next Z4', 'Target', 'Remaining']);
+    expect(visibleStatLabels(root)).toEqual(['Target', 'Interval', 'Next Z4', 'Remaining']);
 
     // Act
     findButton(root, 'Start').click();
@@ -749,7 +749,9 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('75% of FTP, target 75%');
     expect((root.querySelector('.ride-stat-rpm') as HTMLElement).textContent).toBe('90');
     expect((root.querySelector('.ride-stat-rpm') as HTMLElement).parentElement?.textContent).toContain('Cadence');
-    expect(visibleStatLabels(root)).toEqual(['Interval', 'Next Z4', 'Watts', 'Cadence', 'MPH', 'Avg MPH', 'Miles', 'Remaining']);
+    expect(visibleStatLabels(root)).toEqual(['Cadence', 'Watts', 'MPH', 'Avg MPH', 'Miles', 'Interval', 'Next Z4', 'Remaining']);
+    const coloured = [...root.querySelectorAll('.ride-stat, .ride-stat-label, .ride-stat-value')].filter((element) => (element as HTMLElement).style.color !== '');
+    expect(coloured).toEqual([]);
 
     // Act
     await vi.advanceTimersByTimeAsync(30000);

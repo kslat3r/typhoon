@@ -841,10 +841,6 @@ form {
   text-overflow: ellipsis;
 }
 
-.ride-stat-next {
-  transition: color 400ms ease;
-}
-
 .ride-ftp-result {
   display: flex;
   align-items: center;
@@ -859,12 +855,6 @@ form {
   font-size: 2rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ride-stat-next {
-    transition: none;
-  }
 }
 
 /* Summary */

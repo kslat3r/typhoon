@@ -186,7 +186,7 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(interval.cell, next.cell, target.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, remaining.cell);
+  strip.append(rpm.cell, watts.cell, mph.cell, averageMph.cell, miles.cell, target.cell, interval.cell, next.cell, remaining.cell);
 
   return {
     strip,
@@ -293,12 +293,10 @@ function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPo
   if (upcoming === undefined) {
     state.elements.nextLabel.textContent = 'Next';
     state.elements.next.textContent = '--';
-    state.elements.next.style.color = '';
     return;
   }
   state.elements.nextLabel.textContent = `Next Z${upcoming.zone}`;
   state.elements.next.textContent = formatClock(upcoming.seconds);
-  state.elements.next.style.color = ZONES[upcoming.zone - 1].colour;
 }
 
 function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
@@ -340,7 +338,6 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
   remaining.textContent = formatClock(secondsLeftInRide);
   if (!state.settings.bluetoothEnabled) {
     target.textContent = String(targetRpmForZone(zone));
-    target.style.color = ZONES[zone - 1].colour;
     return;
   }
 
