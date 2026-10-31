@@ -4,9 +4,11 @@ import parseIndoorBikeData from '@/lib/client/helpers/parse-indoor-bike-data';
 import { emptyCrankCadenceState, preferCadence, updateCrankCadence, type CrankCadenceState } from '@/lib/client/helpers/resolve-cadence';
 import type { BikeListener, PowerMeasurement } from '@/lib/client/models/types';
 
-// Wattbike power notifications usually carry watts only. The bike's own cadence
-// readout comes from FTMS indoor-bike data, or from CSC / cycling-power crank
-// revolutions when that flag is actually set.
+// Prefer FTMS Indoor Bike Data when the bike sends it (Stages SB20, and a
+// Wattbike that exposes 0x2AD2). Otherwise use Cycling Power Measurement.
+// Stages SC3/SC2 power meters put cadence in the crank-revolution fields of
+// that packet. CSC is only a cadence fallback when the power packet has no
+// crank data. Speed is not taken from the bike; the ride derives MPH from watts.
 export default async function subscribePowerMeasurements(
   server: BluetoothRemoteGATTServer,
   onSample: BikeListener,
@@ -15,6 +17,7 @@ export default async function subscribePowerMeasurements(
   let watts: number | null = null;
   let ftmsRpm: number | null = null;
   let ftmsAt = 0;
+  let ftmsHasPower = false;
   let cyclingPowerHasCrank = false;
 
   const emit = (now: number): void => {
@@ -58,7 +61,9 @@ export default async function subscribePowerMeasurements(
   const cyclingPower: boolean = await listen('cycling_power', 'cycling_power_measurement', (view: DataView): void => {
     const current: PowerMeasurement = parseCyclingPowerMeasurement(view);
     const now: number = performance.now();
-    watts = current.watts;
+    if (!ftmsHasPower) {
+      watts = current.watts;
+    }
     if (current.crankRevolutions !== null) {
       cyclingPowerHasCrank = true;
       updateCrankCadence(crank, current, now);
@@ -70,6 +75,7 @@ export default async function subscribePowerMeasurements(
     const reading = parseIndoorBikeData(view);
     const now: number = performance.now();
     if (reading.watts !== null) {
+      ftmsHasPower = true;
       watts = reading.watts;
     }
     if (reading.cadenceRpm !== null) {

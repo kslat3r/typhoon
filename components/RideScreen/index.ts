@@ -590,7 +590,7 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
 
   state.device = device;
   state.bikeState = 'connected';
-  state.settings = { ...state.settings, bikeName: device.name ?? 'Wattbike' };
+  state.settings = { ...state.settings, bikeName: device.name || 'bike' };
   saveSettings(state.settings);
   state.elements.connectButton.hidden = true;
   state.elements.startButton.disabled = false;

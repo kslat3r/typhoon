@@ -1,4 +1,6 @@
 // FTMS Indoor Bike Data (0x2AD2). Instantaneous cadence is uint16 with a resolution of 0.5 rpm.
+// A Stages SB20 sends flags 0x00c5: instantaneous speed absent, cadence, instantaneous
+// power, and average power. MPH stays derived from watts either way.
 export interface IndoorBikeData {
   watts: number | null;
   cadenceRpm: number | null;

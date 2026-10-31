@@ -19,6 +19,20 @@ describe('parseIndoorBikeData', () => {
     expect(result.watts).toBe(240);
   });
 
+  it('reads a Stages SB20 packet that omits instantaneous speed and still carries average power', () => {
+    // Arrange - flags 0x00c5, as reported for the SB20 Indoor Bike Data characteristic:
+    // bit 0 more-data (instantaneous speed absent), bit 2 cadence, bit 6 power, bit 7 average power.
+    // Cadence raw 170 is 85 rpm. Instantaneous power is 275 W, and the following
+    // average-power field (260 W) must not be read as the instantaneous value.
+    const bytes = [0xc5, 0x00, 0xaa, 0x00, 0x13, 0x01, 0x04, 0x01];
+
+    // Act
+    const result = parseIndoorBikeData(view(bytes));
+
+    // Assert
+    expect(result).toEqual({ watts: 275, cadenceRpm: 85 });
+  });
+
   it('skips speed when the more-data flag is set and ignores a packet with no cadence', () => {
     // Arrange - bit 0 set means instantaneous speed is absent, bit 6 power
     const flags = (1 << 0) | (1 << 6);

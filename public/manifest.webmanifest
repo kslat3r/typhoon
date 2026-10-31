@@ -2,7 +2,7 @@
   "id": "/typhoon/",
   "name": "Typhoon",
   "short_name": "Typhoon",
-  "description": "Power-zone rides for the Wattbike.",
+  "description": "Power-zone rides for an indoor bike.",
   "start_url": "/typhoon/",
   "scope": "/typhoon/",
   "display": "standalone",
