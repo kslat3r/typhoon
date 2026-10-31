@@ -134,7 +134,8 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.querySelector('.ride-stat-label')?.textContent).toBe('Next');
     expect((root.querySelector('.zone-ring-current') as HTMLElement).hidden).toBe(true);
-    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('70 rpm');
+    expect(root.querySelector('.zone-ring-target')).toBeNull();
+    expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('Target 70 rpm');
     expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('hidden');
     expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('hidden');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
@@ -148,7 +149,8 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('85');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.querySelector('.ride-stat-label')?.textContent).toBe('Next');
-    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('85 rpm');
+    expect(root.querySelector('.zone-ring-target')).toBeNull();
+    expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('Target 85 rpm');
     expect((root.querySelector('.zone-ring-current') as HTMLElement).hidden).toBe(true);
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:09');
     expect((root.querySelector('.ride-stat-remaining') as HTMLElement).textContent).toBe('0:19');
@@ -438,7 +440,7 @@ describe('renderRideScreen', () => {
     expect(countdown.textContent).toBe('0:10');
     expect(root.querySelectorAll('.zone-ring-segment')).toHaveLength(7);
     expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('--');
-    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('75%');
+    expect(root.querySelector('.zone-ring-target')).toBeNull();
 
     // Act
     findButton(root, 'Connect bike').click();
@@ -465,7 +467,7 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('75%');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.querySelector('.ride-stat-label')?.textContent).toBe('Next');
-    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('75%');
+    expect(root.querySelector('.zone-ring-target')).toBeNull();
     expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('visible');
     expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('visible');
     expect(Number(root.querySelector('.zone-ring-needle')?.getAttribute('x2'))).toBeLessThan(50);

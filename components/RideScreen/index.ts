@@ -102,7 +102,7 @@ function placeDialPointer(marker: SVGCircleElement, needle: SVGLineElement, perc
   needle.setAttribute('visibility', 'visible');
 }
 
-function buildZoneRing(): { root: HTMLElement; current: HTMLElement; target: HTMLElement; marker: SVGCircleElement; needle: SVGLineElement } {
+function buildZoneRing(): { root: HTMLElement; current: HTMLElement; marker: SVGCircleElement; needle: SVGLineElement } {
   const root: HTMLElement = buildElement('div', 'zone-ring', '');
   root.setAttribute('role', 'img');
   const dial: HTMLElement = buildElement('div', 'zone-ring-dial', '');
@@ -134,10 +134,9 @@ function buildZoneRing(): { root: HTMLElement; current: HTMLElement; target: HTM
   svg.append(needle, marker);
 
   const current: HTMLElement = buildElement('div', 'zone-ring-current', '--');
-  const target: HTMLElement = buildElement('div', 'zone-ring-target', '');
   dial.append(svg, current);
-  root.append(dial, target);
-  return { root, current, target, marker, needle };
+  root.append(dial);
+  return { root, current, marker, needle };
 }
 
 function buildTopBand(): { band: HTMLElement; actions: HTMLElement } {
@@ -217,21 +216,18 @@ function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPo
 }
 
 function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
-  const { zoneCurrent, zoneTarget, zoneMarker, zoneNeedle, zoneRing } = state.elements;
+  const { zoneCurrent, zoneMarker, zoneNeedle, zoneRing } = state.elements;
   const ftp: number = state.settings.ftp;
-  zoneTarget.style.color = ZONES[zone - 1].colour;
 
   if (!state.settings.bluetoothEnabled) {
     const rpm: number = targetRpmForZone(zone);
     zoneCurrent.hidden = true;
     zoneCurrent.textContent = '';
     placeDialPointer(zoneMarker, zoneNeedle, null);
-    zoneTarget.textContent = `${rpm} rpm`;
     zoneRing.setAttribute('aria-label', `Target ${rpm} rpm`);
     return;
   }
 
-  zoneTarget.textContent = zoneTargetLabel(zone);
   if (state.phase === 'riding') {
     return;
   }
@@ -673,7 +669,6 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     elements: {
       ...stats.elements,
       zoneCurrent: ring.current,
-      zoneTarget: ring.target,
       zoneMarker: ring.marker,
       zoneNeedle: ring.needle,
       zoneRing: ring.root,
