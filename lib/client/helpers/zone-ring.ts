@@ -1,8 +1,8 @@
 import type { ZoneNumber } from '@/lib/client/models/types';
 import { ZONES } from '@/lib/client/models/zones';
 
-// Zone 7 is open-ended. The ring stops at 200% of FTP so the last segment has a width.
-export const ZONE_RING_MAX_PERCENT = 200;
+// Zone 7 is open-ended. The ring stops at 160% of FTP so the purple sprint arc is the short cap above 150%.
+export const ZONE_RING_MAX_PERCENT = 160;
 export const ZONE_RING_RADIUS = 36;
 export const ZONE_RING_CENTER = 50;
 
@@ -30,7 +30,7 @@ export function zoneRingSegments(): ZoneRingSegment[] {
 }
 
 // The caption under the ring is the top of the target zone, not the middle of the range.
-// Zone 7 has no finite top. 150%+ is the published open end; 200% is only the drawing cap.
+// Zone 7 has no finite top. 150%+ is the published open end; 160% is only the drawing cap.
 export function zoneTargetLabel(zone: ZoneNumber): string {
   const band = ZONES[zone - 1];
   if (!Number.isFinite(band.maxPercent)) {
@@ -39,7 +39,7 @@ export function zoneTargetLabel(zone: ZoneNumber): string {
   return `${band.maxPercent}%`;
 }
 
-// 0 is 6 o'clock. The turn runs clockwise to 1 at the 200% cap, back at that same point.
+// 0 is 6 o'clock. The turn runs clockwise to 1 at the 160% cap, back at that same point.
 export function zoneRingTurn(percent: number): number {
   const clamped: number = Math.min(ZONE_RING_MAX_PERCENT, Math.max(0, percent));
   return clamped / ZONE_RING_MAX_PERCENT;

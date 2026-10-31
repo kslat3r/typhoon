@@ -13,13 +13,19 @@ import {
 } from '@/lib/client/helpers/zone-ring';
 
 describe('zoneRingSegments', () => {
-  it('sizes each segment by its percent-of-FTP span and caps zone 7 at 200', () => {
+  it('sizes each segment by its percent-of-FTP span and caps zone 7 at 160', () => {
     const segments = zoneRingSegments();
+    const sprint = segments[6];
 
-    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([56, 20, 15, 15, 15, 30, 49]);
+    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([56, 20, 15, 15, 15, 30, 9]);
     expect(segments.reduce((sum, segment) => sum + (segment.endPercent - segment.startPercent), 0)).toBe(ZONE_RING_MAX_PERCENT);
     expect(segments.map((segment) => segment.colour)).toEqual(ZONES.map((zone) => zone.colour));
-    expect(segments[6].endPercent).toBe(200);
+    expect(ZONE_RING_MAX_PERCENT).toBe(160);
+    expect(sprint.startPercent).toBe(151);
+    expect(sprint.endPercent).toBe(160);
+    expect(sprint.colour).toBe('#b45cff');
+    expect((sprint.endPercent - 150) / ZONE_RING_MAX_PERCENT).toBeLessThanOrEqual(0.15);
+    expect((sprint.endPercent - sprint.startPercent) / ZONE_RING_MAX_PERCENT).toBeLessThanOrEqual(0.15);
   });
 });
 
@@ -34,32 +40,36 @@ describe('zoneTargetLabel', () => {
 });
 
 describe('markerPoint', () => {
-  it('starts at 6 o clock, moves clockwise, sits at the top halfway, and clamps above 200', () => {
+  it('starts at 6 o clock, moves clockwise, sits at the top at half the cap, and clamps above 160', () => {
     const start = markerPoint(0);
     const clockwise = markerPoint(40);
-    const middle = markerPoint(100);
-    const cap = markerPoint(200);
-    const over = markerPoint(240);
+    const halfway = markerPoint(ZONE_RING_MAX_PERCENT / 2);
+    const pastHalfway = markerPoint(100);
+    const cap = markerPoint(160);
+    const over = markerPoint(200);
 
     expect(start.x).toBeCloseTo(ZONE_RING_CENTER, 5);
     expect(start.y).toBeCloseTo(ZONE_RING_CENTER + ZONE_RING_RADIUS, 5);
     expect(clockwise.x).toBeLessThan(start.x);
-    expect(middle.x).toBeCloseTo(ZONE_RING_CENTER, 5);
-    expect(middle.y).toBeCloseTo(ZONE_RING_CENTER - ZONE_RING_RADIUS, 5);
+    expect(halfway.x).toBeCloseTo(ZONE_RING_CENTER, 5);
+    expect(halfway.y).toBeCloseTo(ZONE_RING_CENTER - ZONE_RING_RADIUS, 5);
+    expect(pastHalfway.x).toBeGreaterThan(ZONE_RING_CENTER);
+    expect(pastHalfway.y).toBeLessThan(ZONE_RING_CENTER);
     expect(cap.x).toBeCloseTo(start.x, 5);
     expect(cap.y).toBeCloseTo(start.y, 5);
     expect(over).toEqual(cap);
     expect(zoneRingTurn(0)).toBe(0);
+    expect(zoneRingTurn(160)).toBe(1);
     expect(zoneRingTurn(200)).toBe(1);
   });
 });
 
 describe('needleLine', () => {
-  it('points at 6 o clock at 0%, up at the middle, and clamps at the cap', () => {
+  it('points at 6 o clock at 0%, up at half the cap, and clamps at 160', () => {
     const start = needleLine(0);
     const clockwise = needleLine(40);
-    const middle = needleLine(100);
-    const cap = needleLine(200);
+    const middle = needleLine(ZONE_RING_MAX_PERCENT / 2);
+    const cap = needleLine(160);
     const over = needleLine(260);
 
     expect(start.x2).toBeCloseTo(ZONE_RING_CENTER, 5);
