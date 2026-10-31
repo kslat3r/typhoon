@@ -82,8 +82,8 @@ function buildStats(summary: RideSummary): HTMLElement {
     appendStat(grid, 'NP', summary.normalizedPower === undefined ? undefined : String(summary.normalizedPower));
     appendStat(grid, '% FTP', intensity === undefined ? undefined : `${intensity}%`);
     appendStat(grid, 'IF', summary.intensityFactor === undefined ? undefined : String(summary.intensityFactor));
-    appendStat(grid, 'Avg rpm', summary.averageRpm === undefined ? undefined : String(summary.averageRpm));
-    appendStat(grid, 'Max rpm', summary.maxRpm === undefined ? undefined : String(summary.maxRpm));
+    appendStat(grid, 'Avg cadence', summary.averageRpm === undefined ? undefined : String(summary.averageRpm));
+    appendStat(grid, 'Max cadence', summary.maxRpm === undefined ? undefined : String(summary.maxRpm));
     appendStat(grid, 'Miles', summary.miles > 0 ? summary.miles.toFixed(2) : undefined);
     appendStat(grid, 'Avg mph', summary.averageMph > 0 ? summary.averageMph.toFixed(1) : undefined);
     appendStat(grid, 'Energy', kilojoules === undefined ? undefined : `${kilojoules} kJ`);

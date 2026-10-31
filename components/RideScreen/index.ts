@@ -23,6 +23,7 @@ import { dismissToasts, mountToasts, showToast } from '@/lib/client/helpers/toas
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
+import { markerPoint, needleLine, segmentStroke, zoneRingSegments, zoneTargetLabel, ZONE_RING_RADIUS } from '@/lib/client/helpers/zone-ring';
 import { targetRpmForZone } from '@/lib/client/models/target-cadence';
 import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
@@ -59,11 +60,12 @@ function buildButton(label: string, onClick: () => void): HTMLButtonElement {
   return button;
 }
 
-function buildStatCell(label: string, className: string): { cell: HTMLElement; value: HTMLElement } {
+function buildStatCell(label: string, className: string): { cell: HTMLElement; value: HTMLElement; label: HTMLElement } {
   const cell: HTMLElement = buildElement('div', 'ride-stat', '');
+  const labelElement: HTMLElement = buildElement('span', 'ride-stat-label', label);
   const value: HTMLElement = buildElement('span', `ride-stat-value ${className}`, '--');
-  cell.append(buildElement('span', 'ride-stat-label', label), value);
-  return { cell, value };
+  cell.append(labelElement, value);
+  return { cell, value, label: labelElement };
 }
 
 function clock(state: RideScreenState): number {
@@ -85,6 +87,63 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
     return null;
   }
   return state.latestSample;
+}
+
+function placeDialPointer(marker: SVGCircleElement, needle: SVGLineElement, percent: number | null): void {
+  if (percent === null) {
+    marker.setAttribute('visibility', 'hidden');
+    needle.setAttribute('visibility', 'hidden');
+    return;
+  }
+
+  const point = markerPoint(percent);
+  marker.setAttribute('cx', point.x.toFixed(2));
+  marker.setAttribute('cy', point.y.toFixed(2));
+  marker.setAttribute('visibility', 'visible');
+  const line = needleLine(percent);
+  needle.setAttribute('x1', line.x1.toFixed(2));
+  needle.setAttribute('y1', line.y1.toFixed(2));
+  needle.setAttribute('x2', line.x2.toFixed(2));
+  needle.setAttribute('y2', line.y2.toFixed(2));
+  needle.setAttribute('visibility', 'visible');
+}
+
+function buildZoneRing(): { root: HTMLElement; current: HTMLElement; target: HTMLElement; marker: SVGCircleElement; needle: SVGLineElement } {
+  const root: HTMLElement = buildElement('div', 'zone-ring', '');
+  root.setAttribute('role', 'img');
+  const dial: HTMLElement = buildElement('div', 'zone-ring-dial', '');
+  const svg: SVGSVGElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'zone-ring-svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('aria-hidden', 'true');
+
+  for (const segment of zoneRingSegments()) {
+    const circle: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    const stroke = segmentStroke(segment.startPercent, segment.endPercent);
+    circle.setAttribute('class', 'zone-ring-segment');
+    circle.setAttribute('cx', '50');
+    circle.setAttribute('cy', '50');
+    circle.setAttribute('r', String(ZONE_RING_RADIUS));
+    circle.setAttribute('stroke', segment.colour);
+    circle.setAttribute('stroke-dasharray', stroke.dasharray);
+    circle.setAttribute('stroke-dashoffset', stroke.dashoffset);
+    svg.append(circle);
+  }
+
+  const needle: SVGLineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  needle.setAttribute('class', 'zone-ring-needle');
+  needle.setAttribute('visibility', 'hidden');
+  const marker: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  marker.setAttribute('class', 'zone-ring-marker');
+  marker.setAttribute('r', '3.2');
+  marker.setAttribute('visibility', 'hidden');
+  svg.append(needle, marker);
+
+  const current: HTMLElement = buildElement('div', 'zone-ring-current', '--');
+  const target: HTMLElement = buildElement('div', 'zone-ring-target', '');
+  dial.append(svg, current);
+  root.append(dial, target);
+  return { root, current, target, marker, needle };
 }
 
 function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'placeholder' | 'spinner' | 'trackTitle' | 'trackArtist' | 'prevButton' | 'nextButton'>; actions: HTMLElement } {
@@ -115,30 +174,31 @@ function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTM
   return { band, elements: { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
 }
 
-function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining' | 'target'> } {
+function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'next' | 'nextLabel' | 'remaining' | 'target'> } {
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
-  const percent = buildStatCell('% FTP', 'ride-stat-percent');
+  const interval = buildStatCell('Interval', 'ride-stat-interval');
+  const next = buildStatCell('Next', 'ride-stat-next');
+  const target = buildStatCell('Target', 'ride-stat-target');
+  target.cell.hidden = true;
   const watts = buildStatCell('Watts', 'ride-stat-watts');
-  const rpm = buildStatCell('RPM', 'ride-stat-rpm');
+  const rpm = buildStatCell('Cadence', 'ride-stat-rpm');
   const mph = buildStatCell('MPH', 'ride-stat-mph');
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');
-  const target = buildStatCell('Target', 'ride-stat-target');
-  target.cell.hidden = true;
-  const interval = buildStatCell('Interval', 'ride-stat-interval');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(percent.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, target.cell, interval.cell, remaining.cell);
+  strip.append(rpm.cell, watts.cell, mph.cell, averageMph.cell, miles.cell, target.cell, interval.cell, next.cell, remaining.cell);
 
   return {
     strip,
     elements: {
-      percent: percent.value,
       watts: watts.value,
       rpm: rpm.value,
       mph: mph.value,
       averageMph: averageMph.value,
       miles: miles.value,
       interval: interval.value,
+      next: next.value,
+      nextLabel: next.label,
       remaining: remaining.value,
       target: target.value,
     },
@@ -149,8 +209,7 @@ function statCell(value: HTMLElement): HTMLElement {
   return value.parentElement as HTMLElement;
 }
 
-const BIKE_STATS: (keyof Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles'>)[] = [
-  'percent',
+const BIKE_STATS: (keyof Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles'>)[] = [
   'watts',
   'rpm',
   'mph',
@@ -228,33 +287,66 @@ function updateTrack(state: RideScreenState): void {
   }
 }
 
-function updateInterval(state: RideScreenState, position: IntervalPosition): void {
+function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPosition): void {
   state.elements.interval.textContent = formatClock(position.secondsLeftInInterval);
+  const upcoming: RideInterval | undefined = ride.intervals[position.index + 1];
+  if (upcoming === undefined) {
+    state.elements.nextLabel.textContent = 'Next';
+    state.elements.next.textContent = '--';
+    return;
+  }
+  state.elements.nextLabel.textContent = `Next Z${upcoming.zone}`;
+  state.elements.next.textContent = formatClock(upcoming.seconds);
 }
 
-function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number, zone: ZoneNumber): void {
-  const { percent, watts, rpm, mph, averageMph, miles, remaining, target } = state.elements;
-  remaining.textContent = formatClock(secondsLeftInRide);
+function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
+  const { zoneCurrent, zoneTarget, zoneMarker, zoneNeedle, zoneRing } = state.elements;
+  const ftp: number = state.settings.ftp;
+  zoneTarget.style.color = ZONES[zone - 1].colour;
+
   if (!state.settings.bluetoothEnabled) {
-    target.textContent = String(targetRpmForZone(zone));
-    target.style.color = ZONES[zone - 1].colour;
+    const rpm: number = targetRpmForZone(zone);
+    zoneCurrent.hidden = true;
+    zoneCurrent.textContent = '';
+    placeDialPointer(zoneMarker, zoneNeedle, null);
+    zoneTarget.textContent = `${rpm} rpm`;
+    zoneRing.setAttribute('aria-label', `Target ${rpm} rpm`);
     return;
   }
 
-  const ftp: number = state.settings.ftp;
+  zoneTarget.textContent = zoneTargetLabel(zone);
+  const live: boolean = state.bikeState !== 'reconnecting' && sample !== null && ftp > 0;
+  if (!live || sample === null) {
+    zoneCurrent.hidden = false;
+    zoneCurrent.textContent = '--';
+    zoneCurrent.style.color = '';
+    placeDialPointer(zoneMarker, zoneNeedle, null);
+    zoneRing.setAttribute('aria-label', `Target ${zoneTargetLabel(zone)}`);
+    return;
+  }
+
+  const percent: number = Math.round((sample.watts / ftp) * 100);
+  zoneCurrent.hidden = false;
+  zoneCurrent.textContent = `${percent}%`;
+  zoneCurrent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 1].colour;
+  placeDialPointer(zoneMarker, zoneNeedle, percent);
+  zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
+}
+
+function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number, zone: ZoneNumber): void {
+  const { watts, rpm, mph, averageMph, miles, remaining, target } = state.elements;
+  remaining.textContent = formatClock(secondsLeftInRide);
+  if (!state.settings.bluetoothEnabled) {
+    target.textContent = String(targetRpmForZone(zone));
+    return;
+  }
 
   if (state.bikeState === 'reconnecting') {
     watts.textContent = 'Reconnecting';
-    percent.textContent = '--';
-    percent.style.color = '';
   } else if (sample === null) {
     watts.textContent = '--';
-    percent.textContent = '--';
-    percent.style.color = '';
   } else {
     watts.textContent = String(Math.round(sample.watts));
-    percent.textContent = `${Math.round((sample.watts / ftp) * 100)}%`;
-    percent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 1].colour;
   }
 
   rpm.textContent = sample === null || sample.rpm === null ? '--' : String(Math.round(sample.rpm));
@@ -266,8 +358,9 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
 
 function updateScreen(state: RideScreenState, ride: Ride, position: IntervalPosition, sample: BikeSample | null): void {
   updateTrack(state);
-  updateInterval(state, position);
+  updateInterval(state, ride, position);
   updateStats(state, sample, position.secondsLeftInRide, position.interval.zone);
+  updateZoneRing(state, sample, position.interval.zone);
   renderRideProfile(state.elements.profileRoot, {
     ride,
     position: state.phase === 'riding' ? position : null,
@@ -745,6 +838,8 @@ function startTestRide(state: RideScreenState, ride: Ride): void {
 
 export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const top = buildTopBand((direction: 'prev' | 'next'): void => skipTrack(state, ride, direction));
+  const ring = buildZoneRing();
+  top.band.prepend(ring.root);
   const stats = buildStatsStrip();
   const profileRoot: HTMLElement = buildElement('section', 'ride-profile-band', '');
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
@@ -812,6 +907,11 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     elements: {
       ...top.elements,
       ...stats.elements,
+      zoneCurrent: ring.current,
+      zoneTarget: ring.target,
+      zoneMarker: ring.marker,
+      zoneNeedle: ring.needle,
+      zoneRing: ring.root,
       profileRoot,
       connectButton,
       startButton,

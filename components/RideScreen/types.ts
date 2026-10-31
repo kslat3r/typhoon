@@ -15,7 +15,8 @@ export type RideScreenElements = {
   prevButton: HTMLButtonElement;
   nextButton: HTMLButtonElement;
   interval: HTMLElement;
-  percent: HTMLElement;
+  next: HTMLElement;
+  nextLabel: HTMLElement;
   watts: HTMLElement;
   rpm: HTMLElement;
   mph: HTMLElement;
@@ -23,6 +24,11 @@ export type RideScreenElements = {
   miles: HTMLElement;
   remaining: HTMLElement;
   target: HTMLElement;
+  zoneCurrent: HTMLElement;
+  zoneTarget: HTMLElement;
+  zoneMarker: SVGCircleElement;
+  zoneNeedle: SVGLineElement;
+  zoneRing: HTMLElement;
   profileRoot: HTMLElement;
   connectButton: HTMLButtonElement;
   startButton: HTMLButtonElement;

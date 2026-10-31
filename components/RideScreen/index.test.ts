@@ -61,6 +61,12 @@ function playerReports(id: string, position: number, duration: number, paused = 
   });
 }
 
+function visibleStatLabels(root: ParentNode): string[] {
+  return [...root.querySelectorAll('.ride-stat')]
+    .filter((cell) => !(cell as HTMLElement).hidden)
+    .map((cell) => cell.querySelector('.ride-stat-label')?.textContent ?? '');
+}
+
 function findButton(root: HTMLElement, label: string): HTMLButtonElement {
   const buttons: HTMLButtonElement[] = Array.from(root.querySelectorAll('button'));
   const found: HTMLButtonElement | undefined = buttons.find((button: HTMLButtonElement): boolean => button.textContent === label);
@@ -155,7 +161,7 @@ describe('renderRideScreen', () => {
     expect(findButton(root, 'Connect bike').hidden).toBe(true);
     expect(findButton(root, 'Start').disabled).toBe(false);
     expect(connectWattbike).not.toHaveBeenCalled();
-    expect(hidden('.ride-stat-percent')).toBe(true);
+    expect(root.querySelector('.ride-stat-percent')).toBeNull();
     expect(hidden('.ride-stat-watts')).toBe(true);
     expect(hidden('.ride-stat-rpm')).toBe(true);
     expect(hidden('.ride-stat-mph')).toBe(true);
@@ -164,7 +170,14 @@ describe('renderRideScreen', () => {
     expect(hidden('.ride-stat-interval')).toBe(false);
     expect(hidden('.ride-stat-remaining')).toBe(false);
     expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('70');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.textContent).toContain('Next Z4');
+    expect((root.querySelector('.zone-ring-current') as HTMLElement).hidden).toBe(true);
+    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('70 rpm');
+    expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('hidden');
+    expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('hidden');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
+    expect(visibleStatLabels(root)).toEqual(['Target', 'Interval', 'Next Z4', 'Remaining']);
 
     // Act
     findButton(root, 'Start').click();
@@ -172,8 +185,19 @@ describe('renderRideScreen', () => {
 
     // Assert
     expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('85');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.textContent).toContain('Next Z2');
+    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('85 rpm');
+    expect((root.querySelector('.zone-ring-current') as HTMLElement).hidden).toBe(true);
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:09');
     expect((root.querySelector('.ride-stat-remaining') as HTMLElement).textContent).toBe('0:19');
+
+    // Act
+    await vi.advanceTimersByTimeAsync(10000);
+
+    // Assert
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('--');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.textContent).toBe('Next--');
     expect(connectWattbike).not.toHaveBeenCalled();
     expect(root.querySelector('.toast')).toBeNull();
   });
@@ -699,6 +723,9 @@ describe('renderRideScreen', () => {
     await vi.advanceTimersByTimeAsync(0);
     const countdown: HTMLElement = root.querySelector('.ride-stat-interval') as HTMLElement;
     expect(countdown.textContent).toBe('0:10');
+    expect(root.querySelectorAll('.zone-ring-segment')).toHaveLength(7);
+    expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('--');
+    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('75%');
 
     // Act
     findButton(root, 'Connect bike').click();
@@ -711,7 +738,20 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-top') as HTMLElement).textContent).not.toContain('No music');
     expect(countdown.textContent).toBe('0:08');
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
-    expect((root.querySelector('.ride-stat-percent') as HTMLElement).textContent).toBe('75%');
+    expect(root.querySelector('.ride-stat-percent')).toBeNull();
+    expect((root.querySelector('.zone-ring-current') as HTMLElement).textContent).toBe('75%');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
+    expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.textContent).toContain('Next Z4');
+    expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('75%');
+    expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('visible');
+    expect(root.querySelector('.zone-ring-needle')?.getAttribute('visibility')).toBe('visible');
+    expect(Number(root.querySelector('.zone-ring-needle')?.getAttribute('x2'))).toBeGreaterThan(50);
+    expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('75% of FTP, target 75%');
+    expect((root.querySelector('.ride-stat-rpm') as HTMLElement).textContent).toBe('90');
+    expect((root.querySelector('.ride-stat-rpm') as HTMLElement).parentElement?.textContent).toContain('Cadence');
+    expect(visibleStatLabels(root)).toEqual(['Cadence', 'Watts', 'MPH', 'Avg MPH', 'Miles', 'Interval', 'Next Z4', 'Remaining']);
+    const coloured = [...root.querySelectorAll('.ride-stat, .ride-stat-label, .ride-stat-value')].filter((element) => (element as HTMLElement).style.color !== '');
+    expect(coloured).toEqual([]);
 
     // Act
     await vi.advanceTimersByTimeAsync(30000);
