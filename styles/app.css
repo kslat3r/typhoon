@@ -529,6 +529,10 @@ form {
   stroke-width: 10;
 }
 
+.zone-ring-fill {
+  transition: fill 200ms ease, fill-opacity 200ms ease;
+}
+
 .zone-ring-needle {
   stroke: #ffffff;
   stroke-width: 2.8;
@@ -552,6 +556,8 @@ form {
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 75%);
 }
 
 .zone-ring-current[hidden] {

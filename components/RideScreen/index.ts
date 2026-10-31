@@ -23,10 +23,8 @@ import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
 import { dismissToasts, mountToasts, showToast } from '@/lib/client/helpers/toasts';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
-import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
-import { markerPoint, needleLine, segmentStroke, zoneRingSegments, zoneTargetLabel, ZONE_RING_RADIUS } from '@/lib/client/helpers/zone-ring';
+import { markerPoint, needleLine, segmentStroke, zoneRingFill, zoneRingSegments, zoneTargetLabel, ZONE_RING_FILL_ALPHA, ZONE_RING_FILL_RADIUS, ZONE_RING_RADIUS } from '@/lib/client/helpers/zone-ring';
 import { targetRpmForZone } from '@/lib/client/models/target-cadence';
-import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
@@ -102,7 +100,17 @@ function placeDialPointer(marker: SVGCircleElement, needle: SVGLineElement, perc
   needle.setAttribute('visibility', 'visible');
 }
 
-function buildZoneRing(): { root: HTMLElement; current: HTMLElement; marker: SVGCircleElement; needle: SVGLineElement } {
+function paintZoneDisc(fill: SVGCircleElement, percent: number | null): void {
+  if (percent === null) {
+    fill.setAttribute('fill', 'none');
+    fill.setAttribute('fill-opacity', '0');
+    return;
+  }
+  fill.setAttribute('fill', zoneRingFill(percent));
+  fill.setAttribute('fill-opacity', String(ZONE_RING_FILL_ALPHA));
+}
+
+function buildZoneRing(): { root: HTMLElement; current: HTMLElement; fill: SVGCircleElement; marker: SVGCircleElement; needle: SVGLineElement } {
   const root: HTMLElement = buildElement('div', 'zone-ring', '');
   root.setAttribute('role', 'img');
   const dial: HTMLElement = buildElement('div', 'zone-ring-dial', '');
@@ -110,6 +118,14 @@ function buildZoneRing(): { root: HTMLElement; current: HTMLElement; marker: SVG
   svg.setAttribute('class', 'zone-ring-svg');
   svg.setAttribute('viewBox', '0 0 100 100');
   svg.setAttribute('aria-hidden', 'true');
+
+  const fill: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  fill.setAttribute('class', 'zone-ring-fill');
+  fill.setAttribute('cx', '50');
+  fill.setAttribute('cy', '50');
+  fill.setAttribute('r', String(ZONE_RING_FILL_RADIUS));
+  paintZoneDisc(fill, null);
+  svg.append(fill);
 
   for (const segment of zoneRingSegments()) {
     const circle: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -136,7 +152,7 @@ function buildZoneRing(): { root: HTMLElement; current: HTMLElement; marker: SVG
   const current: HTMLElement = buildElement('div', 'zone-ring-current', '--');
   dial.append(svg, current);
   root.append(dial);
-  return { root, current, marker, needle };
+  return { root, current, fill, marker, needle };
 }
 
 function buildTopBand(): { band: HTMLElement; actions: HTMLElement } {
@@ -216,13 +232,14 @@ function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPo
 }
 
 function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
-  const { zoneCurrent, zoneMarker, zoneNeedle, zoneRing } = state.elements;
+  const { zoneCurrent, zoneFill, zoneMarker, zoneNeedle, zoneRing } = state.elements;
   const ftp: number = state.settings.ftp;
 
   if (!state.settings.bluetoothEnabled) {
     const rpm: number = targetRpmForZone(zone);
     zoneCurrent.hidden = true;
     zoneCurrent.textContent = '';
+    paintZoneDisc(zoneFill, null);
     placeDialPointer(zoneMarker, zoneNeedle, null);
     zoneRing.setAttribute('aria-label', `Target ${rpm} rpm`);
     return;
@@ -236,7 +253,7 @@ function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone:
   if (!live || sample === null) {
     zoneCurrent.hidden = false;
     zoneCurrent.textContent = '--';
-    zoneCurrent.style.color = '';
+    paintZoneDisc(zoneFill, null);
     placeDialPointer(zoneMarker, zoneNeedle, null);
     zoneRing.setAttribute('aria-label', `Target ${zoneTargetLabel(zone)}`);
     return;
@@ -245,7 +262,7 @@ function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone:
   const percent: number = Math.round((sample.watts / ftp) * 100);
   zoneCurrent.hidden = false;
   zoneCurrent.textContent = `${percent}%`;
-  zoneCurrent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 1].colour;
+  paintZoneDisc(zoneFill, percent);
   placeDialPointer(zoneMarker, zoneNeedle, percent);
   zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
 }
@@ -259,7 +276,7 @@ function paintDistance(state: RideScreenState): void {
 
 function paintAveragedLive(state: RideScreenState, average: LiveAverage, zone: ZoneNumber): void {
   state.displayedLive = average;
-  const { watts, rpm, mph, zoneCurrent, zoneMarker, zoneNeedle, zoneRing } = state.elements;
+  const { watts, rpm, mph, zoneCurrent, zoneFill, zoneMarker, zoneNeedle, zoneRing } = state.elements;
   if (state.bikeState !== 'reconnecting') {
     watts.textContent = String(Math.round(average.watts));
   }
@@ -277,7 +294,7 @@ function paintAveragedLive(state: RideScreenState, average: LiveAverage, zone: Z
   const percent: number = ftp > 0 ? Math.round((average.watts / ftp) * 100) : 0;
   zoneCurrent.hidden = false;
   zoneCurrent.textContent = `${percent}%`;
-  zoneCurrent.style.color = ftp > 0 ? ZONES[zoneForWatts(average.watts, ftp) - 1].colour : '';
+  paintZoneDisc(zoneFill, ftp > 0 ? percent : null);
   placeDialPointer(zoneMarker, zoneNeedle, percent);
   zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
 }
@@ -292,7 +309,7 @@ function clearLiveDisplay(state: RideScreenState): void {
   state.elements.miles.textContent = '--';
   state.elements.zoneCurrent.hidden = false;
   state.elements.zoneCurrent.textContent = '--';
-  state.elements.zoneCurrent.style.color = '';
+  paintZoneDisc(state.elements.zoneFill, null);
   placeDialPointer(state.elements.zoneMarker, state.elements.zoneNeedle, null);
 }
 
@@ -669,6 +686,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     elements: {
       ...stats.elements,
       zoneCurrent: ring.current,
+      zoneFill: ring.fill,
       zoneMarker: ring.marker,
       zoneNeedle: ring.needle,
       zoneRing: ring.root,

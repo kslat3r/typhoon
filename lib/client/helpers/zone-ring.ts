@@ -1,3 +1,4 @@
+import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
 import type { ZoneNumber } from '@/lib/client/models/types';
 import { ZONES } from '@/lib/client/models/zones';
 
@@ -7,6 +8,10 @@ export const ZONE_RING_MIN_PERCENT = 20;
 export const ZONE_RING_MAX_PERCENT = 170;
 export const ZONE_RING_RADIUS = 36;
 export const ZONE_RING_CENTER = 50;
+// Sits inside the 10-unit stroke so the coloured ring itself stays uncovered.
+export const ZONE_RING_FILL_RADIUS = ZONE_RING_RADIUS - 5;
+// Half strength: obvious on the bike, including dark red and blue, with white type still readable.
+export const ZONE_RING_FILL_ALPHA = 0.5;
 
 // The same arc is left open after every segment, including the join where zone 7 meets zone 1.
 const SEGMENT_GAP = 1.5;
@@ -29,6 +34,11 @@ export function zoneRingSegments(): ZoneRingSegment[] {
       endPercent: next === undefined ? ZONE_RING_MAX_PERCENT : next.minPercent,
     };
   });
+}
+
+// The disc uses the same percent the needle points at, mapped through the Coggan bands.
+export function zoneRingFill(percent: number): string {
+  return ZONES[zoneForWatts(percent, 100) - 1].colour;
 }
 
 // The caption under the ring is the top of the target zone, not the middle of the range.
