@@ -241,7 +241,7 @@ export default function renderSettingsScreen(root: HTMLElement): void {
 
   const bluetoothBody: HTMLElement = document.createElement('div');
   bluetoothBody.className = 'settings-group-body';
-  bluetoothBody.append(bikeField, ftpField);
+  bluetoothBody.append(ftpField, bikeField);
 
   const musicActions: HTMLElement = document.createElement('div');
   musicActions.className = 'settings-actions';

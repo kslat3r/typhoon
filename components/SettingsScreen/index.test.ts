@@ -173,6 +173,34 @@ describe('renderSettingsScreen', () => {
     expect(loadSettings().musicEnabled).toBe(true);
   });
 
+  it('nests FTP and the bike under Bluetooth, and Spotify under Music', () => {
+    // Arrange
+    saveSettings({ ...loadSettings(), ftp: 220, bikeName: 'Wattbike Atom', spotifyClientId: 'client-1' });
+    const root: HTMLElement = document.createElement('div');
+    renderSettingsScreen(root);
+    const bluetooth: HTMLElement = root.querySelector('input[name="bluetoothEnabled"]') as HTMLElement;
+    const ftp: HTMLElement = root.querySelector('input[name="ftp"]') as HTMLElement;
+    const bike: HTMLElement = root.querySelector('input[name="bikeName"]') as HTMLElement;
+    const music: HTMLElement = root.querySelector('input[name="musicEnabled"]') as HTMLElement;
+    const clientId: HTMLElement = root.querySelector('input[name="spotifyClientId"]') as HTMLElement;
+    const connect: HTMLElement = findButton(root, 'Connect Spotify');
+    const follows = (earlier: Node, later: Node): boolean =>
+      (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+    // Assert
+    expect(follows(bluetooth, ftp)).toBe(true);
+    expect(follows(ftp, bike)).toBe(true);
+    expect(follows(bike, music)).toBe(true);
+    expect(follows(music, clientId)).toBe(true);
+    expect(follows(clientId, connect)).toBe(true);
+    expect(ftp.closest('[data-settings-group="bluetooth"] .settings-group-body')).not.toBeNull();
+    expect(bike.closest('[data-settings-group="bluetooth"] .settings-group-body')).not.toBeNull();
+    expect(bluetooth.closest('.settings-group-body')).toBeNull();
+    expect(clientId.closest('[data-settings-group="music"] .settings-group-body')).not.toBeNull();
+    expect(connect.closest('[data-settings-group="music"] .settings-group-body')).not.toBeNull();
+    expect(music.closest('.settings-group-body')).toBeNull();
+  });
+
   it('hides bike and FTP while Bluetooth is off and restores them with their values', () => {
     // Arrange
     saveSettings({ ...loadSettings(), bluetoothEnabled: false, ftp: 220, bikeName: 'Wattbike Atom' });
@@ -229,9 +257,17 @@ describe('renderSettingsScreen', () => {
     expect(music.closest('.settings-group-body')).toBeNull();
     expect(body.hidden).toBe(true);
     expect(clientId.closest('.settings-group-body')).toBe(body);
-    expect(findButton(root, 'Disconnect Spotify').closest('.settings-group-body')).toBe(body);
-    expect(findButton(root, 'Choose playlist').closest('.settings-group-body')).toBe(body);
-    expect(root.querySelector('select')?.closest('.settings-group-body')).toBe(body);
+    const disconnect: HTMLButtonElement = findButton(root, 'Disconnect Spotify');
+    const choose: HTMLButtonElement = findButton(root, 'Choose playlist');
+    const playlist: HTMLSelectElement = root.querySelector('select') as HTMLSelectElement;
+    const follows = (earlier: Node, later: Node): boolean =>
+      (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    expect(disconnect.closest('.settings-group-body')).toBe(body);
+    expect(choose.closest('.settings-group-body')).toBe(body);
+    expect(playlist.closest('.settings-group-body')).toBe(body);
+    expect(follows(clientId, disconnect)).toBe(true);
+    expect(follows(disconnect, choose)).toBe(true);
+    expect(follows(choose, playlist)).toBe(true);
     expect(root.querySelector('progress')?.closest('.settings-group-body')).toBe(body);
     expect(fillTempoCache).not.toHaveBeenCalled();
     expect(findButton(root, 'Save').hidden).toBe(false);
