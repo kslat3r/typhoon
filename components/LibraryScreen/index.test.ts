@@ -47,7 +47,7 @@ describe('renderLibraryScreen', () => {
     expect(root.querySelector('a[href="#/settings"]')?.getAttribute('aria-label')).toBe('Settings');
     expect(root.textContent).toContain('1 min FTP test');
     expect(root.textContent).toContain('Moderate');
-    expect(root.textContent).toContain('Brutal');
+    expect(root.textContent).toContain('Extreme');
     const selects: HTMLSelectElement[] = [...root.querySelectorAll('select')];
     expect(selects).toHaveLength(2);
     expect([...selects[0].options].map((option) => option.text)).toEqual(['All', '30 min', '45 min']);
@@ -57,7 +57,7 @@ describe('renderLibraryScreen', () => {
       'Moderate',
       'Hard',
       'Very hard',
-      'Brutal',
+      'Extreme',
     ]);
     expect(selects[0].value).toBe('all');
     expect(selects[1].value).toBe('all');

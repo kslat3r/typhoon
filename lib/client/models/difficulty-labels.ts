@@ -7,7 +7,7 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   2: 'Moderate',
   3: 'Hard',
   4: 'Very hard',
-  5: 'Brutal',
+  5: 'Extreme',
 };
 
 export function difficultyRank(difficulty: Difficulty): number {

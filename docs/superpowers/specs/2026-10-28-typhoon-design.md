@@ -115,12 +115,16 @@ coaching text is being replaced.
 ### Rides
 
 - Lengths: 30 and 45 minutes only.
-- Difficulty: five grades, Easy, Moderate, Hard, Very hard, Brutal
-  (stored as 1 to 5). Easy tops out at zone 5 in bursts of 30 s or
+- Difficulty: five grades, Easy, Moderate, Hard, Very hard, Extreme
+  (stored as 1 to 5; Extreme was Brutal until Ed's 2026-10-31
+  normalisation, when every grade came down: Easy was not easy enough,
+  Moderate too hard and Brutal impossible). Easy tops out at zone 5 in bursts of 30 s or
   less; Moderate at zone 6 in efforts of 30 s or less; the top three
   use the whole range. Mean intensity, zone 4+ and zone 5+ time rise
-  with every grade, and every Brutal ride has more zone 4+ time than
-  any Easy ride. Ed's 2026-10-31 reset: the nine-grade library of
+  with every grade, and every Extreme ride has more zone 4+ time than
+  any Easy ride. Share of the ride at zone 4+ by grade, roughly: Easy
+  13%, Moderate 26%, Hard 36%, Very hard 44%, Extreme 50%, with no
+  red effort over a minute outside the FTP tests. Ed's 2026-10-31 reset: the nine-grade library of
   ninety rides was dropped for fifty rides, five per grade per length.
 - Every ride is written by hand, the way an instructor builds a
   class: one concept per ride (a climb with hairpins that close in,
@@ -129,8 +133,8 @@ coaching text is being replaced.
   and lengths, sets that grow or shrink rather than repeat, and
   recoveries that vary from 30 s to two minutes, some of them green
   or yellow. Durations are musical: 10, 15, 20, 30, 45, 60, 90 s.
-  Brutal is about 57 to 65% of the ride at zone 4+ with around ten
-  minutes of easy riding (the 2026-10-30 retune still holds).
+  Extreme keeps around twelve minutes of blue or green riding in a
+  45 minute class.
 - No ride is derived from another by scaling.
 - A ride is a flat ordered list of intervals. Each interval is a target
   zone (1 to 7) and a duration in seconds. No names, no blocks, no

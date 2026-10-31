@@ -126,7 +126,7 @@ describe('ride library', () => {
     }
   });
 
-  it.each(LENGTHS)('%i s grades rise from Easy to Brutal in intensity and in time at zone 4+ and zone 5+', (length: number) => {
+  it.each(LENGTHS)('%i s grades rise from Easy to Extreme in intensity and in time at zone 4+ and zone 5+', (length: number) => {
     // Arrange
     const byGrade: Ride[][] = DIFFICULTY_ORDER.map((difficulty) => ridesAt(length, difficulty));
 
