@@ -23,7 +23,7 @@ describe('ride library', () => {
     expect(LENGTHS).toContain(ride.lengthSeconds);
   });
 
-  it.each(RIDES)('$name opens with a zone 1 spin, a varied warm-up inside four minutes and cools down in zone 1', (ride: Ride) => {
+  it.each(RIDES)('$name opens with a zone 1 spin, a varied warm-up inside four minutes and cools down for 30 seconds', (ride: Ride) => {
     // Arrange / Act
     const spin = ride.intervals[0];
     const last = ride.intervals[ride.intervals.length - 1];
@@ -45,8 +45,16 @@ describe('ride library', () => {
     expect(head.length).toBeGreaterThanOrEqual(4);
     expect(new Set(head.map((i) => i.zone)).size).toBeGreaterThanOrEqual(3);
     expect(hardSeconds).toBeLessThanOrEqual(45);
+    let trailingRest = 0;
+    for (let index = ride.intervals.length - 1; index >= 0; index -= 1) {
+      if (ride.intervals[index].zone !== 1) {
+        break;
+      }
+      trailingRest += ride.intervals[index].seconds;
+    }
     expect(last.zone).toBe(1);
-    expect(last.seconds).toBeGreaterThanOrEqual(120);
+    expect(last.seconds).toBe(30);
+    expect(trailingRest).toBe(30);
   });
 
   it.each(RIDES)('$name rests in blue after work, green only as active easy riding', (ride: Ride) => {
