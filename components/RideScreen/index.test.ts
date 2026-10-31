@@ -162,7 +162,7 @@ describe('renderRideScreen', () => {
     expect(hidden('.ride-stat-miles')).toBe(true);
     expect(hidden('.ride-stat-interval')).toBe(false);
     expect(hidden('.ride-stat-remaining')).toBe(false);
-    expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('95');
+    expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('70');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
 
     // Act
@@ -170,7 +170,7 @@ describe('renderRideScreen', () => {
     await vi.advanceTimersByTimeAsync(11000);
 
     // Assert
-    expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('80');
+    expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('85');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:09');
     expect((root.querySelector('.ride-stat-remaining') as HTMLElement).textContent).toBe('0:19');
     expect(connectWattbike).not.toHaveBeenCalled();
