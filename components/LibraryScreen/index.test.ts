@@ -40,7 +40,8 @@ describe('renderLibraryScreen', () => {
     expect(cards).toHaveLength(RIDES.length);
     expect(cards[0].querySelectorAll('.ride-shape .ride-profile-bar').length).toBeGreaterThanOrEqual(10);
     expect(cards[0].textContent).toContain('First Light');
-    expect(cards[0].textContent).toContain('Easy');
+    expect(cards[0].textContent).toContain('30 min · Easy');
+    expect(root.querySelector('h2')).toBeNull();
     expect(root.querySelector('h1')?.textContent).toBe('Tracks');
     expect(root.querySelector('a[href="#/history"]')?.getAttribute('aria-label')).toBe('History');
     expect(root.querySelector('a[href="#/settings"]')?.getAttribute('aria-label')).toBe('Settings');
@@ -79,7 +80,7 @@ describe('renderLibraryScreen', () => {
       expect(card.textContent).toContain('Easy');
       expect(card.getAttribute('href')).toContain('-30');
     }
-    expect([...root.querySelectorAll('h2')].map((heading) => heading.textContent)).toEqual(['30 minutes']);
+    expect(root.querySelector('h2')).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.filters)).toBe('{"duration":1800,"difficulty":1}');
     const again: HTMLElement = document.createElement('div');
     renderLibraryScreen(again);

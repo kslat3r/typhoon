@@ -30,7 +30,7 @@ function buildLink(href: string, label: string, detail: string | null): HTMLAnch
 }
 
 function rideDetail(ride: Ride): string {
-  const label: string = DIFFICULTY_LABELS[ride.difficulty];
+  const label: string = `${ride.lengthSeconds / 60} min · ${DIFFICULTY_LABELS[ride.difficulty]}`;
   return ride.ftpTest === undefined ? label : `${label} · ${ride.ftpTest.seconds / 60} min FTP test`;
 }
 
@@ -48,18 +48,7 @@ function buildRideCard(ride: Ride): HTMLAnchorElement {
 }
 
 function compareRides(a: Ride, b: Ride): number {
-  return difficultyRank(a.difficulty) - difficultyRank(b.difficulty) || a.name.localeCompare(b.name);
-}
-
-function buildSection(title: string, rides: Ride[]): HTMLElement {
-  const section: HTMLElement = document.createElement('section');
-  const heading: HTMLHeadingElement = document.createElement('h2');
-  heading.textContent = title;
-  section.append(heading);
-  for (const ride of rides) {
-    section.append(buildRideCard(ride));
-  }
-  return section;
+  return difficultyRank(a.difficulty) - difficultyRank(b.difficulty) || a.lengthSeconds - b.lengthSeconds || a.name.localeCompare(b.name);
 }
 
 function buildIconLink(href: string, label: string, icon: string): HTMLAnchorElement {
@@ -149,16 +138,8 @@ function buildFilters(root: HTMLElement, rides: Ride[], filters: LibraryFilters)
 export default function renderLibraryScreen(root: HTMLElement, rides: Ride[] = RIDES): void {
   const filters: LibraryFilters = loadLibraryFilters();
   const matched: Ride[] = filterRides(rides, filters).sort(compareRides);
-  const thirty: Ride[] = matched.filter((ride: Ride): boolean => ride.lengthSeconds === 1800);
-  const fortyFive: Ride[] = matched.filter((ride: Ride): boolean => ride.lengthSeconds === 2700);
-  const children: HTMLElement[] = [buildHeader(), buildFilters(root, rides, filters)];
-  if (thirty.length > 0) {
-    children.push(buildSection('30 minutes', thirty));
-  }
-  if (fortyFive.length > 0) {
-    children.push(buildSection('45 minutes', fortyFive));
-  }
-  if (thirty.length === 0 && fortyFive.length === 0) {
+  const children: HTMLElement[] = [buildHeader(), buildFilters(root, rides, filters), ...matched.map(buildRideCard)];
+  if (matched.length === 0) {
     const empty: HTMLParagraphElement = document.createElement('p');
     empty.className = 'library-empty';
     empty.textContent = 'No tracks match these filters.';
