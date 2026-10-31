@@ -154,17 +154,17 @@ function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTM
 
 function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'next' | 'nextLabel' | 'remaining' | 'target'> } {
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
+  const interval = buildStatCell('Interval', 'ride-stat-interval');
+  const next = buildStatCell('Next', 'ride-stat-next');
+  const target = buildStatCell('Target', 'ride-stat-target');
+  target.cell.hidden = true;
   const watts = buildStatCell('Watts', 'ride-stat-watts');
   const rpm = buildStatCell('Cadence', 'ride-stat-rpm');
   const mph = buildStatCell('MPH', 'ride-stat-mph');
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');
-  const target = buildStatCell('Target', 'ride-stat-target');
-  target.cell.hidden = true;
-  const next = buildStatCell('Next', 'ride-stat-next');
-  const interval = buildStatCell('Interval', 'ride-stat-interval');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, target.cell, next.cell, interval.cell, remaining.cell);
+  strip.append(interval.cell, next.cell, target.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, remaining.cell);
 
   return {
     strip,

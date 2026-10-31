@@ -61,6 +61,12 @@ function playerReports(id: string, position: number, duration: number, paused = 
   });
 }
 
+function visibleStatLabels(root: ParentNode): string[] {
+  return [...root.querySelectorAll('.ride-stat')]
+    .filter((cell) => !(cell as HTMLElement).hidden)
+    .map((cell) => cell.querySelector('.ride-stat-label')?.textContent ?? '');
+}
+
 function findButton(root: HTMLElement, label: string): HTMLButtonElement {
   const buttons: HTMLButtonElement[] = Array.from(root.querySelectorAll('button'));
   const found: HTMLButtonElement | undefined = buttons.find((button: HTMLButtonElement): boolean => button.textContent === label);
@@ -170,6 +176,7 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.zone-ring-target') as HTMLElement).textContent).toBe('70 rpm');
     expect(root.querySelector('.zone-ring-marker')?.getAttribute('visibility')).toBe('hidden');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
+    expect(visibleStatLabels(root)).toEqual(['Interval', 'Next Z4', 'Target', 'Remaining']);
 
     // Act
     findButton(root, 'Start').click();
@@ -739,6 +746,7 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.zone-ring')?.getAttribute('aria-label')).toBe('75% of FTP, target 55–76%');
     expect((root.querySelector('.ride-stat-rpm') as HTMLElement).textContent).toBe('90');
     expect((root.querySelector('.ride-stat-rpm') as HTMLElement).parentElement?.textContent).toContain('Cadence');
+    expect(visibleStatLabels(root)).toEqual(['Interval', 'Next Z4', 'Watts', 'Cadence', 'MPH', 'Avg MPH', 'Miles', 'Remaining']);
 
     // Act
     await vi.advanceTimersByTimeAsync(30000);
