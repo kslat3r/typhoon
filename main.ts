@@ -1,4 +1,5 @@
 import '@/styles/app.css';
+import { lockRideLandscape, unlockRideOrientation } from '@/lib/client/helpers/lock-landscape';
 import renderHistoryScreen from '@/components/HistoryScreen';
 import renderLibraryScreen from '@/components/LibraryScreen';
 import renderRideScreen from '@/components/RideScreen';
@@ -49,8 +50,32 @@ function renderRoute(): void {
   renderLibraryScreen(app);
 }
 
-window.addEventListener('hashchange', renderRoute);
+function rideOnScreen(): boolean {
+  const query: URLSearchParams = new URLSearchParams(location.search);
+  if (query.get('code') || query.get('error')) {
+    return false;
+  }
+  const [, route, param] = location.hash.split('/');
+  if (route !== 'ride') {
+    return false;
+  }
+  return RIDES.some((candidate: Ride): boolean => candidate.id === param);
+}
+
+function syncRideOrientation(): void {
+  if (rideOnScreen()) {
+    lockRideLandscape(screen.orientation);
+    return;
+  }
+  unlockRideOrientation(screen.orientation);
+}
+
+window.addEventListener('hashchange', (): void => {
+  renderRoute();
+  syncRideOrientation();
+});
 renderRoute();
+syncRideOrientation();
 
 function registerServiceWorker(): void {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) {
@@ -63,3 +88,9 @@ function registerServiceWorker(): void {
 }
 
 registerServiceWorker();
+
+document.addEventListener('visibilitychange', (): void => {
+  if (document.visibilityState === 'visible' && rideOnScreen()) {
+    lockRideLandscape(screen.orientation);
+  }
+});

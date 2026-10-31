@@ -418,6 +418,24 @@ form {
     max(var(--space-3), env(safe-area-inset-left));
 }
 
+.ride-rotate-hint {
+  display: none;
+  margin: 0;
+  flex: none;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+@media (orientation: portrait) {
+  .ride-rotate-hint {
+    display: block;
+  }
+}
+
 .ride-top {
   display: flex;
   justify-content: space-between;

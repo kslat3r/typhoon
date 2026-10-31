@@ -23,6 +23,7 @@ describe('installable web app', () => {
     expect(manifest.start_url).toBe('/typhoon/');
     expect(manifest.scope).toBe('/typhoon/');
     expect(manifest.display).toBe('standalone');
+    expect(manifest).not.toHaveProperty('orientation');
     expect(manifest.theme_color).toBe('#0f1219');
     expect(manifest.background_color).toBe('#0f1219');
     expect(manifest.icons).toEqual(
@@ -41,6 +42,7 @@ describe('installable web app', () => {
     expect(html).toContain('name="theme-color" content="#0f1219"');
     expect(html).toContain('name="apple-mobile-web-app-capable" content="yes"');
     expect(html).toContain('name="apple-mobile-web-app-status-bar-style" content="black-translucent"');
+    expect(html).not.toContain('Rotate your phone');
   });
 
   it('keeps the shell fresh and leaves Spotify and the OAuth return on the network', () => {
