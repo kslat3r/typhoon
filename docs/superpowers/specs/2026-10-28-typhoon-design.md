@@ -157,18 +157,19 @@ coaching text is being replaced.
 
 ### Zones and FTP
 
-Seven zones as percentages of FTP, as Ed reads them off the Cyclone
-screen (final word, 2026-10-29):
+Seven zones as percentages of FTP. David Lloyd does not publish official
+Cyclone ranges; these are Coggan's 7-zone ranges, which the colour-coded
+Cyclone zones follow. `lib/client/models/zones.ts` is the only copy.
 
-| Zone | % of FTP | Colour |
-|---|---|---|
-| 1 | 0 to 55 | blue |
-| 2 | 55 to 75 | green |
-| 3 | 76 to 90 | yellow |
-| 4 | 91 to 110 | orange |
-| 5 | 111 to 125 | red |
-| 6 | 126 to 150 | dark red |
-| 7 | 151 and up | purple |
+| Zone | Name | % of FTP | Colour |
+|---|---|---|---|
+| 1 | Recover | 0 to 55 | blue |
+| 2 | Endurance | 56 to 75 | green |
+| 3 | Tempo | 76 to 90 | yellow |
+| 4 | Threshold | 91 to 105 | orange |
+| 5 | VO2 | 106 to 120 | red |
+| 6 | Anaerobic | 121 to 150 | dark red |
+| 7 | Sprint | above 150 | purple |
 
 Rides are written in these zones: the spin and cool-down are zone 1,
 every rest after zone 4 or harder work is zone 1 (blue: Ed,
