@@ -1,5 +1,8 @@
 export type ZoneNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
+// 6–9 are the easier grades and sort before 1–5. Saved history keeps 1–5.
+export type Difficulty = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
 export interface RideInterval {
   zone: ZoneNumber;
   seconds: number;
@@ -9,7 +12,7 @@ export interface Ride {
   id: string;
   name: string;
   lengthSeconds: number;
-  difficulty: 1 | 2 | 3 | 4 | 5;
+  difficulty: Difficulty;
   archetype: 'climb' | 'time-trial' | 'hiit' | 'over-under' | 'endurance' | 'mash-up';
   intervals: RideInterval[];
   ftpTest?: { intervalIndex: number; seconds: 60 | 180 | 300 };
