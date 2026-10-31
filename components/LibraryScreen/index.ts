@@ -48,7 +48,6 @@ function buildRideCard(ride: Ride): HTMLAnchorElement {
 
 function buildSection(title: string): HTMLElement {
   const section: HTMLElement = document.createElement('section');
-  section.className = 'library-section';
   const heading: HTMLHeadingElement = document.createElement('h2');
   heading.textContent = title;
   section.append(heading);

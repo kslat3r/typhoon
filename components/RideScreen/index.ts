@@ -853,7 +853,8 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   );
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
-  screen.append(top.band, status, profileRoot, stats.strip);
+  const rotateHint: HTMLElement = buildElement('p', 'ride-rotate-hint', 'Rotate your phone');
+  screen.append(rotateHint, top.band, status, profileRoot, stats.strip);
   applyBluetoothMode(state);
   root.replaceChildren(screen);
   updateReadyScreen(state, ride);
