@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { ZONES } from '@/lib/client/models/zones';
 import {
   ZONE_RING_CENTER,
+  ZONE_RING_FILL_ALPHA,
   ZONE_RING_MAX_PERCENT,
   ZONE_RING_MIN_PERCENT,
   ZONE_RING_RADIUS,
   ZONE_RING_TOP_PERCENT,
   markerPoint,
+  zoneRingFill,
   needleLine,
   segmentStroke,
   zoneRingSegments,
@@ -35,6 +37,26 @@ describe('zoneRingSegments', () => {
     expect(sprint.endPercent).toBe(170);
     expect(sprint.colour).toBe('#b45cff');
     expect((sprint.endPercent - 150) / ZONE_RING_MAX_PERCENT).toBeCloseTo(20 / 170);
+  });
+});
+
+describe('zoneRingFill', () => {
+  it('maps the needle percent onto the Coggan colour at a readable strength', () => {
+    expect(ZONE_RING_FILL_ALPHA).toBe(0.5);
+    expect(zoneRingFill(0)).toBe('#3b8bff');
+    expect(zoneRingFill(40)).toBe('#3b8bff');
+    expect(zoneRingFill(55)).toBe('#3b8bff');
+    expect(zoneRingFill(56)).toBe('#2fd18b');
+    expect(zoneRingFill(65)).toBe('#2fd18b');
+    expect(zoneRingFill(75)).toBe('#2fd18b');
+    expect(zoneRingFill(83)).toBe('#ffd23f');
+    expect(zoneRingFill(98)).toBe('#ff8a1f');
+    expect(zoneRingFill(100)).toBe('#ff8a1f');
+    expect(zoneRingFill(113)).toBe('#ff3b4e');
+    expect(zoneRingFill(135)).toBe('#b0122c');
+    expect(zoneRingFill(150)).toBe('#b0122c');
+    expect(zoneRingFill(160)).toBe('#b45cff');
+    expect(zoneRingFill(200)).toBe('#b45cff');
   });
 });
 

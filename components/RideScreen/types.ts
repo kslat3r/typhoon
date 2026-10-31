@@ -19,6 +19,7 @@ export type RideScreenElements = {
   remaining: HTMLElement;
   target: HTMLElement;
   zoneCurrent: HTMLElement;
+  zoneFill: SVGCircleElement;
   zoneMarker: SVGCircleElement;
   zoneNeedle: SVGLineElement;
   zoneRing: HTMLElement;
