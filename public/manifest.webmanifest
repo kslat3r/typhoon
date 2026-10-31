@@ -6,7 +6,7 @@
   "start_url": "/typhoon/",
   "scope": "/typhoon/",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#0f1219",
   "theme_color": "#0f1219",
   "icons": [
