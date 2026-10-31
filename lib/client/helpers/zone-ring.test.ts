@@ -5,6 +5,7 @@ import {
   ZONE_RING_MAX_PERCENT,
   ZONE_RING_RADIUS,
   markerPoint,
+  needleLine,
   segmentStroke,
   zoneRingSegments,
   zoneRingTurn,
@@ -23,9 +24,11 @@ describe('zoneRingSegments', () => {
 });
 
 describe('zoneTargetLabel', () => {
-  it('prints the zone range, and an open end for zone 7', () => {
-    expect(zoneTargetLabel(1)).toBe('0–55%');
-    expect(zoneTargetLabel(4)).toBe('91–105%');
+  it('prints the top of the target zone, and an open end for zone 7', () => {
+    expect(zoneTargetLabel(1)).toBe('55%');
+    expect(zoneTargetLabel(2)).toBe('75%');
+    expect(zoneTargetLabel(4)).toBe('105%');
+    expect(zoneTargetLabel(6)).toBe('150%');
     expect(zoneTargetLabel(7)).toBe('150%+');
   });
 });
@@ -45,6 +48,26 @@ describe('markerPoint', () => {
     expect(over).toEqual(cap);
     expect(zoneRingTurn(0)).toBeGreaterThan(0);
     expect(zoneRingTurn(200)).toBeLessThan(1);
+  });
+});
+
+describe('needleLine', () => {
+  it('points just clockwise of the top at 0%, down at the middle, and clamps at the cap', () => {
+    const start = needleLine(0);
+    const middle = needleLine(100);
+    const cap = needleLine(200);
+    const over = needleLine(260);
+    const further = needleLine(40);
+
+    expect(start.x2).toBeGreaterThan(ZONE_RING_CENTER);
+    expect(start.y2).toBeLessThan(ZONE_RING_CENTER);
+    expect(further.x2).toBeGreaterThan(start.x2);
+    expect(middle.x2).toBeCloseTo(ZONE_RING_CENTER, 5);
+    expect(middle.y2).toBeGreaterThan(ZONE_RING_CENTER);
+    expect(cap.x2).toBeLessThan(ZONE_RING_CENTER);
+    expect(over).toEqual(cap);
+    expect(start.y1).toBeLessThan(ZONE_RING_CENTER);
+    expect(Math.hypot(start.x2 - start.x1, start.y2 - start.y1)).toBeGreaterThan(10);
   });
 });
 

@@ -30,12 +30,14 @@ export function zoneRingSegments(): ZoneRingSegment[] {
   });
 }
 
+// The caption under the ring is the top of the target zone, not the middle of the range.
+// Zone 7 has no finite top. 150%+ is the published open end; 200% is only the drawing cap.
 export function zoneTargetLabel(zone: ZoneNumber): string {
   const band = ZONES[zone - 1];
-  if (band.maxPercent === Infinity) {
+  if (!Number.isFinite(band.maxPercent)) {
     return '150%+';
   }
-  return `${band.minPercent}–${band.maxPercent}%`;
+  return `${band.maxPercent}%`;
 }
 
 // 0 is 12 o'clock. The seam keeps the first and last turns just off that point.
@@ -44,11 +46,29 @@ export function zoneRingTurn(percent: number): number {
   return SEAM / 2 + (clamped / ZONE_RING_MAX_PERCENT) * (1 - SEAM);
 }
 
+function ringAngle(percent: number): number {
+  return -Math.PI / 2 + zoneRingTurn(percent) * Math.PI * 2;
+}
+
 export function markerPoint(percent: number): { x: number; y: number } {
-  const angle: number = -Math.PI / 2 + zoneRingTurn(percent) * Math.PI * 2;
+  const angle: number = ringAngle(percent);
   return {
     x: ZONE_RING_CENTER + ZONE_RING_RADIUS * Math.cos(angle),
     y: ZONE_RING_CENTER + ZONE_RING_RADIUS * Math.sin(angle),
+  };
+}
+
+// A needle from inside the dial out to the ring. 0% is just clockwise of 12 o'clock.
+const NEEDLE_INNER = 15;
+const NEEDLE_OUTER = ZONE_RING_RADIUS - 1.5;
+
+export function needleLine(percent: number): { x1: number; y1: number; x2: number; y2: number } {
+  const angle: number = ringAngle(percent);
+  return {
+    x1: ZONE_RING_CENTER + NEEDLE_INNER * Math.cos(angle),
+    y1: ZONE_RING_CENTER + NEEDLE_INNER * Math.sin(angle),
+    x2: ZONE_RING_CENTER + NEEDLE_OUTER * Math.cos(angle),
+    y2: ZONE_RING_CENTER + NEEDLE_OUTER * Math.sin(angle),
   };
 }
 

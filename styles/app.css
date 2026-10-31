@@ -478,6 +478,7 @@ form {
 /* Ride: three bands on a landscape phone, never scrolls */
 
 .ride-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -517,24 +518,28 @@ form {
 }
 
 .zone-ring {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-2);
+  left: max(var(--space-3), env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: none;
-  width: 76px;
+  width: 144px;
   gap: 2px;
+  pointer-events: none;
 }
 
 .zone-ring-dial {
   position: relative;
-  width: 72px;
-  height: 72px;
+  width: 136px;
+  height: 136px;
 }
 
 .zone-ring-svg {
   display: block;
-  width: 72px;
-  height: 72px;
+  width: 136px;
+  height: 136px;
 }
 
 .zone-ring-segment {
@@ -542,20 +547,26 @@ form {
   stroke-width: 10;
 }
 
+.zone-ring-needle {
+  stroke: #ffffff;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+}
+
 .zone-ring-marker {
   fill: #ffffff;
   stroke: var(--ink);
-  stroke-width: 1.5;
+  stroke-width: 1.2;
 }
 
 .zone-ring-current {
   position: absolute;
-  inset: 16px;
+  inset: 22%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 1.55rem;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -566,7 +577,7 @@ form {
 }
 
 .zone-ring-target {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.1;
   text-align: center;
@@ -580,6 +591,7 @@ form {
   flex: 0 1 360px;
   max-width: 60%;
   min-width: 0;
+  margin-left: 144px;
 }
 
 .ride-track[hidden] {
