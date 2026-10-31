@@ -15,11 +15,11 @@ import {
 } from '@/lib/client/helpers/zone-ring';
 
 describe('zoneRingSegments', () => {
-  it('sizes each segment by its percent-of-FTP span and caps zone 7 at 180', () => {
+  it('sizes each segment by its percent-of-FTP span and caps zone 7 at 170', () => {
     const segments = zoneRingSegments();
     const sprint = segments[6];
 
-    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([36, 20, 15, 15, 15, 30, 29]);
+    expect(segments.map((segment) => segment.endPercent - segment.startPercent)).toEqual([36, 20, 15, 15, 15, 30, 19]);
     expect(segments.reduce((sum, segment) => sum + (segment.endPercent - segment.startPercent), 0)).toBe(
       ZONE_RING_MAX_PERCENT - ZONE_RING_MIN_PERCENT,
     );
@@ -30,11 +30,11 @@ describe('zoneRingSegments', () => {
     expect(segments[0].startPercent).toBe(20);
     expect(segments[0].endPercent).toBe(56);
     expect(segments[0].colour).toBe('#3b8bff');
-    expect(ZONE_RING_MAX_PERCENT).toBe(180);
+    expect(ZONE_RING_MAX_PERCENT).toBe(170);
     expect(sprint.startPercent).toBe(151);
-    expect(sprint.endPercent).toBe(180);
+    expect(sprint.endPercent).toBe(170);
     expect(sprint.colour).toBe('#b45cff');
-    expect((sprint.endPercent - 150) / ZONE_RING_MAX_PERCENT).toBeCloseTo(30 / 180);
+    expect((sprint.endPercent - 150) / ZONE_RING_MAX_PERCENT).toBeCloseTo(20 / 170);
   });
 });
 
@@ -49,14 +49,14 @@ describe('zoneTargetLabel', () => {
 });
 
 describe('markerPoint', () => {
-  it('starts at 6 o clock, puts the orange midpoint at 12 o clock, and clamps above 180', () => {
+  it('starts at 6 o clock, puts the orange midpoint at 12 o clock, and clamps above 170', () => {
     const start = markerPoint(0);
     const clockwise = markerPoint(40);
     const top = markerPoint(ZONE_RING_TOP_PERCENT);
     const beforeTop = markerPoint(90);
     const pastTop = markerPoint(100);
-    const cap = markerPoint(180);
-    const over = markerPoint(200);
+    const cap = markerPoint(170);
+    const over = markerPoint(180);
 
     expect(ZONE_RING_TOP_PERCENT).toBe(98);
     expect(start.x).toBeCloseTo(ZONE_RING_CENTER, 5);
@@ -76,19 +76,20 @@ describe('markerPoint', () => {
     expect(zoneRingTurn(10)).toBe(0);
     expect(zoneRingTurn(20)).toBe(0);
     expect(zoneRingTurn(98)).toBe(0.5);
+    expect(zoneRingTurn(170)).toBe(1);
     expect(zoneRingTurn(180)).toBe(1);
     expect(zoneRingTurn(200)).toBe(1);
   });
 });
 
 describe('needleLine', () => {
-  it('points at 6 o clock from 20% down, up at the orange midpoint, and clamps at 180', () => {
+  it('points at 6 o clock from 20% down, up at the orange midpoint, and clamps at 170', () => {
     const start = needleLine(20);
     const below = needleLine(0);
     const clockwise = needleLine(40);
     const middle = needleLine(ZONE_RING_TOP_PERCENT);
-    const cap = needleLine(180);
-    const over = needleLine(260);
+    const cap = needleLine(170);
+    const over = needleLine(180);
 
     expect(start.x2).toBeCloseTo(ZONE_RING_CENTER, 5);
     expect(start.y2).toBeGreaterThan(ZONE_RING_CENTER);
@@ -152,6 +153,8 @@ describe('segmentStroke', () => {
 
     const upper = zoneRingTurn(121) - zoneRingTurn(106);
     const upperNext = zoneRingTurn(151) - zoneRingTurn(121);
+    const sprint = zoneRingTurn(170) - zoneRingTurn(151);
     expect(upper / upperNext).toBeCloseTo(15 / 30, 5);
+    expect(sprint / upperNext).toBeCloseTo(19 / 30, 5);
   });
 });
