@@ -219,6 +219,7 @@ footer > a:not(.ride-link) + a {
 
 .library-filters + .ride-card {
   margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
 .library-empty {
@@ -478,6 +479,7 @@ form {
 /* Ride: three bands on a landscape phone, never scrolls */
 
 .ride-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -514,6 +516,150 @@ form {
   gap: var(--space-4);
   flex: none;
   margin-bottom: var(--space-2);
+}
+
+.zone-ring {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-2);
+  left: max(var(--space-3), env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 144px;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.zone-ring-dial {
+  position: relative;
+  width: 136px;
+  height: 136px;
+}
+
+.zone-ring-svg {
+  display: block;
+  width: 136px;
+  height: 136px;
+}
+
+.zone-ring-segment {
+  fill: none;
+  stroke-width: 10;
+}
+
+.zone-ring-needle {
+  stroke: #ffffff;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+}
+
+.zone-ring-marker {
+  fill: #ffffff;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.zone-ring-current {
+  position: absolute;
+  inset: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.zone-ring-current[hidden] {
+  display: none;
+}
+
+.zone-ring-target {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ride-track {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 1 360px;
+  max-width: 60%;
+  min-width: 0;
+  margin-left: 144px;
+}
+
+.ride-track[hidden] {
+  display: none;
+}
+
+.ride-artwork {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.ride-artwork-placeholder {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.ride-artwork-placeholder[hidden] {
+  display: none;
+}
+
+.ride-spinner {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 2px solid var(--line);
+  border-top-color: var(--text-muted);
+  border-radius: 50%;
+  animation: ride-spin 0.8s linear infinite;
+}
+
+.ride-spinner[hidden] {
+  display: none;
+}
+
+@keyframes ride-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ride-track-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ride-track-title,
+.ride-track-artist {
+  font-size: 0.875rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ride-track-title {
+  font-weight: 600;
+}
+
+.ride-track-artist {
+  color: var(--text-muted);
 }
 
 .ride-actions {
@@ -637,10 +783,12 @@ form {
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: var(--space-2);
   flex: none;
+  /* Clear the phone holder, and the home indicator when the browser reports one. */
+  margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .ride-stats-manual {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .ride-stat[hidden] {
@@ -674,10 +822,6 @@ form {
   text-overflow: ellipsis;
 }
 
-.ride-stat-percent {
-  transition: color 400ms ease;
-}
-
 .ride-ftp-result {
   display: flex;
   align-items: center;
@@ -692,12 +836,6 @@ form {
   font-size: 2rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ride-stat-percent {
-    transition: none;
-  }
 }
 
 /* Summary */

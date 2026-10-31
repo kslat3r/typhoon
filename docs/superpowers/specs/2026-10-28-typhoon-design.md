@@ -90,18 +90,15 @@ coaching text is being replaced.
 
 - Lengths: 30 and 45 minutes only.
 - Difficulty: five grades, Gentle, Easy, Moderate, Hard, Very hard
-  (stored as 1 to 5). Ed's second normalisation on 2026-10-31 ("Easy
-  is not easy enough, Moderate is too hard, Hard is too hard, Very
-  hard is too hard, Brutal is next to impossible") brought every grade
-  down again and capped effort lengths: Gentle never leaves zone 4 and
-  its orange kicks are 20 s or less; Easy adds red bursts of 20 s or
-  less; Moderate allows red to 30 s and dark red to 15 s, no purple;
-  Hard allows red to 45 s, dark red to 20 s, purple to 10 s; Very hard
-  allows red to 60 s, dark red to 30 s, purple to 15 s. The FTP test
-  effort is the one exemption. Share of the ride at zone 4+ by grade,
-  roughly: Gentle 10%, Easy 18%, Moderate 27%, Hard 36%, Very hard 40%.
-  Mean intensity, zone 4+ and zone 5+ time rise with every grade, and
-  every Very hard ride has more zone 4+ time than any Gentle ride.
+  (stored as 1 to 5). Grades follow intensity factor from the Coggan
+  zone profile (normalized power over FTP). Slow Burn is the Moderate
+  anchor and Flat Out is the Hard anchor. A higher grade is always a
+  higher intensity factor than a lower one. Effort caps still hold:
+  Gentle never leaves zone 4 and its threshold kicks are 20 s or less;
+  Easy adds VO2 bursts of 20 s or less; Moderate allows VO2 to 30 s and
+  anaerobic to 15 s, no sprint zone; Hard allows VO2 to 45 s, anaerobic
+  to 20 s, sprints to 10 s; Very hard allows VO2 to 60 s, anaerobic to
+  30 s, sprints to 15 s. The FTP test effort is the one exemption.
 - Every ride is written by hand, the way an instructor builds a
   class: one concept per ride (a climb with hairpins that close in,
   pops of red that never come in the same size twice, three summits
@@ -131,18 +128,19 @@ coaching text is being replaced.
 
 ### Zones and FTP
 
-Seven zones as percentages of FTP, as Ed reads them off the Cyclone
-screen (final word, 2026-10-29):
+Seven zones as percentages of FTP. David Lloyd does not publish official
+Cyclone ranges; these are Coggan's 7-zone ranges, which the colour-coded
+Cyclone zones follow. `lib/client/models/zones.ts` is the only copy.
 
-| Zone | % of FTP | Colour |
-|---|---|---|
-| 1 | 0 to 55 | blue |
-| 2 | 55 to 75 | green |
-| 3 | 76 to 90 | yellow |
-| 4 | 91 to 110 | orange |
-| 5 | 111 to 125 | red |
-| 6 | 126 to 150 | dark red |
-| 7 | 151 and up | purple |
+| Zone | Name | % of FTP | Colour |
+|---|---|---|---|
+| 1 | Recover | 0 to 55 | blue |
+| 2 | Endurance | 56 to 75 | green |
+| 3 | Tempo | 76 to 90 | yellow |
+| 4 | Threshold | 91 to 105 | orange |
+| 5 | VO2 | 106 to 120 | red |
+| 6 | Anaerobic | 121 to 150 | dark red |
+| 7 | Sprint | above 150 | purple |
 
 Rides are written in these zones: the spin and cool-down are zone 1,
 every rest after zone 4 or harder work is zone 1 (blue: Ed,

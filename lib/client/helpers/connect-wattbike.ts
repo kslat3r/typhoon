@@ -1,6 +1,11 @@
 import subscribePowerMeasurements from '@/lib/client/helpers/subscribe-power-measurements';
 import type { BikeListener } from '@/lib/client/models/types';
 
+export const WATTBIKE_REQUEST = {
+  filters: [{ services: ['cycling_power'] }, { services: ['fitness_machine'] }],
+  optionalServices: ['cycling_power', 'fitness_machine', 'cycling_speed_and_cadence'],
+} as const satisfies RequestDeviceOptions;
+
 export default async function connectWattbike(
   onSample: BikeListener,
   onDisconnect: () => void,
@@ -11,7 +16,7 @@ export default async function connectWattbike(
 
   let device: BluetoothDevice;
   try {
-    device = await navigator.bluetooth.requestDevice({ filters: [{ services: ['cycling_power'] }] });
+    device = await navigator.bluetooth.requestDevice(WATTBIKE_REQUEST);
   } catch (pickerError) {
     const message: string = pickerError instanceof Error ? pickerError.message : String(pickerError);
     throw new Error('Bluetooth picker failed: ' + message, { cause: pickerError });
