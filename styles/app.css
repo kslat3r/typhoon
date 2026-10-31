@@ -516,6 +516,63 @@ form {
   margin-bottom: var(--space-2);
 }
 
+.zone-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  width: 76px;
+  gap: 2px;
+}
+
+.zone-ring-dial {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+
+.zone-ring-svg {
+  display: block;
+  width: 72px;
+  height: 72px;
+}
+
+.zone-ring-segment {
+  fill: none;
+  stroke-width: 10;
+}
+
+.zone-ring-marker {
+  fill: #ffffff;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.zone-ring-current {
+  position: absolute;
+  inset: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.zone-ring-current[hidden] {
+  display: none;
+}
+
+.zone-ring-target {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .ride-track {
   display: flex;
   align-items: center;

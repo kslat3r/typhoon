@@ -23,6 +23,10 @@ export type RideScreenElements = {
   miles: HTMLElement;
   remaining: HTMLElement;
   target: HTMLElement;
+  zoneCurrent: HTMLElement;
+  zoneTarget: HTMLElement;
+  zoneMarker: SVGCircleElement;
+  zoneRing: HTMLElement;
   profileRoot: HTMLElement;
   connectButton: HTMLButtonElement;
   startButton: HTMLButtonElement;
