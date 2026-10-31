@@ -13,5 +13,5 @@ export const ZONES = [
 ] as const;
 
 // Planned intensity for a block written only as a zone. Zone 7 has no top, so a
-// sprint is taken at 175% of FTP (halfway from 150% to the 200% ring cap).
+// sprint block is taken at 175% of FTP. The ring draws that zone only up to 160%.
 export const ZONE_MID_PERCENT: readonly number[] = [0, 27.5, 65.5, 83, 98, 113, 135.5, 175];
