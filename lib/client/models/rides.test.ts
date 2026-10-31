@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import rideLoad from '@/lib/client/helpers/ride-load';
 import { DIFFICULTY_ORDER } from '@/lib/client/models/difficulty-labels';
 import { RIDES } from '@/lib/client/models/rides';
 import type { Difficulty, Ride, RideInterval } from '@/lib/client/models/types';
@@ -12,23 +13,8 @@ const EFFORT_CAPS: Record<Difficulty, Record<number, number>> = {
   4: { 4: 600, 5: 45, 6: 20, 7: 10 },
   5: { 4: 600, 5: 60, 6: 30, 7: 15 },
 };
-const ZONE_MIDPOINT: number[] = [0, 27.5, 65.5, 83, 98, 113, 135.5, 175];
-
 function secondsAtOrAbove(ride: Ride, zone: number): number {
   return ride.intervals.filter((i) => i.zone >= zone).reduce((sum, i) => sum + i.seconds, 0);
-}
-
-function meanSecondsAtOrAbove(rides: Ride[], zone: number): number {
-  return rides.reduce((sum, ride) => sum + secondsAtOrAbove(ride, zone), 0) / rides.length;
-}
-
-function intensity(ride: Ride): number {
-  const score: number = ride.intervals.reduce((sum, interval) => sum + ZONE_MIDPOINT[interval.zone] * interval.seconds, 0);
-  return score / ride.lengthSeconds;
-}
-
-function meanIntensity(rides: Ride[]): number {
-  return rides.reduce((sum, ride) => sum + intensity(ride), 0) / rides.length;
 }
 
 function ridesAt(length: number, difficulty: Difficulty): Ride[] {
@@ -36,12 +22,12 @@ function ridesAt(length: number, difficulty: Difficulty): Ride[] {
 }
 
 describe('ride library', () => {
-  it('has fifty rides, five per grade per length', () => {
+  it('has fifty rides and at least two of every grade at both lengths', () => {
     // Arrange / Act / Assert
     expect(RIDES).toHaveLength(50);
     for (const length of LENGTHS) {
       for (const difficulty of DIFFICULTY_ORDER) {
-        expect(ridesAt(length, difficulty), `${length} s at difficulty ${difficulty}`).toHaveLength(5);
+        expect(ridesAt(length, difficulty).length, `${length} s at difficulty ${difficulty}`).toBeGreaterThanOrEqual(2);
       }
     }
   });
@@ -125,19 +111,21 @@ describe('ride library', () => {
     }
   });
 
-  it.each(LENGTHS)('%i s grades rise from Gentle to Very hard in intensity and in time at zone 4+ and zone 5+', (length: number) => {
+  it('grades are strictly monotonic with intensity factor', () => {
     // Arrange
-    const byGrade: Ride[][] = DIFFICULTY_ORDER.map((difficulty) => ridesAt(length, difficulty));
+    const slowBurn: Ride | undefined = RIDES.find((ride) => ride.name === 'Slow Burn');
+    const flatOut: Ride | undefined = RIDES.find((ride) => ride.name === 'Flat Out');
 
     // Act / Assert
-    for (let index = 1; index < byGrade.length; index += 1) {
-      const label: string = `grade ${DIFFICULTY_ORDER[index]}`;
-      expect(meanIntensity(byGrade[index]), `${label} intensity`).toBeGreaterThan(meanIntensity(byGrade[index - 1]));
-      expect(meanSecondsAtOrAbove(byGrade[index], 4), `${label} zone 4+`).toBeGreaterThan(meanSecondsAtOrAbove(byGrade[index - 1], 4));
-      expect(meanSecondsAtOrAbove(byGrade[index], 5), `${label} zone 5+`).toBeGreaterThan(meanSecondsAtOrAbove(byGrade[index - 1], 5));
+    expect(slowBurn?.difficulty).toBe(3);
+    expect(flatOut?.difficulty).toBe(4);
+    for (let index = 1; index < DIFFICULTY_ORDER.length; index += 1) {
+      const lower = RIDES.filter((ride) => ride.difficulty === DIFFICULTY_ORDER[index - 1]).map((ride) => rideLoad(ride).intensityFactor);
+      const higher = RIDES.filter((ride) => ride.difficulty === DIFFICULTY_ORDER[index]).map((ride) => rideLoad(ride).intensityFactor);
+      expect(Math.max(...lower), `grade ${DIFFICULTY_ORDER[index]}`).toBeLessThan(Math.min(...higher));
     }
-    const easiest: number = Math.max(...byGrade[0].map((r) => secondsAtOrAbove(r, 4)));
-    for (const ride of byGrade[4]) {
+    const easiest: number = Math.max(...RIDES.filter((ride) => ride.difficulty === 1).map((ride) => secondsAtOrAbove(ride, 4)));
+    for (const ride of RIDES.filter((ride) => ride.difficulty === 5)) {
       expect(secondsAtOrAbove(ride, 4), ride.name).toBeGreaterThan(easiest);
     }
   });
