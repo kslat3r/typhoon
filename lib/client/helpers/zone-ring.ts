@@ -10,8 +10,8 @@ export const ZONE_RING_RADIUS = 36;
 export const ZONE_RING_CENTER = 50;
 // Sits inside the 10-unit stroke so the coloured ring itself stays uncovered.
 export const ZONE_RING_FILL_RADIUS = ZONE_RING_RADIUS - 5;
-// Half strength: obvious on the bike, including dark red and blue, with white type still readable.
-export const ZONE_RING_FILL_ALPHA = 0.5;
+// Strong enough that the zone colour reads at a glance, with white type still readable.
+export const ZONE_RING_FILL_ALPHA = 0.7;
 
 // The same arc is left open after every segment, including the join where zone 7 meets zone 1.
 const SEGMENT_GAP = 1.5;
@@ -79,17 +79,19 @@ export function markerPoint(percent: number): { x: number; y: number } {
   };
 }
 
-// A needle from inside the dial out to the ring. 20% is 6 o'clock; power moves it clockwise.
-const NEEDLE_INNER = 15;
-const NEEDLE_OUTER = ZONE_RING_RADIUS - 1.5;
+// A radial tick across the coloured band. The 10-unit stroke is centred on the radius,
+// so the band runs from r=31 to r=41. The dial is 64px for a 100-unit viewBox, and
+// 1.5 units is about 1px of overhang past each edge of that band.
+const TICK_INNER = ZONE_RING_RADIUS - 5 - 1.5;
+const TICK_OUTER = ZONE_RING_RADIUS + 5 + 1.5;
 
 export function needleLine(percent: number): { x1: number; y1: number; x2: number; y2: number } {
   const angle: number = ringAngle(percent);
   return {
-    x1: ZONE_RING_CENTER + NEEDLE_INNER * Math.cos(angle),
-    y1: ZONE_RING_CENTER + NEEDLE_INNER * Math.sin(angle),
-    x2: ZONE_RING_CENTER + NEEDLE_OUTER * Math.cos(angle),
-    y2: ZONE_RING_CENTER + NEEDLE_OUTER * Math.sin(angle),
+    x1: ZONE_RING_CENTER + TICK_INNER * Math.cos(angle),
+    y1: ZONE_RING_CENTER + TICK_INNER * Math.sin(angle),
+    x2: ZONE_RING_CENTER + TICK_OUTER * Math.cos(angle),
+    y2: ZONE_RING_CENTER + TICK_OUTER * Math.sin(angle),
   };
 }
 

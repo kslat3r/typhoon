@@ -42,7 +42,7 @@ describe('zoneRingSegments', () => {
 
 describe('zoneRingFill', () => {
   it('maps the needle percent onto the Coggan colour at a readable strength', () => {
-    expect(ZONE_RING_FILL_ALPHA).toBe(0.5);
+    expect(ZONE_RING_FILL_ALPHA).toBe(0.7);
     expect(zoneRingFill(0)).toBe('#3b8bff');
     expect(zoneRingFill(40)).toBe('#3b8bff');
     expect(zoneRingFill(55)).toBe('#3b8bff');
@@ -105,13 +105,15 @@ describe('markerPoint', () => {
 });
 
 describe('needleLine', () => {
-  it('points at 6 o clock from 20% down, up at the orange midpoint, and clamps at 170', () => {
+  it('sits in the ring band at 6 o clock from 20%, at 12 for the orange midpoint, and clamps at 170', () => {
     const start = needleLine(20);
     const below = needleLine(0);
     const clockwise = needleLine(40);
     const middle = needleLine(ZONE_RING_TOP_PERCENT);
     const cap = needleLine(170);
     const over = needleLine(180);
+    const inner = Math.hypot(start.x1 - ZONE_RING_CENTER, start.y1 - ZONE_RING_CENTER);
+    const outer = Math.hypot(start.x2 - ZONE_RING_CENTER, start.y2 - ZONE_RING_CENTER);
 
     expect(start.x2).toBeCloseTo(ZONE_RING_CENTER, 5);
     expect(start.y2).toBeGreaterThan(ZONE_RING_CENTER);
@@ -123,7 +125,10 @@ describe('needleLine', () => {
     expect(over).toEqual(cap);
     expect(below).toEqual(start);
     expect(start.y1).toBeGreaterThan(ZONE_RING_CENTER);
-    expect(Math.hypot(start.x2 - start.x1, start.y2 - start.y1)).toBeGreaterThan(10);
+    // The coloured stroke is 10 units wide. The tick crosses it and overhangs ~1px each side.
+    expect(inner).toBeCloseTo(ZONE_RING_RADIUS - 5 - 1.5, 5);
+    expect(outer).toBeCloseTo(ZONE_RING_RADIUS + 5 + 1.5, 5);
+    expect(Math.hypot(start.x2 - start.x1, start.y2 - start.y1)).toBeCloseTo(13, 5);
   });
 });
 
