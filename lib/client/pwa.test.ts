@@ -1,5 +1,6 @@
 import html from '../../index.html?raw';
 import app from '../../main.ts?raw';
+import css from '../../styles/app.css?raw';
 import manifestText from '../../public/manifest.webmanifest?raw';
 import worker from '../../public/sw.js?raw';
 import { describe, expect, it } from 'vitest';
@@ -25,7 +26,7 @@ describe('installable web app', () => {
     expect(manifest.start_url).toBe('/typhoon/');
     expect(manifest.scope).toBe('/typhoon/');
     expect(manifest.display).toBe('standalone');
-    expect(manifest.orientation).toBe('landscape');
+    expect(manifest.orientation).toBe('any');
     expect(manifest.theme_color).toBe('#0f1219');
     expect(manifest.background_color).toBe('#0f1219');
     expect(manifest.icons).toEqual(
@@ -62,10 +63,12 @@ describe('installable web app', () => {
     expect(app).toContain('registration.update');
   });
 
-  it('keeps every screen landscape and rotates the root when the phone is portrait', () => {
+  it('follows the phone and does not force a landscape lock or a rotated fallback', () => {
     // Assert
-    expect(app).toContain('lockLandscape(screen.orientation)');
+    expect(app).not.toContain('lockLandscape');
+    expect(app).not.toContain('orientation.lock');
     expect(app).not.toContain('unlock');
+    expect(css).not.toContain('rotate(90deg)');
     expect(html).not.toContain('Rotate your phone');
   });
 });
