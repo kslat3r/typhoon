@@ -138,6 +138,44 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:08');
   });
 
+  it('shows a target cadence and no bike stats when Bluetooth is off', async () => {
+    // Arrange
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({ ftp: 200, musicEnabled: false, bluetoothEnabled: false }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+    const hidden = (className: string): boolean => (root.querySelector(className) as HTMLElement).parentElement?.hidden === true;
+
+    // Assert
+    expect(findButton(root, 'Connect bike').hidden).toBe(true);
+    expect(findButton(root, 'Start').disabled).toBe(false);
+    expect(connectWattbike).not.toHaveBeenCalled();
+    expect(hidden('.ride-stat-percent')).toBe(true);
+    expect(hidden('.ride-stat-watts')).toBe(true);
+    expect(hidden('.ride-stat-rpm')).toBe(true);
+    expect(hidden('.ride-stat-mph')).toBe(true);
+    expect(hidden('.ride-stat-average-mph')).toBe(true);
+    expect(hidden('.ride-stat-miles')).toBe(true);
+    expect(hidden('.ride-stat-interval')).toBe(false);
+    expect(hidden('.ride-stat-remaining')).toBe(false);
+    expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('95');
+    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
+
+    // Act
+    findButton(root, 'Start').click();
+    await vi.advanceTimersByTimeAsync(11000);
+
+    // Assert
+    expect((root.querySelector('.ride-stat-target') as HTMLElement).textContent).toBe('80');
+    expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:09');
+    expect((root.querySelector('.ride-stat-remaining') as HTMLElement).textContent).toBe('0:19');
+    expect(connectWattbike).not.toHaveBeenCalled();
+  });
+
   it('says what is missing when no playlist has been chosen', async () => {
     // Arrange
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200 }));

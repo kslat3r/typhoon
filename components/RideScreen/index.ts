@@ -22,6 +22,7 @@ import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
+import { targetRpmForZone } from '@/lib/client/models/target-cadence';
 import { ZONES } from '@/lib/client/models/zones';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
 
@@ -113,7 +114,7 @@ function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTM
   return { band, elements: { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
 }
 
-function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining'> } {
+function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining' | 'target'> } {
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
   const percent = buildStatCell('% FTP', 'ride-stat-percent');
   const watts = buildStatCell('Watts', 'ride-stat-watts');
@@ -121,9 +122,11 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
   const mph = buildStatCell('MPH', 'ride-stat-mph');
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');
+  const target = buildStatCell('Target', 'ride-stat-target');
+  target.cell.hidden = true;
   const interval = buildStatCell('Interval', 'ride-stat-interval');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(percent.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, interval.cell, remaining.cell);
+  strip.append(percent.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, target.cell, interval.cell, remaining.cell);
 
   return {
     strip,
@@ -136,8 +139,36 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
       miles: miles.value,
       interval: interval.value,
       remaining: remaining.value,
+      target: target.value,
     },
   };
+}
+
+function statCell(value: HTMLElement): HTMLElement {
+  return value.parentElement as HTMLElement;
+}
+
+const BIKE_STATS: (keyof Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles'>)[] = [
+  'percent',
+  'watts',
+  'rpm',
+  'mph',
+  'averageMph',
+  'miles',
+];
+
+function applyBluetoothMode(state: RideScreenState): void {
+  if (state.settings.bluetoothEnabled) {
+    return;
+  }
+
+  state.elements.connectButton.hidden = true;
+  state.elements.startButton.disabled = false;
+  state.elements.statsStrip.classList.add('ride-stats-manual');
+  for (const name of BIKE_STATS) {
+    statCell(state.elements[name]).hidden = true;
+  }
+  statCell(state.elements.target).hidden = false;
 }
 
 function updateTrack(state: RideScreenState): void {
@@ -200,8 +231,15 @@ function updateInterval(state: RideScreenState, position: IntervalPosition): voi
   state.elements.interval.textContent = formatClock(position.secondsLeftInInterval);
 }
 
-function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number): void {
-  const { percent, watts, rpm, mph, averageMph, miles, remaining } = state.elements;
+function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number, zone: ZoneNumber): void {
+  const { percent, watts, rpm, mph, averageMph, miles, remaining, target } = state.elements;
+  remaining.textContent = formatClock(secondsLeftInRide);
+  if (!state.settings.bluetoothEnabled) {
+    target.textContent = String(targetRpmForZone(zone));
+    target.style.color = ZONES[zone - 1].colour;
+    return;
+  }
+
   const ftp: number = state.settings.ftp;
 
   if (state.bikeState === 'reconnecting') {
@@ -223,13 +261,12 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
   averageMph.textContent =
     state.stats.sampledSeconds > 0 ? (state.stats.miles / (state.stats.sampledSeconds / 3600)).toFixed(1) : '0.0';
   miles.textContent = state.stats.miles.toFixed(2);
-  remaining.textContent = formatClock(secondsLeftInRide);
 }
 
 function updateScreen(state: RideScreenState, ride: Ride, position: IntervalPosition, sample: BikeSample | null): void {
   updateTrack(state);
   updateInterval(state, position);
-  updateStats(state, sample, position.secondsLeftInRide);
+  updateStats(state, sample, position.secondsLeftInRide, position.interval.zone);
   renderRideProfile(state.elements.profileRoot, {
     ride,
     position: state.phase === 'riding' ? position : null,
@@ -498,7 +535,7 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
 }
 
 function startRide(state: RideScreenState, ride: Ride): void {
-  if (state.phase !== 'ready' || state.bikeState !== 'connected') {
+  if (state.phase !== 'ready' || (state.settings.bluetoothEnabled && state.bikeState !== 'connected')) {
     return;
   }
 
@@ -817,6 +854,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
   screen.append(top.band, status, profileRoot, stats.strip);
+  applyBluetoothMode(state);
   root.replaceChildren(screen);
   updateReadyScreen(state, ride);
   void loadMusic(state, ride);

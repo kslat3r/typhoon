@@ -524,6 +524,14 @@ form + section select {
   flex: none;
 }
 
+.ride-stats-manual {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ride-stat[hidden] {
+  display: none;
+}
+
 .ride-stat {
   display: flex;
   flex-direction: column;
