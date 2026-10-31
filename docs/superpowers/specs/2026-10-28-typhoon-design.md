@@ -193,6 +193,10 @@ Landscape. Three bands:
    during it. The ride name is not shown on the ride screen.
 2. **Middle band, the main event**: the ride profile drawn as bars, one
    per interval, width proportional to duration and height proportional
+   to zone out of the ride's own hardest zone, so the tallest bar always
+   meets the top of the band and an easy ride has no empty strip above
+   it (Ed, 2026-10-31). Bike toasts float over the band, fixed under the
+   controls, and never push it down. Height proportional
    to zone. A white vertical line moves along the profile at the current
    position and the ridden part behind it is slightly masked. No effort
    dot and no zone label: the watts figure and the countdown colour

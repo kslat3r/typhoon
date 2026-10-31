@@ -8,8 +8,10 @@ const HEIGHT = 300;
 const GAP = 1;
 const LINE_WIDTH = 3;
 
-function buildBar(interval: RideInterval, x: number, width: number): SVGRectElement {
-  const height: number = (interval.zone / ZONES.length) * HEIGHT;
+// Bars fill the band up to the ride's own hardest zone, so an easy ride is not drawn
+// with an empty strip above it where zone 7 would be.
+function buildBar(interval: RideInterval, topZone: number, x: number, width: number): SVGRectElement {
+  const height: number = (interval.zone / topZone) * HEIGHT;
   const colour: string = ZONES[interval.zone - 1].colour;
   const bar: SVGRectElement = document.createElementNS(SVG_NS, 'rect');
   bar.setAttribute('class', 'ride-profile-bar');
@@ -41,6 +43,7 @@ export default function renderRideProfile(root: HTMLElement, props: RideProfileP
 
   const intervals: RideInterval[] = props.ride.intervals;
   const totalSeconds: number = intervals.reduce((sum: number, interval: RideInterval): number => sum + interval.seconds, 0);
+  const topZone: number = Math.max(...intervals.map((interval: RideInterval): number => interval.zone));
   const usableWidth: number = WIDTH - GAP * (intervals.length - 1);
   const position = props.position;
   let x = 0;
@@ -48,7 +51,7 @@ export default function renderRideProfile(root: HTMLElement, props: RideProfileP
 
   intervals.forEach((interval: RideInterval, index: number): void => {
     const width: number = (interval.seconds / totalSeconds) * usableWidth;
-    svg.append(buildBar(interval, x, width));
+    svg.append(buildBar(interval, topZone, x, width));
 
     if (position !== null && index === position.index) {
       lineX = x + (position.secondsIntoInterval / position.interval.seconds) * width;
