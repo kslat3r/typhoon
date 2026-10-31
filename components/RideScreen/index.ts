@@ -4,6 +4,13 @@ import accumulateRideStats from '@/lib/client/helpers/accumulate-ride-stats';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import calculateFtp from '@/lib/client/helpers/calculate-ftp';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
+import {
+  advanceDisplayWindow,
+  emptyDisplayWindow,
+  ignoreDisplaySample,
+  recordDisplaySample,
+  type LiveAverage,
+} from '@/lib/client/helpers/display-window';
 import emptyRideStats from '@/lib/client/helpers/empty-ride-stats';
 import formatClock from '@/lib/client/helpers/format-clock';
 import intervalAtElapsed from '@/lib/client/helpers/interval-at-elapsed';
@@ -225,6 +232,10 @@ function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone:
   }
 
   zoneTarget.textContent = zoneTargetLabel(zone);
+  if (state.phase === 'riding') {
+    return;
+  }
+
   const live: boolean = state.bikeState !== 'reconnecting' && sample !== null && ftp > 0;
   if (!live || sample === null) {
     zoneCurrent.hidden = false;
@@ -243,11 +254,66 @@ function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone:
   zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
 }
 
+function paintDistance(state: RideScreenState): void {
+  const { averageMph, miles } = state.elements;
+  averageMph.textContent =
+    state.stats.sampledSeconds > 0 ? (state.stats.miles / (state.stats.sampledSeconds / 3600)).toFixed(1) : '0.0';
+  miles.textContent = state.stats.miles.toFixed(2);
+}
+
+function paintAveragedLive(state: RideScreenState, average: LiveAverage, zone: ZoneNumber): void {
+  state.displayedLive = average;
+  const { watts, rpm, mph, zoneCurrent, zoneMarker, zoneNeedle, zoneRing } = state.elements;
+  if (state.bikeState !== 'reconnecting') {
+    watts.textContent = String(Math.round(average.watts));
+  }
+  if (average.rpm !== null) {
+    rpm.textContent = String(Math.round(average.rpm));
+  }
+  mph.textContent = average.mph.toFixed(1);
+  paintDistance(state);
+
+  if (!state.settings.bluetoothEnabled) {
+    return;
+  }
+
+  const ftp: number = state.settings.ftp;
+  const percent: number = ftp > 0 ? Math.round((average.watts / ftp) * 100) : 0;
+  zoneCurrent.hidden = false;
+  zoneCurrent.textContent = `${percent}%`;
+  zoneCurrent.style.color = ftp > 0 ? ZONES[zoneForWatts(average.watts, ftp) - 1].colour : '';
+  placeDialPointer(zoneMarker, zoneNeedle, percent);
+  zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
+}
+
+function clearLiveDisplay(state: RideScreenState): void {
+  state.displayWindow = emptyDisplayWindow();
+  state.displayedLive = null;
+  state.elements.watts.textContent = '--';
+  state.elements.rpm.textContent = '--';
+  state.elements.mph.textContent = '--';
+  state.elements.averageMph.textContent = '--';
+  state.elements.miles.textContent = '--';
+  state.elements.zoneCurrent.hidden = false;
+  state.elements.zoneCurrent.textContent = '--';
+  state.elements.zoneCurrent.style.color = '';
+  placeDialPointer(state.elements.zoneMarker, state.elements.zoneNeedle, null);
+}
+
 function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number, zone: ZoneNumber): void {
   const { watts, rpm, mph, averageMph, miles, remaining, target } = state.elements;
   remaining.textContent = formatClock(secondsLeftInRide);
   if (!state.settings.bluetoothEnabled) {
     target.textContent = String(targetRpmForZone(zone));
+    return;
+  }
+
+  if (state.phase === 'riding') {
+    if (state.bikeState === 'reconnecting') {
+      watts.textContent = 'Reconnecting';
+    } else if (watts.textContent === 'Reconnecting' && state.displayedLive !== null) {
+      watts.textContent = String(Math.round(state.displayedLive.watts));
+    }
     return;
   }
 
@@ -401,7 +467,20 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
   }
 
   state.position = position;
+  state.displayWindow = recordDisplaySample(state.displayWindow, sample);
+  const advanced = advanceDisplayWindow(state.displayWindow, deltaSeconds);
+  state.displayWindow = advanced.state;
   updateScreen(state, ride, position, sample);
+  if (advanced.published === 'hold') {
+    if (state.stats.sampledSeconds > 0 || state.displayedLive !== null) {
+      paintDistance(state);
+    }
+  } else if (advanced.published !== null) {
+    paintAveragedLive(state, advanced.published, position.interval.zone);
+  }
+  if (state.bikeState === 'reconnecting') {
+    state.elements.watts.textContent = 'Reconnecting';
+  }
 }
 
 function startRide(state: RideScreenState, ride: Ride): void {
@@ -418,6 +497,9 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.elements.startButton.hidden = true;
   state.elements.testButton.hidden = true;
   state.elements.pauseButton.hidden = false;
+  if (state.settings.bluetoothEnabled) {
+    clearLiveDisplay(state);
+  }
   state.elements.endButton.hidden = false;
   dismissToasts((message: string): boolean => message === 'Connecting bike' || message.startsWith('Connected to '));
 
@@ -435,6 +517,9 @@ function togglePause(state: RideScreenState): void {
   if (state.paused) {
     state.pausedMs += clock(state) - state.pausedAt;
     state.paused = false;
+    if (state.latestSample !== null) {
+      state.displayWindow = ignoreDisplaySample(state.displayWindow, state.latestSample.receivedAt);
+    }
   } else {
     state.pausedAt = clock(state);
     state.paused = true;
@@ -570,6 +655,8 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     pausedMs: 0,
     lastTickAt: 0,
     stats: emptyRideStats(),
+    displayWindow: emptyDisplayWindow(),
+    displayedLive: null,
     latestSample: null,
     position: null,
     device: null,
@@ -603,6 +690,9 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
 
   function onSample(sample: BikeSample): void {
     state.latestSample = sample;
+    if (state.phase === 'riding' && !state.paused) {
+      state.displayWindow = recordDisplaySample(state.displayWindow, sample);
+    }
     if (state.phase === 'ready') {
       updateReadyScreen(state, ride);
     }
