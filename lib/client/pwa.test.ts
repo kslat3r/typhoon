@@ -1,4 +1,5 @@
 import html from '../../index.html?raw';
+import app from '../../main.ts?raw';
 import manifestText from '../../public/manifest.webmanifest?raw';
 import worker from '../../public/sw.js?raw';
 import { describe, expect, it } from 'vitest';
@@ -53,6 +54,11 @@ describe('installable web app', () => {
     expect(worker).toContain('url.origin === self.location.origin');
     expect(worker).toContain("searchParams.has('code')");
     expect(worker).toContain('networkFirst');
+    expect(worker).toContain("cache: 'no-store'");
+    expect(worker).toContain('typhoon-shell-__BUILD_ID__');
     expect(worker).not.toContain('accounts.spotify.com');
+    expect(app).toContain('controllerchange');
+    expect(app).toContain('location.reload');
+    expect(app).toContain('registration.update');
   });
 });
