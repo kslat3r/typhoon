@@ -674,6 +674,7 @@ describe('renderRideScreen', () => {
 
     // Assert
     expect(toastText()).toEqual(['Connected to WattbikePM1']);
+    expect(loadSettings().bikeName).toBe('WattbikePM1');
     expect(findButton(root, 'Connect bike').hidden).toBe(true);
 
     // Act
@@ -681,6 +682,29 @@ describe('renderRideScreen', () => {
 
     // Assert
     expect(toastText()).toEqual([]);
+  });
+
+  it('names an untitled bike just bike', async () => {
+    // Arrange
+    let finishConnect: (device: BluetoothDevice) => void = (): void => {};
+    vi.mocked(connectWattbike).mockReturnValueOnce(
+      new Promise((resolve): void => {
+        finishConnect = resolve;
+      }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Act
+    findButton(root, 'Connect bike').click();
+    finishConnect({ name: '', gatt: { disconnect: vi.fn() } } as unknown as BluetoothDevice);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(loadSettings().bikeName).toBe('bike');
+    expect([...root.querySelectorAll('.toast-message')].map((element) => element.textContent)).toEqual(['Connected to bike']);
   });
 
   it('keeps a bike connection error until it is dismissed', async () => {
