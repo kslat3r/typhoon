@@ -516,110 +516,15 @@ form {
   margin-bottom: var(--space-2);
 }
 
-.ride-track {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: 0 1 360px;
-  max-width: 60%;
-  min-width: 0;
-}
-
-.ride-track[hidden] {
-  display: none;
-}
-
-.ride-artwork {
-  width: 36px;
-  height: 36px;
-  flex: none;
-  object-fit: cover;
-  border-radius: 3px;
-}
-
-.ride-artwork-placeholder {
-  width: 36px;
-  height: 36px;
-  flex: none;
-  border-radius: 3px;
-  border: 1px solid var(--line);
-  background: var(--surface-raised);
-}
-
-.ride-artwork-placeholder[hidden] {
-  display: none;
-}
-
-.ride-spinner {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  border: 2px solid var(--line);
-  border-top-color: var(--text-muted);
-  border-radius: 50%;
-  animation: ride-spin 0.8s linear infinite;
-}
-
-.ride-spinner[hidden] {
-  display: none;
-}
-
-@keyframes ride-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.ride-track-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.ride-track-title,
-.ride-track-artist {
-  font-size: 0.875rem;
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ride-track-title {
-  font-weight: 600;
-}
-
-.ride-track-artist {
-  color: var(--text-muted);
-}
-
 .ride-actions {
   display: flex;
   flex-wrap: nowrap;
   gap: var(--space-2);
-  margin-left: var(--space-2);
+  margin-left: auto;
   flex: none;
 }
 
-/* The skip controls normally take the free space, which keeps this row on the right.
-   When those controls are removed, the buttons take it themselves. */
-.ride-track-nav[hidden] + .ride-actions {
-  margin-left: auto;
-}
-
-.ride-track-nav {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--space-2);
-  flex: none;
-  margin-left: auto;
-}
-
-.ride-track-nav[hidden] {
-  display: none;
-}
-
-.ride-actions button,
-.ride-track-nav button {
+.ride-actions button {
   box-sizing: border-box;
   min-width: 48px;
   min-height: 48px;
@@ -636,8 +541,7 @@ form {
   min-height: 48px;
 }
 
-.ride-actions button[hidden],
-.ride-track-nav button[hidden] {
+.ride-actions button[hidden] {
   display: none;
 }
 

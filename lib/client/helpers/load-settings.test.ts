@@ -15,45 +15,29 @@ describe('loadSettings', () => {
     // Assert
     expect(settings.ftp).toBe(150);
     expect(settings.bikeName).toBe('');
+    expect(settings.bluetoothEnabled).toBe(true);
   });
 
-  it('leaves music on unless it was saved off', () => {
-    // Arrange / Act
-    const fresh = loadSettings();
-
-    // Assert
-    expect(fresh.musicEnabled).toBe(true);
-    expect(fresh.bluetoothEnabled).toBe(true);
-
+  it('leaves Bluetooth on unless it was saved off', () => {
     // Arrange
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify({ ftp: 200 }));
 
     // Act / Assert
-    expect(loadSettings().musicEnabled).toBe(true);
     expect(loadSettings().bluetoothEnabled).toBe(true);
-
-    // Arrange
-    saveSettings({ ...loadSettings(), musicEnabled: false });
-
-    // Act / Assert
-    expect(loadSettings().musicEnabled).toBe(false);
 
     // Arrange
     saveSettings({ ...loadSettings(), bluetoothEnabled: false });
 
     // Act / Assert
     expect(loadSettings().bluetoothEnabled).toBe(false);
-    expect(loadSettings().musicEnabled).toBe(false);
+    expect(loadSettings().ftp).toBe(200);
   });
 
   it('returns saved values after saveSettings', () => {
     // Arrange
     const saved = {
       ftp: 220,
-      spotifyClientId: 'a',
-      spotifyPlaylistId: 'b',
       bikeName: 'Wattbike',
-      musicEnabled: true,
       bluetoothEnabled: true,
     };
     saveSettings(saved);
@@ -73,8 +57,34 @@ describe('loadSettings', () => {
     const settings = loadSettings();
 
     // Assert
-    expect(settings.ftp).toBe(200);
-    expect(settings.spotifyClientId).toBe('');
+    expect(settings).toEqual({ ftp: 200, bikeName: '', bluetoothEnabled: true });
+  });
+
+  it('ignores leftover music fields from an older settings blob', () => {
+    // Arrange
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({
+        ftp: 210,
+        bikeName: 'Wattbike Atom',
+        bluetoothEnabled: false,
+        spotifyClientId: 'client-1',
+        spotifyPlaylistId: 'playlist',
+        musicEnabled: true,
+        unknown: 'keep-me-out',
+      }),
+    );
+    localStorage.setItem('typhoon.spotifyAuth.v2', JSON.stringify({ accessToken: 'token' }));
+    localStorage.setItem('typhoon.tempoCache', JSON.stringify({ trackA: 120 }));
+
+    // Act
+    const settings = loadSettings();
+
+    // Assert
+    expect(settings).toEqual({ ftp: 210, bikeName: 'Wattbike Atom', bluetoothEnabled: false });
+    expect(JSON.stringify(settings)).not.toContain('spotify');
+    expect(localStorage.getItem('typhoon.spotifyAuth.v2')).toContain('token');
+    expect(localStorage.getItem('typhoon.tempoCache')).toContain('trackA');
   });
 
   it('returns defaults on corrupt JSON', () => {
@@ -86,5 +96,16 @@ describe('loadSettings', () => {
 
     // Assert
     expect(settings.ftp).toBe(150);
+  });
+
+  it('returns defaults when the stored value is not an object', () => {
+    // Arrange
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(['ftp']));
+
+    // Act
+    const settings = loadSettings();
+
+    // Assert
+    expect(settings).toEqual({ ftp: 150, bikeName: '', bluetoothEnabled: true });
   });
 });

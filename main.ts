@@ -15,19 +15,6 @@ function renderRoute(): void {
     return;
   }
 
-  const query: URLSearchParams = new URLSearchParams(location.search);
-  if (query.get('code')) {
-    renderSettingsScreen(app);
-    return;
-  }
-
-  if (query.get('error')) {
-    history.replaceState(null, '', location.pathname + '#/settings');
-    sessionStorage.setItem('typhoon.spotifyLoginCancelled', '1');
-    renderSettingsScreen(app);
-    return;
-  }
-
   const [, route, param] = location.hash.split('/');
 
   if (route === 'ride') {
@@ -51,10 +38,6 @@ function renderRoute(): void {
 }
 
 function rideOnScreen(): boolean {
-  const query: URLSearchParams = new URLSearchParams(location.search);
-  if (query.get('code') || query.get('error')) {
-    return false;
-  }
   const [, route, param] = location.hash.split('/');
   if (route !== 'ride') {
     return false;
