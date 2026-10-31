@@ -19,6 +19,7 @@ import reconnectWattbike from '@/lib/client/helpers/reconnect-wattbike';
 import requestWakeLock from '@/lib/client/helpers/request-wake-lock';
 import saveSettings from '@/lib/client/helpers/save-settings';
 import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
+import { dismissToasts, mountToasts, showToast } from '@/lib/client/helpers/toasts';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
@@ -553,7 +554,7 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.elements.testButton.hidden = true;
   state.elements.pauseButton.hidden = false;
   state.elements.endButton.hidden = false;
-  state.elements.status.textContent = '';
+  dismissToasts((message: string): boolean => message === 'Connecting bike' || message.startsWith('Connected to '));
 
   // The tap that started the ride is the user gesture browsers want before audio
   if (state.settings.musicEnabled) {
@@ -600,7 +601,9 @@ async function attemptReconnect(
   try {
     await reconnectWattbike(device, onSample, onDisconnect);
   } catch (reconnectError) {
-    state.elements.status.textContent = `Reconnecting to bike: ${errorMessage(reconnectError)}`;
+    if (state.settings.bluetoothEnabled) {
+      showToast(`Reconnecting to bike: ${errorMessage(reconnectError)}`, 'error');
+    }
     return;
   } finally {
     state.reconnectInFlight = false;
@@ -616,7 +619,10 @@ async function attemptReconnect(
     state.reconnectHandle = null;
   }
   state.bikeState = 'connected';
-  state.elements.status.textContent = '';
+  dismissToasts((message: string): boolean => message.startsWith('Reconnecting to bike'));
+  if (state.settings.bluetoothEnabled) {
+    showToast(`Connected to ${state.settings.bikeName}`, 'success');
+  }
   if (state.phase === 'ready') {
     state.elements.startButton.disabled = false;
     updateReadyScreen(state, ride);
@@ -624,9 +630,12 @@ async function attemptReconnect(
 }
 
 async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample: BikeSample) => void, onDisconnect: () => void): Promise<void> {
+  if (!state.settings.bluetoothEnabled) {
+    return;
+  }
   state.bikeState = 'connecting';
   state.elements.connectButton.disabled = true;
-  state.elements.status.textContent = 'Connecting bike';
+  showToast('Connecting bike', 'info');
 
   let device: BluetoothDevice;
   try {
@@ -634,7 +643,8 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
   } catch (connectError) {
     state.bikeState = 'disconnected';
     state.elements.connectButton.disabled = false;
-    state.elements.status.textContent = `Could not connect bike: ${errorMessage(connectError)}`;
+    dismissToasts((message: string): boolean => message === 'Connecting bike');
+    showToast(`Could not connect bike: ${errorMessage(connectError)}`, 'error');
     return;
   }
 
@@ -649,7 +659,8 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
   saveSettings(state.settings);
   state.elements.connectButton.hidden = true;
   state.elements.startButton.disabled = false;
-  state.elements.status.textContent = `Connected to ${state.settings.bikeName}`;
+  dismissToasts((message: string): boolean => message === 'Connecting bike');
+  showToast(`Connected to ${state.settings.bikeName}`, 'success');
   updateReadyScreen(state, ride);
 }
 
@@ -736,7 +747,6 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const top = buildTopBand((direction: 'prev' | 'next'): void => skipTrack(state, ride, direction));
   const stats = buildStatsStrip();
   const profileRoot: HTMLElement = buildElement('section', 'ride-profile-band', '');
-  const status: HTMLElement = buildElement('p', 'status ride-status', '');
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
     void connectBike(state, ride, onSample, onDisconnect);
   });
@@ -803,7 +813,6 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
       ...top.elements,
       ...stats.elements,
       profileRoot,
-      status,
       connectButton,
       startButton,
       testButton,
@@ -855,7 +864,8 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
   const rotateHint: HTMLElement = buildElement('p', 'ride-rotate-hint', 'Rotate your phone');
-  screen.append(rotateHint, top.band, status, profileRoot, stats.strip);
+  screen.append(rotateHint, top.band, profileRoot, stats.strip);
+  mountToasts(screen);
   applyBluetoothMode(state);
   root.replaceChildren(screen);
   updateReadyScreen(state, ride);

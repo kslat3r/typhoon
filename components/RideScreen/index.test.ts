@@ -3,6 +3,7 @@ import renderRideScreen from '@/components/RideScreen';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import connectSpotifyPlayer from '@/lib/client/helpers/connect-spotify-player';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
+import reconnectWattbike from '@/lib/client/helpers/reconnect-wattbike';
 import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import playTrack from '@/lib/client/helpers/play-track';
 import loadSettings from '@/lib/client/helpers/load-settings';
@@ -174,6 +175,7 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:09');
     expect((root.querySelector('.ride-stat-remaining') as HTMLElement).textContent).toBe('0:19');
     expect(connectWattbike).not.toHaveBeenCalled();
+    expect(root.querySelector('.toast')).toBeNull();
   });
 
   it('shows a rotate hint on the ride screen', async () => {
@@ -203,7 +205,8 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Music unavailable');
     expect((root.querySelector('.ride-track-artist') as HTMLElement).textContent).toBe('Choose a playlist in Settings');
     expect((root.querySelector('.ride-artwork-placeholder') as HTMLElement).hidden).toBe(false);
-    expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('');
+    expect(root.querySelector('.ride-status')).toBeNull();
+    expect(root.querySelector('.toast')).toBeNull();
     expect(getPlaylistTracks).not.toHaveBeenCalled();
   });
 
@@ -319,7 +322,6 @@ describe('renderRideScreen', () => {
     // Arrange
     vi.mocked(playTrack).mockRejectedValueOnce(new Error('Play failed: 403')).mockResolvedValue(undefined);
     const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
-    const status = (): string => (root.querySelector('.ride-status') as HTMLElement).textContent ?? '';
     const artist = (): string => (root.querySelector('.ride-track-artist') as HTMLElement).textContent ?? '';
 
     // Act
@@ -329,7 +331,7 @@ describe('renderRideScreen', () => {
     expect(playTrack).toHaveBeenCalledTimes(2);
     expect(vi.mocked(playTrack).mock.calls[1][0]).toBe('spotify:track:b');
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track B');
-    expect(status()).toBe('');
+    expect(root.textContent).not.toContain('Play failed: 403');
 
     // Act: every play now fails
     vi.mocked(playTrack).mockRejectedValue(new Error('Play failed: 502'));
@@ -338,7 +340,7 @@ describe('renderRideScreen', () => {
 
     // Assert: Next restarts the skip budget, it runs out, then the placeholder shows the reason, Prev off, Next on
     expect(playTrack).toHaveBeenCalledTimes(6);
-    expect(status()).toBe('');
+    expect([...root.querySelectorAll('.toast-message')].map((element) => element.textContent)).not.toContain('Play failed: 502');
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Music unavailable');
     expect(artist()).toBe('Play failed: 502');
     expect((root.querySelector('.ride-artwork-placeholder') as HTMLElement).hidden).toBe(false);
@@ -411,7 +413,7 @@ describe('renderRideScreen', () => {
     expect(playTrack).toHaveBeenCalledTimes(3);
     expect(vi.mocked(playTrack).mock.calls.map((call) => call[0])).toEqual(['spotify:track:a', 'spotify:track:a', 'spotify:track:a']);
     expect((root.querySelector('.ride-track-title') as HTMLElement).textContent).toBe('Track A');
-    expect((root.querySelector('.ride-status') as HTMLElement).textContent).toBe('');
+    expect([...root.querySelectorAll('.toast-message')].map((element) => element.textContent)).not.toContain('Play failed: 404');
   });
 
   it('freezes the clock and the music on Pause and carries on from the same point on Resume', async () => {
@@ -767,6 +769,90 @@ describe('renderRideScreen', () => {
     // Assert
     expect(loadSettings().ftp).toBe(140);
     expect(appendRideSummary).toHaveBeenCalledTimes(1);
+  });
+
+  it('toasts connecting and connected, then lets the success toast leave', async () => {
+    // Arrange
+    let finishConnect: (device: BluetoothDevice) => void = (): void => {};
+    vi.mocked(connectWattbike).mockReturnValueOnce(
+      new Promise((resolve): void => {
+        finishConnect = resolve;
+      }),
+    );
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+    const toastText = (): string[] => [...root.querySelectorAll('.toast-message')].map((element) => element.textContent ?? '');
+
+    // Act
+    findButton(root, 'Connect bike').click();
+
+    // Assert
+    expect(toastText()).toEqual(['Connecting bike']);
+    expect(root.querySelector('.ride-status')).toBeNull();
+
+    // Act
+    finishConnect({ name: 'WattbikePM1', gatt: { disconnect: vi.fn() } } as unknown as BluetoothDevice);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(toastText()).toEqual(['Connected to WattbikePM1']);
+    expect(findButton(root, 'Connect bike').hidden).toBe(true);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(4000);
+
+    // Assert
+    expect(toastText()).toEqual([]);
+  });
+
+  it('keeps a bike connection error until it is dismissed', async () => {
+    // Arrange
+    vi.mocked(connectWattbike).mockRejectedValueOnce(new Error('Bluetooth picker failed: User cancelled the requestDevice() chooser.'));
+    const root: HTMLElement = document.createElement('div');
+    document.body.replaceChildren(root);
+    renderRideScreen(root, testRide);
+    await vi.advanceTimersByTimeAsync(0);
+    const toastText = (): string[] => [...root.querySelectorAll('.toast-message')].map((element) => element.textContent ?? '');
+
+    // Act
+    findButton(root, 'Connect bike').click();
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(8000);
+
+    // Assert
+    expect(toastText()).toEqual(['Could not connect bike: Bluetooth picker failed: User cancelled the requestDevice() chooser.']);
+    expect(root.querySelector('.toast-error')?.getAttribute('role')).toBe('alert');
+    expect(findButton(root, 'Connect bike').disabled).toBe(false);
+
+    // Act
+    (root.querySelector('.toast-close') as HTMLButtonElement).click();
+
+    // Assert
+    expect(toastText()).toEqual([]);
+  });
+
+  it('shows one reconnect toast for a repeated failure and clears it when the bike returns', async () => {
+    // Arrange
+    vi.mocked(reconnectWattbike).mockRejectedValueOnce(new Error('GATT connect failed')).mockResolvedValueOnce(undefined);
+    const root: HTMLElement = await renderAndStart(testRide);
+    const toastText = (): string[] => [...root.querySelectorAll('.toast-message')].map((element) => element.textContent ?? '');
+
+    // Act
+    capturedBikeCallbacks().onDisconnect();
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Assert
+    expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('Reconnecting');
+    expect(toastText()).toEqual(['Reconnecting to bike: GATT connect failed']);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Assert
+    expect(toastText()).toEqual(['Connected to WattbikePM1']);
+    expect(reconnectWattbike).toHaveBeenCalledTimes(2);
   });
 
   it('saves the summary and stops ticking when navigated away', async () => {

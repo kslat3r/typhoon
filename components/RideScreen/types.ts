@@ -24,7 +24,6 @@ export type RideScreenElements = {
   remaining: HTMLElement;
   target: HTMLElement;
   profileRoot: HTMLElement;
-  status: HTMLElement;
   connectButton: HTMLButtonElement;
   startButton: HTMLButtonElement;
   testButton: HTMLButtonElement;
