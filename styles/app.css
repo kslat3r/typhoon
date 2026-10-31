@@ -40,14 +40,21 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-#app {
+#app:has(.ride-screen) {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.app-scroll {
   max-width: 560px;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) var(--space-6);
 }
 
-#app:has(> .ride-screen) {
+#app:has(.ride-screen) .app-scroll {
   max-width: none;
+  height: 100%;
+  margin: 0;
   padding: 0;
 }
 
@@ -144,7 +151,7 @@ footer > a:not(.ride-link) + a {
   margin-left: var(--space-5);
 }
 
-#app > a:not(.ride-link) {
+.app-scroll > a:not(.ride-link) {
   display: inline-block;
   margin-top: var(--space-5);
 }
@@ -483,30 +490,11 @@ form {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   overflow: hidden;
   box-sizing: border-box;
   padding: var(--space-2) max(var(--space-3), env(safe-area-inset-right)) var(--space-2)
     max(var(--space-3), env(safe-area-inset-left));
-}
-
-.ride-rotate-hint {
-  display: none;
-  margin: 0;
-  flex: none;
-  padding: var(--space-2) var(--space-3);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  text-align: center;
-  font-size: 0.875rem;
-}
-
-@media (orientation: portrait) {
-  .ride-rotate-hint {
-    display: block;
-  }
 }
 
 .ride-top {
@@ -693,7 +681,7 @@ form {
 
 .toast-host {
   position: fixed;
-  /* Sit under the ride controls. The portrait ride also shows the rotate hint above them. */
+  /* Sit under the ride controls. A transformed #app contains this fixed box. */
   top: calc(64px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
@@ -704,12 +692,6 @@ form {
   gap: var(--space-2);
   width: min(420px, calc(100vw - 32px));
   pointer-events: none;
-}
-
-@media (orientation: portrait) {
-  .toast-host {
-    top: calc(112px + env(safe-area-inset-top));
-  }
 }
 
 .toast {
@@ -922,3 +904,53 @@ form {
 }
 
 /* History reuses the library list rows above */
+
+/*
+ * Portrait phones still show a landscape layout. The frame is the long side
+ * wide and the short side tall, then turned so it fills the portrait viewport.
+ * The scroller is the untransformed child: a transformed overflow box does not
+ * pan. Installed Android PWAs can also lock via the Screen Orientation API.
+ */
+@media (orientation: portrait) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #app,
+  #app:has(.ride-screen) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vh;
+    width: 100dvh;
+    height: 100vw;
+    height: 100dvw;
+    max-width: none;
+    margin: 0;
+    overflow: hidden;
+    transform-origin: top left;
+    transform: translateX(100vw) rotate(90deg);
+    transform: translateX(100dvw) rotate(90deg);
+  }
+
+  .app-scroll {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Pan is handled in script: the browser's gesture axis does not follow the rotation. */
+    touch-action: none;
+    padding: var(--space-5) max(var(--space-4), calc((100vh - 560px) / 2)) var(--space-6);
+    padding: var(--space-5) max(var(--space-4), calc((100dvh - 560px) / 2)) var(--space-6);
+  }
+
+  #app:has(.ride-screen) .app-scroll {
+    padding: 0;
+    overflow: hidden;
+  }
+}

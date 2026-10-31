@@ -13,6 +13,7 @@ describe('installable web app', () => {
       start_url: string;
       scope: string;
       display: string;
+      orientation: string;
       theme_color: string;
       background_color: string;
       icons: { src: string; sizes: string; purpose: string; type: string }[];
@@ -24,7 +25,7 @@ describe('installable web app', () => {
     expect(manifest.start_url).toBe('/typhoon/');
     expect(manifest.scope).toBe('/typhoon/');
     expect(manifest.display).toBe('standalone');
-    expect(manifest).not.toHaveProperty('orientation');
+    expect(manifest.orientation).toBe('landscape');
     expect(manifest.theme_color).toBe('#0f1219');
     expect(manifest.background_color).toBe('#0f1219');
     expect(manifest.icons).toEqual(
@@ -59,5 +60,12 @@ describe('installable web app', () => {
     expect(app).toContain('controllerchange');
     expect(app).toContain('location.reload');
     expect(app).toContain('registration.update');
+  });
+
+  it('keeps every screen landscape and rotates the root when the phone is portrait', () => {
+    // Assert
+    expect(app).toContain('lockLandscape(screen.orientation)');
+    expect(app).not.toContain('unlock');
+    expect(html).not.toContain('Rotate your phone');
   });
 });

@@ -162,19 +162,6 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.toast')).toBeNull();
   });
 
-  it('shows a rotate hint on the ride screen', async () => {
-    // Arrange
-    const root: HTMLElement = document.createElement('div');
-    document.body.replaceChildren(root);
-
-    // Act
-    renderRideScreen(root, testRide);
-    await vi.advanceTimersByTimeAsync(0);
-
-    // Assert
-    expect((root.querySelector('.ride-rotate-hint') as HTMLElement).textContent).toBe('Rotate your phone');
-  });
-
   it('freezes the clock on Pause and carries on from the same point on Resume', async () => {
     // Arrange
     const root: HTMLElement = await renderAndStart({ ...testRide, lengthSeconds: 600, intervals: [{ zone: 2, seconds: 600 }] });
