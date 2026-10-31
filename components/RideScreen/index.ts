@@ -119,7 +119,7 @@ function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenEleme
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
   const percent = buildStatCell('% FTP', 'ride-stat-percent');
   const watts = buildStatCell('Watts', 'ride-stat-watts');
-  const rpm = buildStatCell('RPM', 'ride-stat-rpm');
+  const rpm = buildStatCell('Cadence', 'ride-stat-rpm');
   const mph = buildStatCell('MPH', 'ride-stat-mph');
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');

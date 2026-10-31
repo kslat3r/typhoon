@@ -712,6 +712,8 @@ describe('renderRideScreen', () => {
     expect(countdown.textContent).toBe('0:08');
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
     expect((root.querySelector('.ride-stat-percent') as HTMLElement).textContent).toBe('75%');
+    expect((root.querySelector('.ride-stat-rpm') as HTMLElement).textContent).toBe('90');
+    expect((root.querySelector('.ride-stat-rpm') as HTMLElement).parentElement?.textContent).toContain('Cadence');
 
     // Act
     await vi.advanceTimersByTimeAsync(30000);
