@@ -226,6 +226,7 @@ footer > a:not(.ride-link) + a {
 
 .library-filters + .ride-card {
   margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
 .library-empty {
@@ -485,6 +486,7 @@ form {
 /* Ride: three bands on a landscape phone, never scrolls */
 
 .ride-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -504,6 +506,73 @@ form {
   margin-bottom: var(--space-2);
 }
 
+.zone-ring {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-2);
+  left: max(var(--space-3), env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 144px;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.zone-ring-dial {
+  position: relative;
+  width: 136px;
+  height: 136px;
+}
+
+.zone-ring-svg {
+  display: block;
+  width: 136px;
+  height: 136px;
+}
+
+.zone-ring-segment {
+  fill: none;
+  stroke-width: 10;
+}
+
+.zone-ring-needle {
+  stroke: #ffffff;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+}
+
+.zone-ring-marker {
+  fill: #ffffff;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.zone-ring-current {
+  position: absolute;
+  inset: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.zone-ring-current[hidden] {
+  display: none;
+}
+
+.zone-ring-target {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .ride-track {
   display: flex;
   align-items: center;
@@ -511,6 +580,7 @@ form {
   flex: 0 1 360px;
   max-width: 60%;
   min-width: 0;
+  margin-left: 144px;
 }
 
 .ride-track[hidden] {
@@ -584,30 +654,11 @@ form {
   display: flex;
   flex-wrap: nowrap;
   gap: var(--space-2);
-  margin-left: var(--space-2);
+  margin-left: auto;
   flex: none;
 }
 
-/* The skip controls normally take the free space, which keeps this row on the right.
-   When those controls are removed, the buttons take it themselves. */
-.ride-track-nav[hidden] + .ride-actions {
-  margin-left: auto;
-}
-
-.ride-track-nav {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--space-2);
-  flex: none;
-  margin-left: auto;
-}
-
-.ride-track-nav[hidden] {
-  display: none;
-}
-
-.ride-actions button,
-.ride-track-nav button {
+.ride-actions button {
   box-sizing: border-box;
   min-width: 48px;
   min-height: 48px;
@@ -624,8 +675,7 @@ form {
   min-height: 48px;
 }
 
-.ride-actions button[hidden],
-.ride-track-nav button[hidden] {
+.ride-actions button[hidden] {
   display: none;
 }
 
@@ -715,10 +765,12 @@ form {
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: var(--space-2);
   flex: none;
+  /* Clear the phone holder, and the home indicator when the browser reports one. */
+  margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .ride-stats-manual {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .ride-stat[hidden] {
@@ -752,10 +804,6 @@ form {
   text-overflow: ellipsis;
 }
 
-.ride-stat-percent {
-  transition: color 400ms ease;
-}
-
 .ride-ftp-result {
   display: flex;
   align-items: center;
@@ -770,12 +818,6 @@ form {
   font-size: 2rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ride-stat-percent {
-    transition: none;
-  }
 }
 
 /* Summary */

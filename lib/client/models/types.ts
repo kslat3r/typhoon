@@ -86,48 +86,6 @@ export interface RideSummary {
 
 export interface Settings {
   ftp: number;
-  spotifyClientId: string;
-  spotifyPlaylistId: string;
   bikeName: string;
-  musicEnabled: boolean;
   bluetoothEnabled: boolean;
-}
-
-export type TempoCache = Record<string, number | null>;
-
-export interface SpotifyAuth {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-}
-
-export interface Track {
-  id: string;
-  uri: string;
-  name: string;
-  artist: string;
-  artworkUrl: string | null;
-  durationMs: number;
-}
-
-export interface SpotifyPlaylist {
-  id: string;
-  name: string;
-}
-
-export interface SpotifyPlayerState {
-  paused: boolean;
-  position: number;
-  duration: number;
-  track_window: { current_track: { uri: string; name: string; artists: { name: string }[]; album: { images: { url: string }[] } } };
-}
-
-export interface SpotifyPlayer {
-  connect(): Promise<boolean>;
-  disconnect(): void;
-  activateElement(): Promise<void>;
-  pause(): Promise<void>;
-  resume(): Promise<void>;
-  getCurrentState(): Promise<SpotifyPlayerState | null>;
-  addListener(event: string, callback: (payload: never) => void): void;
 }

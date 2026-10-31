@@ -30,7 +30,7 @@ function buildLink(href: string, label: string, detail: string | null): HTMLAnch
 }
 
 function rideDetail(ride: Ride): string {
-  const label: string = `${ride.lengthSeconds / 60} min · ${DIFFICULTY_LABELS[ride.difficulty]}`;
+  const label: string = `${DIFFICULTY_LABELS[ride.difficulty]} · ${ride.lengthSeconds / 60} min`;
   return ride.ftpTest === undefined ? label : `${label} · ${ride.ftpTest.seconds / 60} min FTP test`;
 }
 

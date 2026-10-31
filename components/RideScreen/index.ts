@@ -3,18 +3,12 @@ import type { FinishReason, RideScreenElements, RideScreenState } from '@/compon
 import accumulateRideStats from '@/lib/client/helpers/accumulate-ride-stats';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import calculateFtp from '@/lib/client/helpers/calculate-ftp';
-import connectSpotifyPlayer from '@/lib/client/helpers/connect-spotify-player';
 import connectWattbike from '@/lib/client/helpers/connect-wattbike';
 import emptyRideStats from '@/lib/client/helpers/empty-ride-stats';
 import formatClock from '@/lib/client/helpers/format-clock';
-import getPlaylistTracks from '@/lib/client/helpers/get-playlist-tracks';
 import intervalAtElapsed from '@/lib/client/helpers/interval-at-elapsed';
 import loadSettings from '@/lib/client/helpers/load-settings';
-import loadSpotifyAuth from '@/lib/client/helpers/load-spotify-auth';
-import loadTempoCache from '@/lib/client/helpers/load-tempo-cache';
 import navigate from '@/lib/client/helpers/navigate';
-import pickTrack from '@/lib/client/helpers/pick-track';
-import playTrack from '@/lib/client/helpers/play-track';
 import reconnectWattbike from '@/lib/client/helpers/reconnect-wattbike';
 import requestWakeLock from '@/lib/client/helpers/request-wake-lock';
 import saveSettings from '@/lib/client/helpers/save-settings';
@@ -23,20 +17,14 @@ import { dismissToasts, mountToasts, showToast } from '@/lib/client/helpers/toas
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
 import zoneForWatts from '@/lib/client/helpers/zone-for-watts';
+import { markerPoint, needleLine, segmentStroke, zoneRingSegments, zoneTargetLabel, ZONE_RING_RADIUS } from '@/lib/client/helpers/zone-ring';
 import { targetRpmForZone } from '@/lib/client/models/target-cadence';
 import { ZONES } from '@/lib/client/models/zones';
-import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, SpotifyPlayer, SpotifyPlayerState, Track, ZoneNumber } from '@/lib/client/models/types';
+import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, ZoneNumber } from '@/lib/client/models/types';
 
 const TICK_MS = 250;
-const POLL_MS = 500;
 const RECONNECT_MS = 3000;
 const SAMPLE_MAX_AGE_MS = 3000;
-const NEXT_BEFORE_END_MS = 1500;
-// The player endpoint lags a play call by a second or two; polls inside this window are ignored
-const PLAY_GRACE_MS = 4000;
-const MAX_MUSIC_SKIPS = 3;
-const PLAY_ATTEMPTS = 4;
-const PLAY_RETRY_MS = 1000;
 // ponytail: test rides run at 4x so a 30 minute ride takes 7.5 minutes at the desk
 const TEST_SPEED = 4;
 
@@ -59,11 +47,12 @@ function buildButton(label: string, onClick: () => void): HTMLButtonElement {
   return button;
 }
 
-function buildStatCell(label: string, className: string): { cell: HTMLElement; value: HTMLElement } {
+function buildStatCell(label: string, className: string): { cell: HTMLElement; value: HTMLElement; label: HTMLElement } {
   const cell: HTMLElement = buildElement('div', 'ride-stat', '');
+  const labelElement: HTMLElement = buildElement('span', 'ride-stat-label', label);
   const value: HTMLElement = buildElement('span', `ride-stat-value ${className}`, '--');
-  cell.append(buildElement('span', 'ride-stat-label', label), value);
-  return { cell, value };
+  cell.append(labelElement, value);
+  return { cell, value, label: labelElement };
 }
 
 function clock(state: RideScreenState): number {
@@ -87,58 +76,95 @@ function freshSample(state: RideScreenState, now: number): BikeSample | null {
   return state.latestSample;
 }
 
-function buildTopBand(onSkip: (direction: 'prev' | 'next') => void): { band: HTMLElement; elements: Pick<RideScreenElements, 'artwork' | 'placeholder' | 'spinner' | 'trackTitle' | 'trackArtist' | 'prevButton' | 'nextButton'>; actions: HTMLElement } {
-  const band: HTMLElement = buildElement('section', 'ride-top', '');
+function placeDialPointer(marker: SVGCircleElement, needle: SVGLineElement, percent: number | null): void {
+  if (percent === null) {
+    marker.setAttribute('visibility', 'hidden');
+    needle.setAttribute('visibility', 'hidden');
+    return;
+  }
 
-  const artwork: HTMLImageElement = document.createElement('img');
-  artwork.className = 'ride-artwork';
-  artwork.alt = '';
-  artwork.hidden = true;
-  const placeholder: HTMLElement = buildElement('div', 'ride-artwork-placeholder', '');
-  placeholder.hidden = true;
-  const spinner: HTMLElement = buildElement('div', 'ride-spinner', '');
-  spinner.hidden = true;
-  const trackTitle: HTMLElement = buildElement('div', 'ride-track-title', '');
-  const trackArtist: HTMLElement = buildElement('div', 'ride-track-artist', '');
-  const trackText: HTMLElement = buildElement('div', 'ride-track-text', '');
-  trackText.append(trackTitle, trackArtist);
-  const prevButton: HTMLButtonElement = buildButton('Prev', (): void => onSkip('prev'));
-  const nextButton: HTMLButtonElement = buildButton('Next', (): void => onSkip('next'));
-  const nav: HTMLElement = buildElement('div', 'ride-track-nav', '');
-  nav.append(prevButton, nextButton);
-  const track: HTMLElement = buildElement('div', 'ride-track', '');
-  track.append(spinner, artwork, placeholder, trackText);
-
-  const actions: HTMLElement = buildElement('div', 'ride-actions', '');
-  band.append(track, nav, actions);
-
-  return { band, elements: { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton }, actions };
+  const point = markerPoint(percent);
+  marker.setAttribute('cx', point.x.toFixed(2));
+  marker.setAttribute('cy', point.y.toFixed(2));
+  marker.setAttribute('visibility', 'visible');
+  const line = needleLine(percent);
+  needle.setAttribute('x1', line.x1.toFixed(2));
+  needle.setAttribute('y1', line.y1.toFixed(2));
+  needle.setAttribute('x2', line.x2.toFixed(2));
+  needle.setAttribute('y2', line.y2.toFixed(2));
+  needle.setAttribute('visibility', 'visible');
 }
 
-function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'remaining' | 'target'> } {
+function buildZoneRing(): { root: HTMLElement; current: HTMLElement; target: HTMLElement; marker: SVGCircleElement; needle: SVGLineElement } {
+  const root: HTMLElement = buildElement('div', 'zone-ring', '');
+  root.setAttribute('role', 'img');
+  const dial: HTMLElement = buildElement('div', 'zone-ring-dial', '');
+  const svg: SVGSVGElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'zone-ring-svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('aria-hidden', 'true');
+
+  for (const segment of zoneRingSegments()) {
+    const circle: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    const stroke = segmentStroke(segment.startPercent, segment.endPercent);
+    circle.setAttribute('class', 'zone-ring-segment');
+    circle.setAttribute('cx', '50');
+    circle.setAttribute('cy', '50');
+    circle.setAttribute('r', String(ZONE_RING_RADIUS));
+    circle.setAttribute('stroke', segment.colour);
+    circle.setAttribute('stroke-dasharray', stroke.dasharray);
+    circle.setAttribute('stroke-dashoffset', stroke.dashoffset);
+    svg.append(circle);
+  }
+
+  const needle: SVGLineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  needle.setAttribute('class', 'zone-ring-needle');
+  needle.setAttribute('visibility', 'hidden');
+  const marker: SVGCircleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  marker.setAttribute('class', 'zone-ring-marker');
+  marker.setAttribute('r', '3.2');
+  marker.setAttribute('visibility', 'hidden');
+  svg.append(needle, marker);
+
+  const current: HTMLElement = buildElement('div', 'zone-ring-current', '--');
+  const target: HTMLElement = buildElement('div', 'zone-ring-target', '');
+  dial.append(svg, current);
+  root.append(dial, target);
+  return { root, current, target, marker, needle };
+}
+
+function buildTopBand(): { band: HTMLElement; actions: HTMLElement } {
+  const band: HTMLElement = buildElement('section', 'ride-top', '');
+  const actions: HTMLElement = buildElement('div', 'ride-actions', '');
+  band.append(actions);
+  return { band, actions };
+}
+
+function buildStatsStrip(): { strip: HTMLElement; elements: Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles' | 'interval' | 'next' | 'nextLabel' | 'remaining' | 'target'> } {
   const strip: HTMLElement = buildElement('section', 'ride-stats', '');
-  const percent = buildStatCell('% FTP', 'ride-stat-percent');
+  const interval = buildStatCell('Interval', 'ride-stat-interval');
+  const next = buildStatCell('Next', 'ride-stat-next');
+  const target = buildStatCell('Target', 'ride-stat-target');
+  target.cell.hidden = true;
   const watts = buildStatCell('Watts', 'ride-stat-watts');
-  const rpm = buildStatCell('RPM', 'ride-stat-rpm');
+  const rpm = buildStatCell('Cadence', 'ride-stat-rpm');
   const mph = buildStatCell('MPH', 'ride-stat-mph');
   const averageMph = buildStatCell('Avg MPH', 'ride-stat-average-mph');
   const miles = buildStatCell('Miles', 'ride-stat-miles');
-  const target = buildStatCell('Target', 'ride-stat-target');
-  target.cell.hidden = true;
-  const interval = buildStatCell('Interval', 'ride-stat-interval');
   const remaining = buildStatCell('Remaining', 'ride-stat-remaining');
-  strip.append(percent.cell, watts.cell, rpm.cell, mph.cell, averageMph.cell, miles.cell, target.cell, interval.cell, remaining.cell);
+  strip.append(rpm.cell, watts.cell, mph.cell, averageMph.cell, miles.cell, target.cell, interval.cell, next.cell, remaining.cell);
 
   return {
     strip,
     elements: {
-      percent: percent.value,
       watts: watts.value,
       rpm: rpm.value,
       mph: mph.value,
       averageMph: averageMph.value,
       miles: miles.value,
       interval: interval.value,
+      next: next.value,
+      nextLabel: next.label,
       remaining: remaining.value,
       target: target.value,
     },
@@ -149,8 +175,7 @@ function statCell(value: HTMLElement): HTMLElement {
   return value.parentElement as HTMLElement;
 }
 
-const BIKE_STATS: (keyof Pick<RideScreenElements, 'percent' | 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles'>)[] = [
-  'percent',
+const BIKE_STATS: (keyof Pick<RideScreenElements, 'watts' | 'rpm' | 'mph' | 'averageMph' | 'miles'>)[] = [
   'watts',
   'rpm',
   'mph',
@@ -172,89 +197,66 @@ function applyBluetoothMode(state: RideScreenState): void {
   statCell(state.elements.target).hidden = false;
 }
 
-function updateTrack(state: RideScreenState): void {
-  const { artwork, placeholder, spinner, trackTitle, trackArtist, prevButton, nextButton } = state.elements;
-  const trackRow: HTMLElement | null = trackTitle.closest('.ride-track');
-  const trackNav: HTMLElement | null = prevButton.closest('.ride-track-nav');
-  if (!state.settings.musicEnabled) {
-    if (trackRow) {
-      trackRow.hidden = true;
-    }
-    if (trackNav) {
-      trackNav.hidden = true;
-    }
-    spinner.hidden = true;
-    placeholder.hidden = true;
-    artwork.hidden = true;
-    artwork.removeAttribute('src');
-    prevButton.hidden = true;
-    nextButton.hidden = true;
-    trackTitle.textContent = '';
-    trackArtist.textContent = '';
+function updateInterval(state: RideScreenState, ride: Ride, position: IntervalPosition): void {
+  state.elements.interval.textContent = formatClock(position.secondsLeftInInterval);
+  const upcoming: RideInterval | undefined = ride.intervals[position.index + 1];
+  if (upcoming === undefined) {
+    state.elements.nextLabel.textContent = 'Next';
+    state.elements.next.textContent = '--';
     return;
   }
-  if (trackRow) {
-    trackRow.hidden = false;
-  }
-  if (trackNav) {
-    trackNav.hidden = false;
-  }
-
-  const failed: boolean = state.musicMessage !== null;
-  const shown: Track | null = failed ? null : (state.pendingPlay ?? state.track);
-  spinner.hidden = failed || shown !== null || !state.musicLoading;
-  placeholder.hidden = !failed;
-  prevButton.hidden = state.phase !== 'riding' || (shown === null && !failed);
-  nextButton.hidden = prevButton.hidden;
-  prevButton.disabled = failed || state.history.length === 0;
-  nextButton.disabled = state.tracks.length === 0;
-
-  if (shown === null) {
-    trackTitle.textContent = failed ? 'Music unavailable' : '';
-    trackArtist.textContent = state.musicMessage ?? '';
-    artwork.hidden = true;
-    artwork.removeAttribute('src');
-    return;
-  }
-
-  trackTitle.textContent = shown.name;
-  trackArtist.textContent = shown.artist;
-  if (shown.artworkUrl) {
-    artwork.src = shown.artworkUrl;
-    artwork.hidden = false;
-  } else {
-    artwork.hidden = true;
-    artwork.removeAttribute('src');
-  }
+  state.elements.nextLabel.textContent = `Next Z${upcoming.zone}`;
+  state.elements.next.textContent = formatClock(upcoming.seconds);
 }
 
-function updateInterval(state: RideScreenState, position: IntervalPosition): void {
-  state.elements.interval.textContent = formatClock(position.secondsLeftInInterval);
+function updateZoneRing(state: RideScreenState, sample: BikeSample | null, zone: ZoneNumber): void {
+  const { zoneCurrent, zoneTarget, zoneMarker, zoneNeedle, zoneRing } = state.elements;
+  const ftp: number = state.settings.ftp;
+  zoneTarget.style.color = ZONES[zone - 1].colour;
+
+  if (!state.settings.bluetoothEnabled) {
+    const rpm: number = targetRpmForZone(zone);
+    zoneCurrent.hidden = true;
+    zoneCurrent.textContent = '';
+    placeDialPointer(zoneMarker, zoneNeedle, null);
+    zoneTarget.textContent = `${rpm} rpm`;
+    zoneRing.setAttribute('aria-label', `Target ${rpm} rpm`);
+    return;
+  }
+
+  zoneTarget.textContent = zoneTargetLabel(zone);
+  const live: boolean = state.bikeState !== 'reconnecting' && sample !== null && ftp > 0;
+  if (!live || sample === null) {
+    zoneCurrent.hidden = false;
+    zoneCurrent.textContent = '--';
+    zoneCurrent.style.color = '';
+    placeDialPointer(zoneMarker, zoneNeedle, null);
+    zoneRing.setAttribute('aria-label', `Target ${zoneTargetLabel(zone)}`);
+    return;
+  }
+
+  const percent: number = Math.round((sample.watts / ftp) * 100);
+  zoneCurrent.hidden = false;
+  zoneCurrent.textContent = `${percent}%`;
+  zoneCurrent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 1].colour;
+  placeDialPointer(zoneMarker, zoneNeedle, percent);
+  zoneRing.setAttribute('aria-label', `${percent}% of FTP, target ${zoneTargetLabel(zone)}`);
 }
 
 function updateStats(state: RideScreenState, sample: BikeSample | null, secondsLeftInRide: number, zone: ZoneNumber): void {
-  const { percent, watts, rpm, mph, averageMph, miles, remaining, target } = state.elements;
+  const { watts, rpm, mph, averageMph, miles, remaining, target } = state.elements;
   remaining.textContent = formatClock(secondsLeftInRide);
   if (!state.settings.bluetoothEnabled) {
     target.textContent = String(targetRpmForZone(zone));
-    target.style.color = ZONES[zone - 1].colour;
     return;
   }
 
-  const ftp: number = state.settings.ftp;
-
   if (state.bikeState === 'reconnecting') {
     watts.textContent = 'Reconnecting';
-    percent.textContent = '--';
-    percent.style.color = '';
   } else if (sample === null) {
     watts.textContent = '--';
-    percent.textContent = '--';
-    percent.style.color = '';
   } else {
     watts.textContent = String(Math.round(sample.watts));
-    percent.textContent = `${Math.round((sample.watts / ftp) * 100)}%`;
-    percent.style.color = ZONES[zoneForWatts(sample.watts, ftp) - 1].colour;
   }
 
   rpm.textContent = sample === null || sample.rpm === null ? '--' : String(Math.round(sample.rpm));
@@ -265,9 +267,9 @@ function updateStats(state: RideScreenState, sample: BikeSample | null, secondsL
 }
 
 function updateScreen(state: RideScreenState, ride: Ride, position: IntervalPosition, sample: BikeSample | null): void {
-  updateTrack(state);
-  updateInterval(state, position);
+  updateInterval(state, ride, position);
   updateStats(state, sample, position.secondsLeftInRide, position.interval.zone);
+  updateZoneRing(state, sample, position.interval.zone);
   renderRideProfile(state.elements.profileRoot, {
     ride,
     position: state.phase === 'riding' ? position : null,
@@ -277,132 +279,6 @@ function updateScreen(state: RideScreenState, ride: Ride, position: IntervalPosi
 function updateReadyScreen(state: RideScreenState, ride: Ride): void {
   const position: IntervalPosition = intervalAtElapsed(ride, 0) as IntervalPosition;
   updateScreen(state, ride, position, freshSample(state, clock(state)));
-}
-
-async function runSpotifyCall(state: RideScreenState, call: () => Promise<void>): Promise<void> {
-  if (state.spotifyCallInFlight) {
-    return;
-  }
-
-  state.spotifyCallInFlight = true;
-  try {
-    await call();
-  } catch (spotifyError) {
-    markMusicFailed(state, errorMessage(spotifyError));
-  } finally {
-    state.spotifyCallInFlight = false;
-  }
-}
-
-// A failed play or a player error skips to another track fitting the current block; after a
-// few failures in a row the song display becomes a placeholder with the reason, and Next retries.
-function markMusicFailed(state: RideScreenState, message: string): void {
-  if (state.phase === 'riding' && state.position !== null && state.tracks.length > 0 && state.musicSkips < MAX_MUSIC_SKIPS) {
-    state.musicSkips += 1;
-    state.pendingPlay = pickTrack(state.tracks, state.tempos, state.position.interval.zone, state.played, state.track?.id ?? null, Math.random);
-    return;
-  }
-  state.musicMessage = message;
-  updateTrack(state);
-}
-
-// Spotify answers 404 while the tab's player is still registering or has just come back; wait and try again
-async function playWithRetry(uri: string, deviceId: string): Promise<void> {
-  for (let attempt = 1; ; attempt += 1) {
-    try {
-      await playTrack(uri, deviceId);
-      return;
-    } catch (playError) {
-      if (attempt === PLAY_ATTEMPTS || errorMessage(playError) !== 'Play failed: 404') {
-        throw new Error(errorMessage(playError), { cause: playError });
-      }
-    }
-    await new Promise((resolve): void => {
-      setTimeout(resolve, PLAY_RETRY_MS);
-    });
-  }
-}
-
-async function playPending(state: RideScreenState): Promise<void> {
-  if (!state.settings.musicEnabled) {
-    state.pendingPlay = null;
-    return;
-  }
-
-  const track: Track | null = state.pendingPlay;
-  const deviceId: string | null = state.playerDeviceId;
-  if (track === null || deviceId === null || state.spotifyCallInFlight || state.phase !== 'riding') {
-    return;
-  }
-
-  state.pendingPlay = null;
-  state.track = track;
-  state.played.add(track.id);
-  await runSpotifyCall(state, async (): Promise<void> => {
-    await playWithRetry(track.uri, deviceId);
-    state.lastPlayAt = performance.now();
-    state.musicMessage = null;
-    updateTrack(state);
-  });
-}
-
-// Builds a display entry for whatever the tab is playing, playlist track or not
-function trackFromPlayer(state: RideScreenState, current: SpotifyPlayerState): Track {
-  const playing = current.track_window.current_track;
-  const id: string = playing.uri.replace('spotify:track:', '');
-  const known: Track | undefined = state.tracks.find((track: Track): boolean => track.id === id);
-  return known ?? { id, uri: playing.uri, name: playing.name, artist: playing.artists[0]?.name ?? '', artworkUrl: playing.album.images[0]?.url ?? null, durationMs: current.duration };
-}
-
-// The app never cuts a song: it shows what is playing and, as a song ends, lines up
-// the next one to match the cadence of the block the ride is in right now.
-async function pollPlayer(state: RideScreenState, ride: Ride): Promise<void> {
-  if (!state.settings.musicEnabled || state.musicMessage !== null || state.player === null || state.playerDeviceId === null) {
-    return;
-  }
-
-  const current: SpotifyPlayerState | null = await state.player.getCurrentState();
-  if (current === null || state.phase !== 'riding' || performance.now() - state.lastPlayAt < PLAY_GRACE_MS) {
-    return;
-  }
-
-  if (!current.paused) {
-    state.musicSkips = 0;
-  }
-  const playing: Track = trackFromPlayer(state, current);
-  if (state.track === null || playing.id !== state.track.id) {
-    state.track = playing;
-    state.played.add(playing.id);
-    updateTrack(state);
-  }
-
-  // The app starts the next song itself in the last moment of the current one (or once it has
-  // ended and sits paused at its start). Spotify's own queue is never used: it persists across
-  // rides, so leftovers would replay the same songs in the same order.
-  const ending: boolean = current.duration - current.position <= NEXT_BEFORE_END_MS || (current.paused && current.position === 0);
-  if (ending) {
-    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, playing.id, Math.random);
-    void playPending(state);
-  }
-}
-
-function skipTrack(state: RideScreenState, ride: Ride, direction: 'prev' | 'next'): void {
-  const current: Track | null = state.track;
-  if (!state.settings.musicEnabled || state.phase !== 'riding' || state.tracks.length === 0) {
-    return;
-  }
-
-  if (direction === 'next') {
-    if (current !== null && state.musicMessage === null) {
-      state.history.push(current);
-    }
-    state.pendingPlay = pickTrack(state.tracks, state.tempos, currentZone(state, ride), state.played, current?.id ?? null, Math.random);
-  } else {
-    state.pendingPlay = state.history.pop() ?? current;
-  }
-  state.musicSkips = 0;
-  state.musicMessage = null;
-  void playPending(state);
 }
 
 async function releaseWakeLock(state: RideScreenState): Promise<void> {
@@ -460,7 +336,6 @@ function finishRide(state: RideScreenState, ride: Ride, reason: FinishReason): v
   }
   void releaseWakeLock(state);
   state.device?.gatt?.disconnect();
-  state.player?.disconnect();
 
   if (!wasRiding) {
     return;
@@ -526,15 +401,6 @@ function tick(state: RideScreenState, ride: Ride, testIntervalIndex: number): vo
   }
 
   state.position = position;
-  if (state.pendingPlay !== null) {
-    void playPending(state);
-  }
-
-  if (performance.now() - state.lastPollAt >= POLL_MS) {
-    state.lastPollAt = performance.now();
-    void pollPlayer(state, ride);
-  }
-
   updateScreen(state, ride, position, sample);
 }
 
@@ -548,7 +414,6 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.startedAt = performance.now();
   state.startedAtDate = new Date();
   state.lastTickAt = state.startedAt;
-  state.lastPollAt = state.startedAt;
   state.position = intervalAtElapsed(ride, 0);
   state.elements.startButton.hidden = true;
   state.elements.testButton.hidden = true;
@@ -556,11 +421,6 @@ function startRide(state: RideScreenState, ride: Ride): void {
   state.elements.endButton.hidden = false;
   dismissToasts((message: string): boolean => message === 'Connecting bike' || message.startsWith('Connected to '));
 
-  // The tap that started the ride is the user gesture browsers want before audio
-  if (state.settings.musicEnabled) {
-    void state.player?.activateElement();
-    void playPending(state);
-  }
   void acquireWakeLock(state);
   state.tickHandle = setInterval((): void => {
     tick(state, ride, testIntervalIndex);
@@ -575,15 +435,9 @@ function togglePause(state: RideScreenState): void {
   if (state.paused) {
     state.pausedMs += clock(state) - state.pausedAt;
     state.paused = false;
-    if (state.settings.musicEnabled) {
-      void state.player?.resume();
-    }
   } else {
     state.pausedAt = clock(state);
     state.paused = true;
-    if (state.settings.musicEnabled) {
-      void state.player?.pause();
-    }
   }
   state.elements.pauseButton.textContent = state.paused ? 'Resume' : 'Pause';
 }
@@ -664,74 +518,6 @@ async function connectBike(state: RideScreenState, ride: Ride, onSample: (sample
   updateReadyScreen(state, ride);
 }
 
-async function loadMusic(state: RideScreenState, ride: Ride): Promise<void> {
-  if (!state.settings.musicEnabled) {
-    return;
-  }
-  if (loadSpotifyAuth() === null) {
-    markMusicFailed(state, 'Connect Spotify in Settings');
-    return;
-  }
-  if (state.settings.spotifyPlaylistId === '') {
-    markMusicFailed(state, 'Choose a playlist in Settings');
-    return;
-  }
-
-  state.musicLoading = true;
-  updateTrack(state);
-  let tracks: Track[];
-  try {
-    tracks = await getPlaylistTracks(state.settings.spotifyPlaylistId);
-  } catch (trackError) {
-    markMusicFailed(state, errorMessage(trackError));
-    return;
-  } finally {
-    state.musicLoading = false;
-  }
-
-  if (state.phase === 'finished') {
-    return;
-  }
-
-  if (tracks.length === 0) {
-    markMusicFailed(state, 'Playlist has no tracks');
-    return;
-  }
-
-  state.tracks = tracks;
-  state.tempos = loadTempoCache();
-  if (state.track === null && state.pendingPlay === null) {
-    state.pendingPlay = pickTrack(tracks, state.tempos, currentZone(state, ride), state.played, null, Math.random);
-  }
-  updateTrack(state);
-  void connectPlayer(state);
-}
-
-async function connectPlayer(state: RideScreenState): Promise<void> {
-  let connected: { player: SpotifyPlayer; deviceId: string };
-  try {
-    connected = await connectSpotifyPlayer(
-      (message: string): void => markMusicFailed(state, message),
-      (deviceId: string | null): void => {
-        state.playerDeviceId = deviceId;
-        if (deviceId === null) {
-          markMusicFailed(state, 'Spotify player offline');
-        }
-      },
-    );
-  } catch (playerError) {
-    markMusicFailed(state, errorMessage(playerError));
-    return;
-  }
-
-  if (state.phase === 'finished') {
-    connected.player.disconnect();
-    return;
-  }
-  state.player = connected.player;
-  state.playerDeviceId = connected.deviceId;
-}
-
 function startTestRide(state: RideScreenState, ride: Ride): void {
   if (state.phase !== 'ready') {
     return;
@@ -744,7 +530,9 @@ function startTestRide(state: RideScreenState, ride: Ride): void {
 }
 
 export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
-  const top = buildTopBand((direction: 'prev' | 'next'): void => skipTrack(state, ride, direction));
+  const top = buildTopBand();
+  const ring = buildZoneRing();
+  top.band.prepend(ring.root);
   const stats = buildStatsStrip();
   const profileRoot: HTMLElement = buildElement('section', 'ride-profile-band', '');
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
@@ -781,28 +569,14 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     pausedAt: 0,
     pausedMs: 0,
     lastTickAt: 0,
-    lastPollAt: 0,
     stats: emptyRideStats(),
     latestSample: null,
     position: null,
     device: null,
     bikeState: 'disconnected',
     testMode: false,
-    tracks: [],
-    tempos: {},
-    track: null,
-    history: [],
-    played: new Set(),
     summaryId: null,
-    musicMessage: null,
-    musicSkips: 0,
-    musicLoading: false,
-    lastPlayAt: 0,
-    player: null,
-    playerDeviceId: null,
-    spotifyCallInFlight: false,
     reconnectInFlight: false,
-    pendingPlay: null,
     wakeLock: null,
     tickHandle: null,
     reconnectHandle: null,
@@ -810,8 +584,12 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
     ftpTestSeconds: 0,
     listeners: new AbortController(),
     elements: {
-      ...top.elements,
       ...stats.elements,
+      zoneCurrent: ring.current,
+      zoneTarget: ring.target,
+      zoneMarker: ring.marker,
+      zoneNeedle: ring.needle,
+      zoneRing: ring.root,
       profileRoot,
       connectButton,
       startButton,
@@ -868,5 +646,4 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   applyBluetoothMode(state);
   root.replaceChildren(screen);
   updateReadyScreen(state, ride);
-  void loadMusic(state, ride);
 }

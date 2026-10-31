@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import appendRideSummary from '@/lib/client/helpers/append-ride-summary';
 import deleteRideSummary from '@/lib/client/helpers/delete-ride-summary';
 import loadHistory from '@/lib/client/helpers/load-history';
-import loadTempoCache from '@/lib/client/helpers/load-tempo-cache';
-import saveTempoCache from '@/lib/client/helpers/save-tempo-cache';
 import type { RideSummary } from '@/lib/client/models/types';
 
 function buildSummary(id: string): RideSummary {
@@ -82,22 +80,5 @@ describe('loadHistory', () => {
 
     // Assert
     expect(history[0].secondsInZone).toEqual([0, 30, 40, 1, 2, 3, 4]);
-  });
-});
-
-describe('loadTempoCache', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it('round-trips a saved cache including nulls', () => {
-    // Arrange
-    saveTempoCache({ trackA: 120, trackB: null });
-
-    // Act
-    const cache = loadTempoCache();
-
-    // Assert
-    expect(cache).toEqual({ trackA: 120, trackB: null });
   });
 });

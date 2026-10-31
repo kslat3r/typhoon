@@ -47,17 +47,16 @@ describe('installable web app', () => {
     expect(html).not.toContain('Rotate your phone');
   });
 
-  it('keeps the shell fresh and leaves Spotify and the OAuth return on the network', () => {
+  it('keeps the shell fresh and leaves off-origin requests on the network', () => {
     // Assert
     expect(worker).toContain('skipWaiting');
     expect(worker).toContain('clients.claim');
     expect(worker).toContain("addEventListener('fetch'");
     expect(worker).toContain('url.origin === self.location.origin');
-    expect(worker).toContain("searchParams.has('code')");
     expect(worker).toContain('networkFirst');
     expect(worker).toContain("cache: 'no-store'");
     expect(worker).toContain('typhoon-shell-__BUILD_ID__');
-    expect(worker).not.toContain('accounts.spotify.com');
+    expect(worker).not.toContain('spotify');
     expect(app).toContain('controllerchange');
     expect(app).toContain('location.reload');
     expect(app).toContain('registration.update');
