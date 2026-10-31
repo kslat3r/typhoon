@@ -219,6 +219,7 @@ footer > a:not(.ride-link) + a {
 
 .library-filters + .ride-card {
   margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
 .library-empty {
