@@ -68,6 +68,8 @@ describe('renderSummaryScreen', () => {
     expect(root.textContent).toContain('190');
     expect(root.textContent).toContain('88');
     expect(root.textContent).toContain('102');
+    expect(root.textContent).toContain('Avg cadence');
+    expect(root.textContent).toContain('Max cadence');
     expect(root.textContent).toContain('0.95');
     expect(root.textContent).toContain('337 kJ');
     expect(root.textContent).toContain('337 kcal');
