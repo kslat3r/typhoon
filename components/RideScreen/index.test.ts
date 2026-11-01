@@ -448,7 +448,10 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.zone-ring')).toBeNull();
     expect(root.querySelector('.ride-bottom')).toBeNull();
     expect((root.querySelector('.ride-zone-current') as HTMLElement).textContent).toBe('--');
-    expect(root.querySelector('.ride-zone-rail')?.firstElementChild?.className).toBe('ride-zone-current');
+    expect(root.querySelector('.ride-zone-sizer')?.textContent).toBe('888%');
+    expect(root.querySelector('.ride-zone-sizer')?.getAttribute('aria-hidden')).toBe('true');
+    expect(root.querySelector('.ride-zone-sizer')?.parentElement?.className).toBe('ride-zone-rail');
+    expect(root.querySelector('.ride-zone-current')?.nextElementSibling?.className).toBe('ride-zone-bar');
     expect(root.querySelector('.ride-zone-bar')?.parentElement?.className).toBe('ride-zone-rail');
     expect(root.querySelector('.ride-zone-rail')?.parentElement?.className).toBe('ride-stage');
     expect(root.querySelector('.ride-profile-band')?.parentElement?.className).toBe('ride-stage');
@@ -482,6 +485,7 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
     expect(root.querySelector('.ride-stat-percent')).toBeNull();
     expect((root.querySelector('.ride-zone-current') as HTMLElement).textContent).toBe('75%');
+    expect(root.querySelector('.ride-zone-sizer')?.textContent).toBe('888%');
     expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toBe('rgb(47, 209, 139)');
     expect((root.querySelector('.ride-zone-current') as HTMLElement).style.color).toBe('rgb(15, 18, 25)');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');

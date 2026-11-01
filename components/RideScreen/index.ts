@@ -103,6 +103,9 @@ function paintZoneChip(current: HTMLElement, percent: number | null): void {
 
 function buildZoneBar(): { rail: HTMLElement; bar: HTMLElement; current: HTMLElement; marker: HTMLElement } {
   const rail: HTMLElement = buildElement('div', 'ride-zone-rail', '');
+  // Widest four-character label. Digits are tabular, and 8 is the widest if a font ignores that.
+  const sizer: HTMLElement = buildElement('span', 'ride-zone-sizer', '888%');
+  sizer.setAttribute('aria-hidden', 'true');
   const current: HTMLElement = buildElement('div', 'ride-zone-current', '--');
   const bar: HTMLElement = buildElement('div', 'ride-zone-bar', '');
   bar.setAttribute('role', 'img');
@@ -118,7 +121,7 @@ function buildZoneBar(): { rail: HTMLElement; bar: HTMLElement; current: HTMLEle
   const marker: HTMLElement = buildElement('div', 'ride-zone-marker', '');
   marker.hidden = true;
   bar.append(marker);
-  rail.append(current, bar);
+  rail.append(sizer, current, bar);
   return { rail, bar, current, marker };
 }
 
