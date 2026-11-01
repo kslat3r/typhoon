@@ -598,9 +598,11 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const top = buildTopBand();
   const zone = buildZoneBar();
   const stats = buildStatsStrip();
+  const stage: HTMLElement = buildElement('div', 'ride-stage', '');
   const profileBand: HTMLElement = buildElement('section', 'ride-profile-band', '');
   const profileRoot: HTMLElement = buildElement('div', 'ride-profile-slot', '');
   profileBand.append(profileRoot);
+  stage.append(zone.rail, profileBand);
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
     void connectBike(state, ride, onSample, onDisconnect);
   });
@@ -710,7 +712,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   );
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
-  screen.append(zone.rail, top.band, profileBand, stats.strip);
+  screen.append(top.band, stage, stats.strip);
   mountToasts(screen);
   applyBluetoothMode(state);
   root.replaceChildren(screen);

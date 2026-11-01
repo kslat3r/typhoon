@@ -450,8 +450,11 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-zone-current') as HTMLElement).textContent).toBe('--');
     expect(root.querySelector('.ride-zone-rail')?.firstElementChild?.className).toBe('ride-zone-current');
     expect(root.querySelector('.ride-zone-bar')?.parentElement?.className).toBe('ride-zone-rail');
+    expect(root.querySelector('.ride-zone-rail')?.parentElement?.className).toBe('ride-stage');
+    expect(root.querySelector('.ride-profile-band')?.parentElement?.className).toBe('ride-stage');
     expect(root.querySelector('.ride-profile-band')?.firstElementChild?.className).toBe('ride-profile-slot');
     expect(root.querySelector('.ride-stats')?.parentElement?.className).toBe('ride-screen');
+    expect(root.querySelector('.ride-stage')?.nextElementSibling?.className).toBe('ride-stats');
     expect(root.querySelector('.ride-profile')?.parentElement?.className).toBe('ride-profile-slot');
 
     // Act
