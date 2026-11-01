@@ -139,6 +139,7 @@ describe('renderRideScreen', () => {
     expect(root.querySelector('.ride-zone-bar')?.getAttribute('aria-label')).toBe('Target 70 rpm');
     expect((root.querySelector('.ride-zone-marker') as HTMLElement).hidden).toBe(true);
     expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toBe('');
+    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.color).toBe('');
     expect((root.querySelector('.ride-stat-interval') as HTMLElement).textContent).toBe('0:10');
     expect(visibleStatLabels(root)).toEqual(['Target', 'Interval', 'Next', 'Remaining']);
 
@@ -445,9 +446,12 @@ describe('renderRideScreen', () => {
     expect(segments[0].style.bottom).toBe('0%');
     expect(segments[6].style.backgroundColor).toBe('rgb(180, 92, 255)');
     expect(root.querySelector('.zone-ring')).toBeNull();
+    expect(root.querySelector('.ride-bottom')).toBeNull();
     expect((root.querySelector('.ride-zone-current') as HTMLElement).textContent).toBe('--');
-    expect(root.querySelector('.ride-zone-bar')?.parentElement?.className).toBe('ride-zone-column');
-    expect(root.querySelector('.ride-profile-band')?.firstElementChild?.className).toBe('ride-zone-column');
+    expect(root.querySelector('.ride-zone-rail')?.firstElementChild?.className).toBe('ride-zone-current');
+    expect(root.querySelector('.ride-zone-bar')?.parentElement?.className).toBe('ride-zone-rail');
+    expect(root.querySelector('.ride-profile-band')?.firstElementChild?.className).toBe('ride-profile-slot');
+    expect(root.querySelector('.ride-stats')?.parentElement?.className).toBe('ride-screen');
     expect(root.querySelector('.ride-profile')?.parentElement?.className).toBe('ride-profile-slot');
 
     // Act
@@ -464,6 +468,7 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('--');
     expect((root.querySelector('.ride-zone-current') as HTMLElement).textContent).toBe('--');
     expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toBe('');
+    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.color).toBe('');
     expect((root.querySelector('.ride-zone-marker') as HTMLElement).hidden).toBe(true);
 
     // Act
@@ -474,8 +479,8 @@ describe('renderRideScreen', () => {
     expect((root.querySelector('.ride-stat-watts') as HTMLElement).textContent).toBe('150');
     expect(root.querySelector('.ride-stat-percent')).toBeNull();
     expect((root.querySelector('.ride-zone-current') as HTMLElement).textContent).toBe('75%');
-    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toContain('70%');
-    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toContain('47, 209, 139');
+    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toBe('rgb(47, 209, 139)');
+    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.color).toBe('rgb(15, 18, 25)');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).textContent).toBe('0:10');
     expect((root.querySelector('.ride-stat-next') as HTMLElement).parentElement?.querySelector('.ride-stat-label')?.textContent).toBe('Next');
     expect(root.querySelector('.zone-ring')).toBeNull();
@@ -528,8 +533,8 @@ describe('renderRideScreen', () => {
     expect(text('.ride-stat-mph')).toBe(expectedMph);
     expect(text('.ride-stat-miles')).not.toBe('--');
     expect(text('.ride-zone-current')).toBe('100%');
-    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toContain('70%');
-    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toContain('255, 138, 31');
+    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.backgroundColor).toBe('rgb(255, 138, 31)');
+    expect((root.querySelector('.ride-zone-current') as HTMLElement).style.color).toBe('rgb(15, 18, 25)');
     expect((root.querySelector('.ride-zone-marker') as HTMLElement).hidden).toBe(false);
     expect(Number.parseFloat((root.querySelector('.ride-zone-marker') as HTMLElement).style.bottom)).toBeGreaterThan(50);
     const milesAtWindow: string = text('.ride-stat-miles');

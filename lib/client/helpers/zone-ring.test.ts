@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { ZONES } from '@/lib/client/models/zones';
 import {
   ZONE_BAR_GAP,
-  ZONE_RING_FILL_ALPHA,
   ZONE_RING_MAX_PERCENT,
   ZONE_RING_MIN_PERCENT,
   ZONE_RING_TOP_PERCENT,
   zoneBarBands,
   zoneBarFraction,
+  zoneChipText,
   zoneRingFill,
   zoneRingSegments,
   zoneTargetLabel,
@@ -38,8 +38,7 @@ describe('zoneRingSegments', () => {
 });
 
 describe('zoneRingFill', () => {
-  it('maps the needle percent onto the Coggan colour at a readable strength', () => {
-    expect(ZONE_RING_FILL_ALPHA).toBe(0.7);
+  it('maps the percent onto the Coggan colour', () => {
     expect(zoneRingFill(0)).toBe('#3b8bff');
     expect(zoneRingFill(40)).toBe('#3b8bff');
     expect(zoneRingFill(55)).toBe('#3b8bff');
@@ -54,6 +53,18 @@ describe('zoneRingFill', () => {
     expect(zoneRingFill(150)).toBe('#b0122c');
     expect(zoneRingFill(160)).toBe('#b45cff');
     expect(zoneRingFill(200)).toBe('#b45cff');
+  });
+});
+
+describe('zoneChipText', () => {
+  it('picks the text colour with more contrast on each solid zone colour', () => {
+    expect(zoneChipText(40)).toBe('#0f1219');
+    expect(zoneChipText(65)).toBe('#0f1219');
+    expect(zoneChipText(83)).toBe('#0f1219');
+    expect(zoneChipText(100)).toBe('#0f1219');
+    expect(zoneChipText(113)).toBe('#0f1219');
+    expect(zoneChipText(135)).toBe('#ffffff');
+    expect(zoneChipText(160)).toBe('#0f1219');
   });
 });
 

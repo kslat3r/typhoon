@@ -23,7 +23,7 @@ import simulateBikeSample from '@/lib/client/helpers/simulate-bike-sample';
 import { dismissToasts, mountToasts, showToast } from '@/lib/client/helpers/toasts';
 import speedFromWatts from '@/lib/client/helpers/speed-from-watts';
 import summariseRide from '@/lib/client/helpers/summarise-ride';
-import { zoneBarBands, zoneBarFraction, zoneRingFill, zoneTargetLabel, ZONE_RING_FILL_ALPHA } from '@/lib/client/helpers/zone-ring';
+import { zoneBarBands, zoneBarFraction, zoneChipText, zoneRingFill, zoneTargetLabel } from '@/lib/client/helpers/zone-ring';
 import { targetRpmForZone } from '@/lib/client/models/target-cadence';
 import type { BikeSample, IntervalPosition, Ride, RideInterval, RideSummary, ZoneNumber } from '@/lib/client/models/types';
 
@@ -94,14 +94,16 @@ function placeZoneMarker(marker: HTMLElement, percent: number | null): void {
 function paintZoneChip(current: HTMLElement, percent: number | null): void {
   if (percent === null) {
     current.style.removeProperty('background-color');
+    current.style.removeProperty('color');
     return;
   }
-  const percentAlpha: number = Math.round(ZONE_RING_FILL_ALPHA * 100);
-  current.style.backgroundColor = `color-mix(in srgb, ${zoneRingFill(percent)} ${percentAlpha}%, transparent)`;
+  current.style.backgroundColor = zoneRingFill(percent);
+  current.style.color = zoneChipText(percent);
 }
 
-function buildZoneBar(): { column: HTMLElement; bar: HTMLElement; current: HTMLElement; marker: HTMLElement } {
-  const column: HTMLElement = buildElement('div', 'ride-zone-column', '');
+function buildZoneBar(): { rail: HTMLElement; bar: HTMLElement; current: HTMLElement; marker: HTMLElement } {
+  const rail: HTMLElement = buildElement('div', 'ride-zone-rail', '');
+  const current: HTMLElement = buildElement('div', 'ride-zone-current', '--');
   const bar: HTMLElement = buildElement('div', 'ride-zone-bar', '');
   bar.setAttribute('role', 'img');
 
@@ -116,10 +118,8 @@ function buildZoneBar(): { column: HTMLElement; bar: HTMLElement; current: HTMLE
   const marker: HTMLElement = buildElement('div', 'ride-zone-marker', '');
   marker.hidden = true;
   bar.append(marker);
-  column.append(bar);
-
-  const current: HTMLElement = buildElement('div', 'ride-zone-current', '--');
-  return { column, bar, current, marker };
+  rail.append(current, bar);
+  return { rail, bar, current, marker };
 }
 
 function buildTopBand(): { band: HTMLElement; actions: HTMLElement } {
@@ -600,11 +600,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   const stats = buildStatsStrip();
   const profileBand: HTMLElement = buildElement('section', 'ride-profile-band', '');
   const profileRoot: HTMLElement = buildElement('div', 'ride-profile-slot', '');
-  profileBand.append(zone.column, profileRoot);
-  const bottom: HTMLElement = buildElement('div', 'ride-bottom', '');
-  const readout: HTMLElement = buildElement('div', 'ride-zone-readout', '');
-  readout.append(zone.current);
-  bottom.append(readout, stats.strip);
+  profileBand.append(profileRoot);
   const connectButton: HTMLButtonElement = buildButton('Connect bike', (): void => {
     void connectBike(state, ride, onSample, onDisconnect);
   });
@@ -714,7 +710,7 @@ export default function renderRideScreen(root: HTMLElement, ride: Ride): void {
   );
 
   const screen: HTMLElement = buildElement('div', 'ride-screen', '');
-  screen.append(top.band, profileBand, bottom);
+  screen.append(zone.rail, top.band, profileBand, stats.strip);
   mountToasts(screen);
   applyBluetoothMode(state);
   root.replaceChildren(screen);
