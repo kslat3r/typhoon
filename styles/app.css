@@ -503,26 +503,32 @@ form {
 }
 
 .ride-profile-band {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: var(--space-2);
   flex: 1;
   min-height: 0;
+  margin-left: calc(26px + var(--space-2));
   border-bottom: 1px solid var(--line);
 }
 
-.ride-zone-column,
-.ride-zone-readout {
-  flex: none;
-  width: 64px;
+.ride-zone-rail {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-2);
+  /* Stay above the holder. The 20px matches the stats clearance, plus the screen padding. */
+  bottom: calc(20px + var(--space-2) + env(safe-area-inset-bottom, 0px));
+  left: max(var(--space-3), env(safe-area-inset-left, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 26px;
+  pointer-events: none;
+  gap: var(--space-1);
 }
 
 .ride-zone-bar {
   position: relative;
   width: 26px;
-  height: 100%;
-  margin: 0 auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .ride-zone-segment {
@@ -547,8 +553,9 @@ form {
 
 .ride-zone-current {
   box-sizing: border-box;
-  margin-top: var(--space-1);
-  padding: 3px 2px;
+  width: max-content;
+  min-width: 26px;
+  padding: 3px 6px;
   border-radius: 4px;
   background: var(--surface-raised);
   color: #fff;
@@ -559,19 +566,10 @@ form {
   text-align: center;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 90%);
 }
 
 .ride-zone-current[hidden] {
   display: none;
-}
-
-.ride-bottom {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  flex: none;
-  margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .ride-track {
@@ -767,8 +765,13 @@ form {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: var(--space-2);
-  flex: 1;
-  min-width: 0;
+  flex: none;
+  box-sizing: border-box;
+  width: 100%;
+  /* The bar runs down the left edge. Keep the numbers clear of it. */
+  padding-left: calc(26px + var(--space-2));
+  /* Clear the phone holder, and the home indicator when the browser reports one. */
+  margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .ride-stats-manual {

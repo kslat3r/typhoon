@@ -6,9 +6,6 @@ import { ZONES } from '@/lib/client/models/zones';
 export const ZONE_RING_MIN_PERCENT = 20;
 // Zone 7 is open-ended. The ring stops at 170% of FTP so the purple sprint arc is the band above 150%.
 export const ZONE_RING_MAX_PERCENT = 170;
-// Strong enough that the zone colour reads at a glance, with white type still readable.
-export const ZONE_RING_FILL_ALPHA = 0.7;
-
 // The old ring left 1.5 units open on a 36-radius circle. The bar keeps that fraction of its height between zones.
 const ZONE_BAR_CIRCUMFERENCE = 2 * Math.PI * 36;
 export const ZONE_BAR_GAP = 1.5 / ZONE_BAR_CIRCUMFERENCE;
@@ -36,6 +33,33 @@ export function zoneRingSegments(): ZoneRingSegment[] {
 // The disc uses the same percent the needle points at, mapped through the Coggan bands.
 export function zoneRingFill(percent: number): string {
   return ZONES[zoneForWatts(percent, 100) - 1].colour;
+}
+
+const CHIP_INK = '#0f1219';
+const CHIP_LIGHT = '#ffffff';
+
+function channelLuminance(value: number): number {
+  const unit: number = value / 255;
+  return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex: string): number {
+  const red: number = Number.parseInt(hex.slice(1, 3), 16);
+  const green: number = Number.parseInt(hex.slice(3, 5), 16);
+  const blue: number = Number.parseInt(hex.slice(5, 7), 16);
+  return 0.2126 * channelLuminance(red) + 0.7152 * channelLuminance(green) + 0.0722 * channelLuminance(blue);
+}
+
+function contrast(background: string, foreground: string): number {
+  const lighter: number = Math.max(luminance(background), luminance(foreground));
+  const darker: number = Math.min(luminance(background), luminance(foreground));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+// Solid zone colour behind the percent. Pick ink or white, whichever reads more clearly.
+export function zoneChipText(percent: number): string {
+  const background: string = zoneRingFill(percent);
+  return contrast(background, CHIP_LIGHT) >= contrast(background, CHIP_INK) ? CHIP_LIGHT : CHIP_INK;
 }
 
 // The caption under the ring is the top of the target zone, not the middle of the range.
