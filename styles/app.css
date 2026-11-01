@@ -502,31 +502,40 @@ form {
   margin-bottom: var(--space-2);
 }
 
-.ride-profile-band {
+.ride-stage {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--space-2);
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  margin-left: calc(26px + var(--space-2));
   border-bottom: 1px solid var(--line);
 }
 
-.ride-zone-rail {
-  position: absolute;
-  z-index: 2;
-  top: var(--space-2);
-  /* Stay above the holder. The 20px matches the stats clearance, plus the screen padding. */
-  bottom: calc(20px + var(--space-2) + env(safe-area-inset-bottom, 0px));
-  left: max(var(--space-3), env(safe-area-inset-left, 0px));
+.ride-profile-band {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  width: 26px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ride-zone-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: none;
+  /* Wide enough for "170%" so the chip and the bar stay the same width. */
+  width: 4.5rem;
+  min-height: 0;
   pointer-events: none;
   gap: var(--space-1);
 }
 
 .ride-zone-bar {
   position: relative;
-  width: 26px;
+  width: 100%;
   flex: 1;
   min-height: 0;
 }
@@ -553,9 +562,9 @@ form {
 
 .ride-zone-current {
   box-sizing: border-box;
-  width: max-content;
-  min-width: 26px;
-  padding: 3px 6px;
+  width: 100%;
+  flex: none;
+  padding: 3px 4px;
   border-radius: 4px;
   background: var(--surface-raised);
   color: #fff;
@@ -768,8 +777,6 @@ form {
   flex: none;
   box-sizing: border-box;
   width: 100%;
-  /* The bar runs down the left edge. Keep the numbers clear of it. */
-  padding-left: calc(26px + var(--space-2));
   /* Clear the phone holder, and the home indicator when the browser reports one. */
   margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
