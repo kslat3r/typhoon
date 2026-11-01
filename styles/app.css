@@ -522,21 +522,38 @@ form {
 }
 
 .ride-zone-rail {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: max-content;
+  grid-template-rows: auto minmax(0, 1fr);
+  justify-items: stretch;
   align-items: stretch;
   flex: none;
-  /* Wide enough for "170%" so the chip and the bar stay the same width. */
-  width: 4.5rem;
+  /* The sizer sets this: the widest 4-character label, plus the chip's side padding. */
+  width: max-content;
   min-height: 0;
   pointer-events: none;
-  gap: var(--space-1);
+}
+
+.ride-zone-sizer {
+  grid-area: 1 / 1;
+  box-sizing: border-box;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  min-width: max-content;
+  padding: 0 4px;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .ride-zone-bar {
+  grid-row: 2;
   position: relative;
-  width: 100%;
-  flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -561,9 +578,9 @@ form {
 }
 
 .ride-zone-current {
+  grid-area: 1 / 1;
   box-sizing: border-box;
-  width: 100%;
-  flex: none;
+  margin-bottom: var(--space-1);
   padding: 3px 4px;
   border-radius: 4px;
   background: var(--surface-raised);
